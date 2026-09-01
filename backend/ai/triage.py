@@ -1,8 +1,9 @@
 import io
 from functools import lru_cache
-from typing import Any
 from PIL import Image
 from ultralytics import YOLO
+
+from backend.core.evidence_model import DetectionResult
 
 
 # COCO Class IDs for common triage targets
@@ -30,8 +31,9 @@ def get_triage_model(model_name: str = "yolov8n.pt") -> YOLO:
 
 def analyze_frame(
     image_bytes: bytes,
-    confidence_threshold: float = 0.4
-) -> list[dict[str, Any]]:
+    confidence_threshold: float = 0.4,
+    fragment_id: str | None = None
+) -> list[DetectionResult]:
     """
     Analyzes a single video frame for objects, restricted to broad triage categories.
     STRICTLY PROHIBITED from performing facial recognition or identity claims.
@@ -39,9 +41,10 @@ def analyze_frame(
     Args:
         image_bytes: The raw JPEG/PNG byte stream of the extracted frame.
         confidence_threshold: Minimum confidence to retain a detection.
+        fragment_id: Optional reference to the video fragment being analyzed.
         
     Returns:
-        A list of detection dictionaries containing bounding boxes, labels, and confidences.
+        A list of strict DetectionResult Pydantic models.
     """
     # Instantly fetches the cached model in memory (O(1) time, zero reloading)
     model = get_triage_model()
@@ -64,10 +67,13 @@ def analyze_frame(
             confidence = round(float(box.conf[0].item()), 3)
             coords = box.xyxy[0].tolist()  # [x1, y1, x2, y2]
             
-            detections.append({
-                "label": result.names[cls_id],
-                "confidence": confidence,
-                "bounding_box": [round(c, 2) for c in coords]
-            })
+            detections.append(
+                DetectionResult(
+                    bounding_box=[round(c, 2) for c in coords],
+                    object_class=result.names[cls_id],
+                    confidence_score=confidence,
+                    fragment_id=fragment_id
+                )
+            )
             
     return detections
