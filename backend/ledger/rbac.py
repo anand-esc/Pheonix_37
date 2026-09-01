@@ -1,1 +1,3 @@
-# Role-based access control (4 roles, deny-by-default) - TODO: Satya Sarthak
+def get_rbac_manager():
+    """Stub for RBAC operations."""
+    raise NotImplementedError("Owner: ledger/RBAC branch")

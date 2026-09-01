@@ -1,40 +1,20 @@
-# Python
 __pycache__/
 *.py[cod]
-*.pyo
-.venv/
-venv/
-env/
+*$py.class
 
-# Environment / secrets — NEVER commit keys or evidence data
+# Environments
 .env
-.env.*
-!.env.example
-*.dek
-*.kek
-*.key
-*.pem
-/evidence_vault/
-/case_data/
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
 
-# Test fixtures — large binary blobs
-tests/fixtures/*.bin
-tests/fixtures/*.img
-tests/fixtures/*.raw
+# pytest
+.pytest_cache/
+.coverage
+htmlcov/
 
-# IDE
-.vscode/
-.idea/
-
-# Node / Frontend
-node_modules/
-.next/
-dist/
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
-logs/
+# Ruff
+.ruff_cache/
