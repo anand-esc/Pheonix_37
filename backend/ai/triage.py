@@ -1,4 +1,5 @@
 import io
+from functools import lru_cache
 from typing import Any
 from PIL import Image
 from ultralytics import YOLO
@@ -9,10 +10,14 @@ from ultralytics import YOLO
 TRIAGE_CLASS_IDS = [0, 1, 2, 3, 5, 7]
 
 
-def load_triage_model(model_name: str = "yolov8n.pt") -> YOLO:
+@lru_cache(maxsize=1)
+def get_triage_model(model_name: str = "yolov8n.pt") -> YOLO:
     """
-    Loads the YOLOv8-nano model for AI triage.
-    Downloads the weights automatically if not present.
+    Loads the YOLOv8-nano model as a Singleton.
+    
+    The @lru_cache ensures the heavy weights (tens of megabytes) are loaded 
+    into VRAM/RAM exactly once across the entire application lifecycle, 
+    preventing massive memory leaks on repeated frame analysis.
     
     Args:
         model_name: The Ultralytics model identifier.
@@ -24,7 +29,6 @@ def load_triage_model(model_name: str = "yolov8n.pt") -> YOLO:
 
 
 def analyze_frame(
-    model: YOLO,
     image_bytes: bytes,
     confidence_threshold: float = 0.4
 ) -> list[dict[str, Any]]:
@@ -33,13 +37,15 @@ def analyze_frame(
     STRICTLY PROHIBITED from performing facial recognition or identity claims.
     
     Args:
-        model: The loaded YOLO model.
         image_bytes: The raw JPEG/PNG byte stream of the extracted frame.
         confidence_threshold: Minimum confidence to retain a detection.
         
     Returns:
         A list of detection dictionaries containing bounding boxes, labels, and confidences.
     """
+    # Instantly fetches the cached model in memory (O(1) time, zero reloading)
+    model = get_triage_model()
+    
     image = Image.open(io.BytesIO(image_bytes))
     
     # Run inference restricted to triage classes to save compute and enforce policy
