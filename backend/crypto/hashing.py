@@ -1,1 +1,3 @@
-# Integrity Hashing (SHA-256, plaintext-first) - TODO: Suryansh
+def get_hasher():
+    """Stub for hashing operations."""
+    raise NotImplementedError("Owner: crypto/hashing branch")

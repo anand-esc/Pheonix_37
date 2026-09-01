@@ -1,1 +1,3 @@
-# BSA Section 63 / DPDP Act certificate-draft generator - TODO: Varsha
+def generate_draft():
+    """Stub for generating certificate drafts."""
+    raise NotImplementedError("Owner: reporting branch")
