@@ -1,1 +1,3 @@
-# Key generation, wrapping/unwrapping, rotation interface - TODO: Suryansh
+def manage_keys():
+    """Stub for key management."""
+    raise NotImplementedError("Owner: crypto/hashing branch")

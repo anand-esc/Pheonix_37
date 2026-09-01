@@ -1,1 +1,3 @@
-# Signed hash-chained audit ledger - TODO: Satya Sarthak
+def init_ledger():
+    """Stub for audit ledger operations."""
+    raise NotImplementedError("Owner: ledger/RBAC branch")

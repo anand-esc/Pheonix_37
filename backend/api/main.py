@@ -1,1 +1,8 @@
-# FastAPI routes - the ONLY thing frontend talks to - TODO: Shayanna (glue)
+from fastapi import FastAPI
+
+app = FastAPI(title="Phoenix API")
+
+
+@app.get("/")
+def read_root():
+    return {"status": "Phoenix API stub running"}
