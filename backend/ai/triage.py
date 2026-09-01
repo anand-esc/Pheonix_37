@@ -1,4 +1,5 @@
 import io
+import torch
 from functools import lru_cache
 from PIL import Image
 from ultralytics import YOLO
@@ -11,6 +12,18 @@ from backend.core.evidence_model import DetectionResult
 TRIAGE_CLASS_IDS = [0, 1, 2, 3, 5, 7]
 
 
+def _get_optimal_accelerator() -> str:
+    """Dynamically determines the best hardware accelerator available."""
+    if torch.cuda.is_available():
+        return "cuda"
+    elif torch.backends.mps.is_available():
+        return "mps"
+    return "cpu"
+
+# Cache the hardware choice so we don't query the driver repeatedly
+ACCELERATOR = _get_optimal_accelerator()
+
+
 @lru_cache(maxsize=1)
 def get_triage_model(model_name: str = "yolov8n.pt") -> YOLO:
     """
@@ -19,12 +32,6 @@ def get_triage_model(model_name: str = "yolov8n.pt") -> YOLO:
     The @lru_cache ensures the heavy weights (tens of megabytes) are loaded 
     into VRAM/RAM exactly once across the entire application lifecycle, 
     preventing massive memory leaks on repeated frame analysis.
-    
-    Args:
-        model_name: The Ultralytics model identifier.
-        
-    Returns:
-        The instantiated YOLO model.
     """
     return YOLO(model_name)
 
@@ -37,25 +44,19 @@ def analyze_frame(
     """
     Analyzes a single video frame for objects, restricted to broad triage categories.
     STRICTLY PROHIBITED from performing facial recognition or identity claims.
-    
-    Args:
-        image_bytes: The raw JPEG/PNG byte stream of the extracted frame.
-        confidence_threshold: Minimum confidence to retain a detection.
-        fragment_id: Optional reference to the video fragment being analyzed.
-        
-    Returns:
-        A list of strict DetectionResult Pydantic models.
     """
     # Instantly fetches the cached model in memory (O(1) time, zero reloading)
     model = get_triage_model()
     
     image = Image.open(io.BytesIO(image_bytes))
     
-    # Run inference restricted to triage classes to save compute and enforce policy
+    # Run inference restricted to triage classes and forced onto the fastest hardware
     results = model.predict(
         source=image,
         conf=confidence_threshold,
         classes=TRIAGE_CLASS_IDS,
+        device=ACCELERATOR,
+        imgsz=640, # Standardized compute resolution for maximum speed
         verbose=False
     )
     

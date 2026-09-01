@@ -16,7 +16,7 @@ def compute_sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def compute_sha256_file(filepath: Union[Path, str], chunk_size: int = 65536) -> str:
+def compute_sha256_file(filepath: Union[Path, str], chunk_size: int = 4194304) -> str:
     """
     Computes the SHA-256 hash of a file efficiently using memory-safe chunking.
     

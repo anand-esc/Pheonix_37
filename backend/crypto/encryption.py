@@ -44,7 +44,7 @@ def decrypt_data(ciphertext: bytes, nonce: bytes, key: bytes) -> bytes:
 # STREAMING ENCRYPTION (For massive DVR video files)
 # ---------------------------------------------------------
 
-def encrypt_file(input_path: Path | str, output_path: Path | str, key: bytes, chunk_size: int = 65536) -> None:
+def encrypt_file(input_path: Path | str, output_path: Path | str, key: bytes, chunk_size: int = 4194304) -> None:
     """
     Encrypts a massive file using streaming AES-256-GCM in O(1) memory space.
     File format: [12-byte Nonce] + [Ciphertext...] + [16-byte Auth Tag]
@@ -69,7 +69,7 @@ def encrypt_file(input_path: Path | str, output_path: Path | str, key: bytes, ch
         f_out.write(encryptor.tag)
 
 
-def decrypt_file(input_path: Path | str, output_path: Path | str, key: bytes, chunk_size: int = 65536) -> None:
+def decrypt_file(input_path: Path | str, output_path: Path | str, key: bytes, chunk_size: int = 4194304) -> None:
     """
     Decrypts a massive file using streaming AES-256-GCM.
     If the authentication tag at the end of the file is invalid, the operation aborts
