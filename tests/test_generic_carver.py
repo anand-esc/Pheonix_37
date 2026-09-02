@@ -226,6 +226,47 @@ def test_same_stream_split_by_zero_filler_but_not_by_small_padding(tmp_path):
     assert result.fragments[0].features.parameter_set_repeats >= 1
 
 
+def test_short_gop_before_repeated_sps_splits_abutting_recordings(tmp_path):
+    # recording A: GOPs of 10, 10 and a cut GOP of 5; recording B starts
+    # immediately with identical SPS/PPS, no EOS, no filler.
+    a = build_h264_stream(frames=25, seed=1, with_eos=False)
+    b = build_h264_stream(frames=20, seed=2, with_eos=False)
+    path = tmp_path / "abut.h264"
+    path.write_bytes(a + b)
+    result = GenericNalCarver(SMALL).carve(path)
+    assert [c.features.end_reason for c in result.fragments] == [
+        "short_gop",
+        "end_of_data",
+    ]
+    first, second = result.fragments
+    assert first.fragment.byte_offset_end == len(a)
+    assert second.fragment.byte_offset_start == len(a)
+    assert first.sha256 == hashlib.sha256(a).hexdigest()
+    assert second.sha256 == hashlib.sha256(b).hexdigest()
+    assert second.features.has_sps and second.features.first_vcl_is_idr
+
+    # with access-unit delimiters the split lands on the AUD, not the SPS
+    a2 = build_h264_stream(frames=25, seed=1, with_eos=False, with_aud=True)
+    b2 = build_h264_stream(frames=20, seed=2, with_eos=False, with_aud=True)
+    path.write_bytes(a2 + b2)
+    result = GenericNalCarver(SMALL).carve(path)
+    assert [c.sha256 for c in result.fragments] == [
+        hashlib.sha256(a2).hexdigest(),
+        hashlib.sha256(b2).hexdigest(),
+    ]
+
+
+def test_full_gops_with_identical_sps_stay_one_fragment(tmp_path):
+    # no in-band evidence of a boundary: documented residual limitation
+    a = build_h264_stream(frames=30, seed=1, with_eos=False)
+    b = build_h264_stream(frames=20, seed=2, with_eos=False)
+    path = tmp_path / "abut2.h264"
+    path.write_bytes(a + b)
+    result = GenericNalCarver(SMALL).carve(path)
+    assert len(result.fragments) == 1
+    assert result.fragments[0].features.parameter_set_repeats == 4
+
+
 def test_idr_without_parameter_sets_is_carved_at_lower_confidence(tmp_path):
     full = build_h264_stream(frames=6, seed=8)
     headerless = full[full.index(b"\x00\x00\x00\x01\x65") :]

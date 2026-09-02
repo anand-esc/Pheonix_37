@@ -48,6 +48,7 @@ carve statistics into `EvidenceItem.metadata`.
    |---|---|---|
    | `eos` | end-of-sequence/stream NAL (H.264 10/11, H.265 36/37) | +0.10 |
    | `new_sequence` | an SPS with different bytes (new resolution/profile) | +0.05 |
+   | `short_gop` | a repeated SPS (or the AUD before it) whose preceding GOP is shorter than the GOP length the recording had established | +0.05 |
    | `zero_filler` | a zero run longer than `filler_split_bytes` (4 KiB) | +0.05 |
    | `end_of_data` | image ends | -0.05 |
    | `truncated_nal` | `00 00 00` inside a NAL followed by a short zero run | -0.10 |
@@ -111,8 +112,11 @@ hikvision variant) is committed with its manifest and a drift-guard test.
 ## Known limitations
 
 * Two recordings with identical SPS bytes that abut with no EOS and less than
-  4 KiB of zero filler between them are carved as one fragment. Splitting them
-  would need frame_num or POC continuity checks, which are a natural next step.
+  4 KiB of zero filler are split only when the first one ends in a short GOP
+  (the `short_gop` rule). Recorders use a fixed GOP, so an abrupt end almost
+  always leaves one; but a recording that happens to stop exactly on a GOP
+  boundary is carved together with the next one. The rule needs two equal
+  GOPs of evidence before it fires, so it never splits a healthy stream.
 * Fragments are byte streams, not playable containers. Wrapping into MP4 for
   the viewer is a separate, lossless step that must keep the fragment hash.
 * A NAL that is truncated by non-zero garbage (no zero triple) keeps the

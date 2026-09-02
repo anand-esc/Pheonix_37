@@ -59,6 +59,17 @@ class RawNal:
     header: int  # first byte after the start code
     header2: int  # second byte (0 when at EOF)
     preceding_zeros: int  # zero bytes immediately before ``offset``
+    header3: int = 0  # third byte; first slice-header byte for H.265
+
+    def is_picture_start(self, codec: str) -> bool:
+        """True when this VCL NAL begins a new picture.
+
+        H.264: ``first_mb_in_slice`` is the first ue(v) of the slice header
+        and ue(0) is the single bit '1'. H.265: ``first_slice_segment_in_pic_flag``
+        is the first bit after the two-byte header.
+        """
+        first = self.header2 if codec == "h264" else self.header3
+        return bool(first & 0x80)
 
     # --- H.264 view -------------------------------------------------------
     @property
@@ -114,11 +125,12 @@ def scan_start_codes(fh: BinaryIO, file_size: int, block_size: int) -> Iterator[
     prev_trailing_zeros = 0
     position = 0  # absolute offset of buffer[0]
     first = True
-    tail_len = 5  # start code + two header bytes
+    tail_len = 6  # start code + two header bytes + first slice byte
 
     def _emit(buffer: bytes, p: int) -> RawNal | None:
         header = buffer[p + 3]
         header2 = buffer[p + 4] if p + 4 < len(buffer) else 0
+        header3 = buffer[p + 5] if p + 5 < len(buffer) else 0
         probe = RawNal(0, 3, header, header2, 0)
         if not (probe.is_h264 or probe.is_h265):
             return None
@@ -132,6 +144,7 @@ def scan_start_codes(fh: BinaryIO, file_size: int, block_size: int) -> Iterator[
             header=header,
             header2=header2,
             preceding_zeros=zeros,
+            header3=header3,
         )
 
     while True:

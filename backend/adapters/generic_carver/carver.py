@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import BinaryIO
 
@@ -85,6 +85,16 @@ class _Builder:
     parameter_set_repeats: int = 0
     stream: StreamInfo | None = None
     sps_error: str | None = field(default=None)
+    pps_count: int = 0
+    # GOP bookkeeping for the short-GOP split heuristic
+    gop_pictures: int = 0  # pictures since (and including) the last IDR
+    gop_lengths: list[int] = field(default_factory=list)
+    last_kind: str | None = None
+    split_snapshot: _Builder | None = None  # state just before a repeated SPS/AUD
+    split_start: int = 0  # offset where a new fragment would begin
+
+    def snapshot(self) -> _Builder:
+        return replace(self, gop_lengths=list(self.gop_lengths), split_snapshot=None)
 
 
 class GenericNalCarver(RecoveryEngine):
@@ -101,6 +111,7 @@ class GenericNalCarver(RecoveryEngine):
         self.case_id = case_id
         self.evidence_id = evidence_id
         self._features: dict[tuple[int, int], FragmentFeatures] = {}
+        self._pending_aud: tuple[int, int] | None = None
 
     # ------------------------------------------------------------ interface
     def carve_fragments(self, source_path: str) -> list[Fragment]:
@@ -128,6 +139,7 @@ class GenericNalCarver(RecoveryEngine):
         stats = {"seen": 0, "valid": 0, "orphan": 0, "oversized": 0, "discarded": 0}
         builder: _Builder | None = None
         pending: RawNal | None = None
+        self._pending_aud = None
 
         try:
             # ``scan`` is read sequentially by the scanner; ``rnd`` is used for
@@ -135,16 +147,19 @@ class GenericNalCarver(RecoveryEngine):
             with open(path, "rb") as scan, open(path, "rb") as rnd:
                 file_trailing_zeros = trailing_zeros_of_file(rnd, size, opts.block_size)
 
-                def close(reason: str) -> None:
+                def close(reason: str, target: _Builder | None = None) -> None:
+                    """Finish ``target`` (default: the current builder)."""
                     nonlocal builder
-                    if builder is None:
+                    b = target if target is not None else builder
+                    if b is None:
                         return
-                    finished = self._finish(rnd, builder, reason, len(fragments))
+                    finished = self._finish(rnd, b, reason, len(fragments))
                     if finished is None:
                         stats["discarded"] += 1
                     else:
                         fragments.append(finished)
-                    builder = None
+                    if target is None or target is builder:
+                        builder = None
 
                 for nal in scan_start_codes(scan, size, opts.block_size):
                     stats["seen"] += 1
@@ -235,6 +250,10 @@ class GenericNalCarver(RecoveryEngine):
             elif nal.is_h265_parameter_set:
                 codec = "h265"
             else:
+                is_aud = (nal.is_h264 and nal.h264_type == 9) or (
+                    nal.is_h265 and nal.h265_type == 35
+                )
+                self._pending_aud = (nal.offset, end) if is_aud else None
                 stats["orphan"] += 1
                 return builder, None
 
@@ -246,6 +265,15 @@ class GenericNalCarver(RecoveryEngine):
             return None, codec
         stats["valid"] += 1
 
+        # An access-unit delimiter right before a fragment's first SPS belongs
+        # to that fragment; remember it until the next NAL decides.
+        pending_aud = self._pending_aud
+        self._pending_aud = None
+        if builder is None and kind == "aud":
+            self._pending_aud = (nal.offset, end)
+            return None, codec
+        lead_in = pending_aud if pending_aud and pending_aud[1] == nal.offset else None
+
         if kind == "sps":
             sps_bytes = _read_nal(fh, nal, end)
             if builder is not None and builder.sps_bytes is not None:
@@ -253,9 +281,20 @@ class GenericNalCarver(RecoveryEngine):
                     close("new_sequence")
                     builder = None
                 else:
+                    # Remember the state before this repeated SPS (or the AUD
+                    # that preceded it): if the IDR that follows reveals a
+                    # short GOP, the recording boundary is here.
+                    if builder.last_kind != "aud":
+                        builder.split_snapshot = builder.snapshot()
+                        builder.split_start = nal.offset
                     builder.parameter_set_repeats += 1
             if builder is None:
-                builder = _Builder(start=nal.offset, start_reason="sps", codec=codec)
+                builder = _Builder(
+                    start=lead_in[0] if lead_in else nal.offset,
+                    start_reason="sps",
+                    codec=codec,
+                    nal_count=1 if lead_in else 0,
+                )
             if builder.sps_bytes is None:
                 builder.sps_bytes = sps_bytes
                 try:
@@ -265,7 +304,12 @@ class GenericNalCarver(RecoveryEngine):
                     builder.sps_error = str(exc)
         elif kind == "vps":
             if builder is None:
-                builder = _Builder(start=nal.offset, start_reason="vps", codec=codec)
+                builder = _Builder(
+                    start=lead_in[0] if lead_in else nal.offset,
+                    start_reason="vps",
+                    codec=codec,
+                    nal_count=1 if lead_in else 0,
+                )
         elif builder is None:
             if kind == "idr":
                 builder = _Builder(
@@ -298,16 +342,54 @@ class GenericNalCarver(RecoveryEngine):
                     "zero_filler" if run >= opts.filler_split_bytes else "truncated_nal"
                 )
 
+        picture_start = kind in ("idr", "vcl") and nal.is_picture_start(codec)
+
+        if kind == "aud" and builder.sps_bytes is not None:
+            # An access-unit delimiter may open the next recording; snapshot
+            # here so a split lands before it rather than before the SPS.
+            builder.split_snapshot = builder.snapshot()
+            builder.split_start = nal.offset
+
+        if kind == "idr" and picture_start and builder.split_snapshot is not None:
+            snap = builder.split_snapshot
+            expected = _established_gop(snap.gop_lengths)
+            if expected is not None and 0 < snap.gop_pictures < expected:
+                # The GOP before the repeated SPS was cut short: a recording
+                # ended there and a new one started with these parameter sets.
+                close("short_gop", snap)
+                builder = _Builder(
+                    start=builder.split_start,
+                    start_reason="sps",
+                    codec=codec,
+                    end=builder.end,
+                    nal_count=builder.nal_count - snap.nal_count,
+                    sps_bytes=builder.sps_bytes,
+                    stream=builder.stream,
+                    sps_error=builder.sps_error,
+                    has_pps=builder.pps_count > snap.pps_count,
+                    pps_count=builder.pps_count - snap.pps_count,
+                )
+            else:
+                builder.split_snapshot = None
+
         builder.nal_count += 1
         builder.end = end
+        builder.last_kind = kind
         if kind == "pps":
             builder.has_pps = True
+            builder.pps_count += 1
         if kind in ("idr", "vcl"):
             builder.vcl_count += 1
             if builder.first_vcl_is_idr is None:
                 builder.first_vcl_is_idr = kind == "idr"
             if kind == "idr":
                 builder.idr_count += 1
+            if picture_start:
+                if kind == "idr":
+                    if builder.gop_pictures > 0:
+                        builder.gop_lengths.append(builder.gop_pictures)
+                    builder.gop_pictures = 0
+                builder.gop_pictures += 1
         if kind == "eos":
             close("eos")
             return None, codec
@@ -447,6 +529,8 @@ def _classify(nal: RawNal, codec: str) -> str | None:
             return "vcl"
         if t in H264_EOS:
             return "eos"
+        if t == 9:
+            return "aud"
         return "other"
     if not nal.is_h265:
         return None
@@ -463,7 +547,16 @@ def _classify(nal: RawNal, codec: str) -> str | None:
         return "vcl"
     if t in H265_EOS:
         return "eos"
+    if t == 35:
+        return "aud"
     return "other"
+
+
+def _established_gop(lengths: list[int]) -> int | None:
+    """GOP length a recorder has demonstrated: two consecutive equal GOPs."""
+    if len(lengths) >= 2 and lengths[-1] == lengths[-2]:
+        return lengths[-1]
+    return None
 
 
 def _find_zero_triple(fh: BinaryIO, start: int, end: int) -> tuple[int, int] | None:

@@ -17,6 +17,7 @@ VCL_RATIO = 0.10
 END_DELTAS = {
     "eos": 0.10,
     "new_sequence": 0.05,
+    "short_gop": 0.05,
     "zero_filler": 0.05,
     "end_of_data": -0.05,
     "oversized_nal_gap": -0.10,
