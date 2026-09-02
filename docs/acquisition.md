@@ -1,6 +1,6 @@
 # Acquisition, intake hashing and the pipeline event seam
 
-Owner: acquisition / detection / fallback-recovery branch (`feat/acquisition`).
+Owner: acquisition / detection / fallback-recovery branch (`feat/acquisition-recovery`).
 
 ## What intake does
 

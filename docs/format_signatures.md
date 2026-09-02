@@ -1,6 +1,6 @@
 # Format detection: signatures, confidence rules, adapter routing
 
-Owner: `feat/acquisition` branch. Code: `backend/detection/`.
+Owner: `feat/acquisition-recovery` branch. Code: `backend/detection/`.
 
 The detector reads a bounded amount of the image (1 MiB head plus 32 windows of
 64 KiB spread evenly over the file, about 3 MiB total) and never decodes video.

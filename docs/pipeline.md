@@ -1,6 +1,6 @@
 # Acquisition-side pipeline runner
 
-Owner: `feat/acquisition` branch. Code: `backend/pipeline/runner.py`.
+Owner: `feat/acquisition-recovery` branch. Code: `backend/pipeline/runner.py`.
 
 `run_pipeline(source, case_id=..., operator_id=..., out_dir=...)` chains the
 modules on this branch into one auditable run:

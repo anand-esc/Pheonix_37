@@ -1,6 +1,6 @@
 # Generic Annex-B NAL carver
 
-Owner: `feat/acquisition` branch. Code: `backend/adapters/generic_carver/`.
+Owner: `feat/acquisition-recovery` branch. Code: `backend/adapters/generic_carver/`.
 
 This is the vendor-agnostic fallback recovery engine. It works on any image
 that stores H.264 or H.265 as Annex-B byte streams, which covers most DVR
