@@ -44,8 +44,21 @@ human-readable replay used by `hardware/acquisition_rig/run_demo_pipeline.py
 
 ## Not in scope here
 
-Ledger persistence of events (the ledger branch subscribes to the sink),
-report generation (reporting branch reads `pipeline_result.json`), and API
-exposure. Encrypting the whole image with the bytes-based `CryptoProvider`
-interface would load it into memory; the runner encrypts fragments and
-records the image hash instead.
+Ledger persistence of events (the ledger branch subscribes to the sink) and
+report generation (reporting branch reads `pipeline_result.json`). The API
+router exists (`backend/api/routes_acquisition.py`) but is not registered.
+
+## Whole-image encryption
+
+`encrypt_image=True` (default) also streams the whole image into
+`<out>/vault/evidence.img.enc` with the crypto module's `encrypt_file`
+(AES-256-GCM, nonce + ciphertext + tag, constant memory). The plaintext hash
+is the intake SHA-256 already in the lineage; the ciphertext SHA-256 is
+recorded in `PipelineResult.image_encrypted` and emitted as an
+`encryption_completed` event with `fragment_index = -1`.
+
+The public `CryptoProvider` interface is bytes-only, so the runner obtains
+the case DEK through `PhoenixCryptoProvider._get_key_for_case`. If a provider
+has no such hook the image step is skipped with a warning and fragments are
+still encrypted through the public interface. A public `encrypt_file`-style
+method on the provider would remove that seam; flagged for the crypto owner.

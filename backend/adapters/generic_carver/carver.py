@@ -284,7 +284,7 @@ class GenericNalCarver(RecoveryEngine):
                     # Remember the state before this repeated SPS (or the AUD
                     # that preceded it): if the IDR that follows reveals a
                     # short GOP, the recording boundary is here.
-                    if builder.last_kind != "aud":
+                    if builder.last_kind not in ("aud", "vps"):
                         builder.split_snapshot = builder.snapshot()
                         builder.split_start = nal.offset
                     builder.parameter_set_repeats += 1
@@ -310,6 +310,10 @@ class GenericNalCarver(RecoveryEngine):
                     codec=codec,
                     nal_count=1 if lead_in else 0,
                 )
+            elif builder.sps_bytes is not None and builder.last_kind != "aud":
+                # A repeated VPS precedes the repeated SPS; a split lands here.
+                builder.split_snapshot = builder.snapshot()
+                builder.split_start = nal.offset
         elif builder is None:
             if kind == "idr":
                 builder = _Builder(

@@ -1,7 +1,7 @@
 {
   "summary": {
     "case_id": "CASE-DEMO-001",
-    "evidence_id": "ev-acq-9c8487e7-1931-489a-bbe1-77924132a29c",
+    "evidence_id": "ev-acq-5b2c4320-fd93-470f-a85d-dc3fcc8ab21e",
     "image_sha256": "786c5f7dd7d5a2e5159c7b688793dd7e6bb12e0d33aba481f265a77d3788b878",
     "image_md5": "ad3ff27eeb6c8b6adfec2f222f45643d",
     "vendor": "Hikvision",
@@ -12,27 +12,29 @@
     "fragments": 4,
     "exported": 4,
     "encrypted": 4,
-    "events": 14,
-    "seconds": 0.3190784000107669
+    "image_encrypted": true,
+    "playable": 4,
+    "events": 15,
+    "seconds": 0.3678836000035517
   },
-  "started_utc": "2026-09-02T20:12:40.786954+00:00",
-  "finished_utc": "2026-09-02T20:12:41.105171+00:00",
+  "started_utc": "2026-09-02T21:52:36.638020+00:00",
+  "finished_utc": "2026-09-02T21:52:37.004940+00:00",
   "timings": [
     {
       "stage": "intake",
-      "seconds": 0.11217420000320999
+      "seconds": 0.1058472000004258
     },
     {
       "stage": "detection",
-      "seconds": 0.008386400004383177
+      "seconds": 0.006986600004893262
     },
     {
       "stage": "recovery",
-      "seconds": 0.1511956000031205
+      "seconds": 0.16638619999866933
     },
     {
       "stage": "encryption",
-      "seconds": 0.04732220000005327
+      "seconds": 0.0886635999995633
     }
   ],
   "detection_rationale": [
@@ -79,43 +81,43 @@
       "pipeline_stage": "intake",
       "algorithm": "SHA-256",
       "hex_digest": "786c5f7dd7d5a2e5159c7b688793dd7e6bb12e0d33aba481f265a77d3788b878",
-      "timestamp_utc": "2026-09-02T20:12:40.861883Z"
+      "timestamp_utc": "2026-09-02T21:52:36.713110Z"
     },
     {
       "pipeline_stage": "intake",
       "algorithm": "MD5",
       "hex_digest": "ad3ff27eeb6c8b6adfec2f222f45643d",
-      "timestamp_utc": "2026-09-02T20:12:40.861883Z"
+      "timestamp_utc": "2026-09-02T21:52:36.713110Z"
     },
     {
       "pipeline_stage": "intake_verify",
       "algorithm": "SHA-256",
       "hex_digest": "786c5f7dd7d5a2e5159c7b688793dd7e6bb12e0d33aba481f265a77d3788b878",
-      "timestamp_utc": "2026-09-02T20:12:40.896570Z"
+      "timestamp_utc": "2026-09-02T21:52:36.740167Z"
     },
     {
       "pipeline_stage": "pre_encryption/fragment_0000",
       "algorithm": "SHA-256",
       "hex_digest": "4ad5f3db5622000f60bdfa81903942afad64d8f307388df1a2c1dee0136a0838",
-      "timestamp_utc": "2026-09-02T20:12:41.093918Z"
+      "timestamp_utc": "2026-09-02T21:52:36.989228Z"
     },
     {
       "pipeline_stage": "pre_encryption/fragment_0001",
       "algorithm": "SHA-256",
       "hex_digest": "53aa831f1110dfd2eb0a998de01e715b3f49198cf0d8bf22ea7bdd4371c9b24c",
-      "timestamp_utc": "2026-09-02T20:12:41.098042Z"
+      "timestamp_utc": "2026-09-02T21:52:36.989228Z"
     },
     {
       "pipeline_stage": "pre_encryption/fragment_0002",
       "algorithm": "SHA-256",
       "hex_digest": "15c0d14c35eb8ee97f9496afc8d797f555015177eab3840770357fcc22d9aa31",
-      "timestamp_utc": "2026-09-02T20:12:41.098042Z"
+      "timestamp_utc": "2026-09-02T21:52:36.989228Z"
     },
     {
       "pipeline_stage": "pre_encryption/fragment_0003",
       "algorithm": "SHA-256",
       "hex_digest": "2a2e3cf6c4d92d1ebd8dabef9a6511e3c439dbfddec1b24b9ab2a9a130438f82",
-      "timestamp_utc": "2026-09-02T20:12:41.098042Z"
+      "timestamp_utc": "2026-09-02T21:52:37.004940Z"
     }
   ],
   "events": [
@@ -125,12 +127,12 @@
       "evidence_id": null,
       "stage": "intake",
       "payload": {
-        "acquisition_id": "acq-9c8487e7-1931-489a-bbe1-77924132a29c",
+        "acquisition_id": "acq-5b2c4320-fd93-470f-a85d-dc3fcc8ab21e",
         "source": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\dvr_image.img",
         "destination": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\run\\evidence.img",
         "operator_id": "op-amritansh"
       },
-      "timestamp_utc": "2026-09-02T20:12:40.786954Z"
+      "timestamp_utc": "2026-09-02T21:52:36.639031Z"
     },
     {
       "event_type": "intake_completed",
@@ -138,19 +140,19 @@
       "evidence_id": null,
       "stage": "intake",
       "payload": {
-        "acquisition_id": "acq-9c8487e7-1931-489a-bbe1-77924132a29c",
+        "acquisition_id": "acq-5b2c4320-fd93-470f-a85d-dc3fcc8ab21e",
         "bytes_read": 16777216,
         "sha256": "786c5f7dd7d5a2e5159c7b688793dd7e6bb12e0d33aba481f265a77d3788b878",
         "md5": "ad3ff27eeb6c8b6adfec2f222f45643d",
         "image_path": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\run\\evidence.img",
         "sidecar": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\run\\evidence.img.acquisition.json"
       },
-      "timestamp_utc": "2026-09-02T20:12:40.896570Z"
+      "timestamp_utc": "2026-09-02T21:52:36.740167Z"
     },
     {
       "event_type": "format_detected",
       "case_id": "CASE-DEMO-001",
-      "evidence_id": "ev-acq-9c8487e7-1931-489a-bbe1-77924132a29c",
+      "evidence_id": "ev-acq-5b2c4320-fd93-470f-a85d-dc3fcc8ab21e",
       "stage": "detection",
       "payload": {
         "source": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\run\\evidence.img",
@@ -165,12 +167,12 @@
         ],
         "adapter_module": "backend.adapters.hikvision"
       },
-      "timestamp_utc": "2026-09-02T20:12:40.906317Z"
+      "timestamp_utc": "2026-09-02T21:52:36.749949Z"
     },
     {
       "event_type": "adapter_resolved",
       "case_id": "CASE-DEMO-001",
-      "evidence_id": "ev-acq-9c8487e7-1931-489a-bbe1-77924132a29c",
+      "evidence_id": "ev-acq-5b2c4320-fd93-470f-a85d-dc3fcc8ab21e",
       "stage": "detection",
       "payload": {
         "adapter": "backend.adapters.generic_carver.GenericCarverAdapter",
@@ -178,23 +180,23 @@
         "available": true,
         "reason": "backend.adapters.hikvision.HikvisionAdapter unavailable (AttributeError: module 'backend.adapters.hikvision' has no attribute 'HikvisionAdapter'); using generic carver"
       },
-      "timestamp_utc": "2026-09-02T20:12:40.907684Z"
+      "timestamp_utc": "2026-09-02T21:52:36.749949Z"
     },
     {
       "event_type": "recovery_started",
       "case_id": "CASE-DEMO-001",
-      "evidence_id": "ev-acq-9c8487e7-1931-489a-bbe1-77924132a29c",
+      "evidence_id": "ev-acq-5b2c4320-fd93-470f-a85d-dc3fcc8ab21e",
       "stage": "recovery",
       "payload": {
         "image_path": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\run\\evidence.img",
         "file_size": 16777216
       },
-      "timestamp_utc": "2026-09-02T20:12:40.908135Z"
+      "timestamp_utc": "2026-09-02T21:52:36.749949Z"
     },
     {
       "event_type": "recovery_completed",
       "case_id": "CASE-DEMO-001",
-      "evidence_id": "ev-acq-9c8487e7-1931-489a-bbe1-77924132a29c",
+      "evidence_id": "ev-acq-5b2c4320-fd93-470f-a85d-dc3fcc8ab21e",
       "stage": "recovery",
       "payload": {
         "image_path": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\run\\evidence.img",
@@ -209,12 +211,12 @@
         "discarded_fragments": 0,
         "codec": "h264"
       },
-      "timestamp_utc": "2026-09-02T20:12:40.999633Z"
+      "timestamp_utc": "2026-09-02T21:52:36.812004Z"
     },
     {
       "event_type": "fragment_exported",
       "case_id": "CASE-DEMO-001",
-      "evidence_id": "ev-acq-9c8487e7-1931-489a-bbe1-77924132a29c",
+      "evidence_id": "ev-acq-5b2c4320-fd93-470f-a85d-dc3fcc8ab21e",
       "stage": "recovery",
       "payload": {
         "index": 0,
@@ -224,12 +226,12 @@
         "sha256": "4ad5f3db5622000f60bdfa81903942afad64d8f307388df1a2c1dee0136a0838",
         "length": 585277
       },
-      "timestamp_utc": "2026-09-02T20:12:41.014370Z"
+      "timestamp_utc": "2026-09-02T21:52:36.825537Z"
     },
     {
       "event_type": "fragment_exported",
       "case_id": "CASE-DEMO-001",
-      "evidence_id": "ev-acq-9c8487e7-1931-489a-bbe1-77924132a29c",
+      "evidence_id": "ev-acq-5b2c4320-fd93-470f-a85d-dc3fcc8ab21e",
       "stage": "recovery",
       "payload": {
         "index": 1,
@@ -239,12 +241,12 @@
         "sha256": "53aa831f1110dfd2eb0a998de01e715b3f49198cf0d8bf22ea7bdd4371c9b24c",
         "length": 588087
       },
-      "timestamp_utc": "2026-09-02T20:12:41.027510Z"
+      "timestamp_utc": "2026-09-02T21:52:36.840608Z"
     },
     {
       "event_type": "fragment_exported",
       "case_id": "CASE-DEMO-001",
-      "evidence_id": "ev-acq-9c8487e7-1931-489a-bbe1-77924132a29c",
+      "evidence_id": "ev-acq-5b2c4320-fd93-470f-a85d-dc3fcc8ab21e",
       "stage": "recovery",
       "payload": {
         "index": 2,
@@ -254,12 +256,12 @@
         "sha256": "15c0d14c35eb8ee97f9496afc8d797f555015177eab3840770357fcc22d9aa31",
         "length": 582013
       },
-      "timestamp_utc": "2026-09-02T20:12:41.043950Z"
+      "timestamp_utc": "2026-09-02T21:52:36.854662Z"
     },
     {
       "event_type": "fragment_exported",
       "case_id": "CASE-DEMO-001",
-      "evidence_id": "ev-acq-9c8487e7-1931-489a-bbe1-77924132a29c",
+      "evidence_id": "ev-acq-5b2c4320-fd93-470f-a85d-dc3fcc8ab21e",
       "stage": "recovery",
       "payload": {
         "index": 3,
@@ -269,71 +271,87 @@
         "sha256": "2a2e3cf6c4d92d1ebd8dabef9a6511e3c439dbfddec1b24b9ab2a9a130438f82",
         "length": 200000
       },
-      "timestamp_utc": "2026-09-02T20:12:41.056345Z"
+      "timestamp_utc": "2026-09-02T21:52:36.867252Z"
     },
     {
       "event_type": "encryption_completed",
       "case_id": "CASE-DEMO-001",
-      "evidence_id": "ev-acq-9c8487e7-1931-489a-bbe1-77924132a29c",
+      "evidence_id": "ev-acq-5b2c4320-fd93-470f-a85d-dc3fcc8ab21e",
+      "stage": "encryption",
+      "payload": {
+        "fragment_index": -1,
+        "plaintext_path": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\run\\evidence.img",
+        "encrypted_path": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\run\\vault\\evidence.img.enc",
+        "plaintext_sha256": "786c5f7dd7d5a2e5159c7b688793dd7e6bb12e0d33aba481f265a77d3788b878",
+        "ciphertext_sha256": "df40dbb06787dd32024def77b5513332da7ddc704886808c018c8252920549ae",
+        "plaintext_bytes": 16777216,
+        "ciphertext_bytes": 16777244
+      },
+      "timestamp_utc": "2026-09-02T21:52:36.989228Z"
+    },
+    {
+      "event_type": "encryption_completed",
+      "case_id": "CASE-DEMO-001",
+      "evidence_id": "ev-acq-5b2c4320-fd93-470f-a85d-dc3fcc8ab21e",
       "stage": "encryption",
       "payload": {
         "fragment_index": 0,
         "plaintext_path": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\run\\fragments\\fragment_0000_000000080000.h264",
         "encrypted_path": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\run\\vault\\fragment_0000_000000080000.h264.enc",
         "plaintext_sha256": "4ad5f3db5622000f60bdfa81903942afad64d8f307388df1a2c1dee0136a0838",
-        "ciphertext_sha256": "e6e279bd182e8234980750eb8daf46032b77c862cf49449257155f8c23a1a95f",
+        "ciphertext_sha256": "e89870d0ead58bca32150d61102a8498355a6a81de73647a450b12a9ea01a59c",
         "plaintext_bytes": 585277,
         "ciphertext_bytes": 585305
       },
-      "timestamp_utc": "2026-09-02T20:12:41.098042Z"
+      "timestamp_utc": "2026-09-02T21:52:36.989228Z"
     },
     {
       "event_type": "encryption_completed",
       "case_id": "CASE-DEMO-001",
-      "evidence_id": "ev-acq-9c8487e7-1931-489a-bbe1-77924132a29c",
+      "evidence_id": "ev-acq-5b2c4320-fd93-470f-a85d-dc3fcc8ab21e",
       "stage": "encryption",
       "payload": {
         "fragment_index": 1,
         "plaintext_path": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\run\\fragments\\fragment_0001_000000140000.h264",
         "encrypted_path": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\run\\vault\\fragment_0001_000000140000.h264.enc",
         "plaintext_sha256": "53aa831f1110dfd2eb0a998de01e715b3f49198cf0d8bf22ea7bdd4371c9b24c",
-        "ciphertext_sha256": "5c7071ceb12f7058171e689dfd26c13bc8299c1888c9ce1209b60f77cbbc6896",
+        "ciphertext_sha256": "e3738b3c9b1d843f572409b519ccbac8f8f91cc1636648ad340828d0fd76643f",
         "plaintext_bytes": 588087,
         "ciphertext_bytes": 588115
       },
-      "timestamp_utc": "2026-09-02T20:12:41.098042Z"
+      "timestamp_utc": "2026-09-02T21:52:36.989228Z"
     },
     {
       "event_type": "encryption_completed",
       "case_id": "CASE-DEMO-001",
-      "evidence_id": "ev-acq-9c8487e7-1931-489a-bbe1-77924132a29c",
+      "evidence_id": "ev-acq-5b2c4320-fd93-470f-a85d-dc3fcc8ab21e",
       "stage": "encryption",
       "payload": {
         "fragment_index": 2,
         "plaintext_path": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\run\\fragments\\fragment_0002_000000200000.h264",
         "encrypted_path": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\run\\vault\\fragment_0002_000000200000.h264.enc",
         "plaintext_sha256": "15c0d14c35eb8ee97f9496afc8d797f555015177eab3840770357fcc22d9aa31",
-        "ciphertext_sha256": "80201586940202316a4d4fe25ad4f5eb92f47792fd89f67bb5e76fcee99b2eb8",
+        "ciphertext_sha256": "dae06bfe60008f8c8737db0127f46a9863eed917f0176989fa29b0056d3e438a",
         "plaintext_bytes": 582013,
         "ciphertext_bytes": 582041
       },
-      "timestamp_utc": "2026-09-02T20:12:41.098042Z"
+      "timestamp_utc": "2026-09-02T21:52:36.989228Z"
     },
     {
       "event_type": "encryption_completed",
       "case_id": "CASE-DEMO-001",
-      "evidence_id": "ev-acq-9c8487e7-1931-489a-bbe1-77924132a29c",
+      "evidence_id": "ev-acq-5b2c4320-fd93-470f-a85d-dc3fcc8ab21e",
       "stage": "encryption",
       "payload": {
         "fragment_index": 3,
         "plaintext_path": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\run\\fragments\\fragment_0003_0000002c0000.h264",
         "encrypted_path": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\run\\vault\\fragment_0003_0000002c0000.h264.enc",
         "plaintext_sha256": "2a2e3cf6c4d92d1ebd8dabef9a6511e3c439dbfddec1b24b9ab2a9a130438f82",
-        "ciphertext_sha256": "fda8a8b1816b8a8ad3dabd757a3141f1dff70c1cbf4d5ea7d64409abc4d90733",
+        "ciphertext_sha256": "da64bd12d4e2a98e33b06db4c7478c1067540758b8a7bc4cd2426dbbcfda20ad",
         "plaintext_bytes": 200000,
         "ciphertext_bytes": 200028
       },
-      "timestamp_utc": "2026-09-02T20:12:41.105171Z"
+      "timestamp_utc": "2026-09-02T21:52:37.004940Z"
     }
   ]
 }

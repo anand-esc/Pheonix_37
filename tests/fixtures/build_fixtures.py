@@ -214,6 +214,55 @@ def build_h264_stream(
     return bytes(out)
 
 
+def build_h265_sps(width: int = 1280, height: int = 720) -> bytes:
+    """Minimal H.265 SPS NAL (2-byte header + escaped RBSP), Main profile."""
+    bw = BitWriter()
+    bw.u(4, 0).u(3, 0).u(1, 1)  # vps id, max_sub_layers_minus1, nesting
+    bw.u(2, 0).u(1, 0).u(5, 1)  # profile space, tier, profile_idc Main
+    bw.u(32, 0x60000000)  # compatibility flags
+    bw.u(48, 0)  # source flags + reserved
+    bw.u(8, 93)  # level 3.1
+    bw.ue(0)  # sps id
+    bw.ue(1)  # chroma 4:2:0
+    bw.ue(width).ue(height)
+    bw.u(1, 0)  # conformance_window_flag
+    bw.rbsp_trailing()
+    return b"\x42\x01" + escape_emulation(bw.to_bytes())
+
+
+def build_h265_stream(
+    *,
+    frames: int = 20,
+    gop: int = 10,
+    width: int = 1280,
+    height: int = 720,
+    seed: int = 1,
+    idr_size: int = 4000,
+    p_size: int = 1000,
+    with_eos: bool = True,
+    start_code_len: int = 4,
+) -> bytes:
+    """Annex-B H.265 stream: VPS SPS PPS IDR per GOP, TRAIL_R otherwise, EOS."""
+    rng = random.Random(seed)
+    sc = START_CODE_4 if start_code_len == 4 else START_CODE_4[1:]
+    vps = b"\x40\x01\x0c\x01\xff\xff\x01\x60\x00\x00\x03\x00\x90"
+    sps = build_h265_sps(width, height)
+    pps = b"\x44\x01\xc0\xf2\xf0\x3c\x90"
+    out = bytearray()
+    for i in range(frames):
+        idr = i % gop == 0
+        if idr:
+            out += sc + vps + sc + sps + sc + pps
+        header = b"\x26\x01" if idr else b"\x02\x01"  # IDR_W_RADL / TRAIL_R
+        size = int((idr_size if idr else p_size) * rng.uniform(0.7, 1.3))
+        # first_slice_segment_in_pic_flag = 1 -> first payload bit set
+        payload = bytes([0xAF]) + rng.randbytes(size).translate(_ZERO_FREE)
+        out += sc + header + payload
+    if with_eos:
+        out += sc + b"\x48\x01"  # EOS_NUT (36)
+    return bytes(out)
+
+
 # ---------------------------------------------------------------------------
 # Synthetic DVR image
 # ---------------------------------------------------------------------------

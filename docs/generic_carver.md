@@ -109,6 +109,19 @@ segment, deleted or not, so tests can prove byte-exact recovery of a deleted
 segment. `tests/fixtures/sample_dvr_image.img` (448 KiB, seed 2026,
 hikvision variant) is committed with its manifest and a drift-guard test.
 
+## Playable view: lossless MP4 wrapping
+
+`mp4.wrap_fragment_file(fragment.h264, out.mp4, fps=25)` builds a minimal
+ISO BMFF file: `ftyp`, one video track with `avc1`/`avcC` (SPS and PPS from
+the fragment), fixed-rate `stts`, `stss` for IDR pictures, and an `mdat`
+that holds every VCL and SEI NAL byte for byte with a 4-byte length prefix
+in place of the Annex-B start code. Nothing is decoded or re-encoded, and the
+raw fragment on disk is never touched, so the evidence hash stays valid; the
+MP4 is a viewing aid and carries its own SHA-256 in `PipelineResult.playable`.
+The frame rate is supplied, not measured: elementary streams from recorders
+rarely carry timing, so the wrapper defaults to 25 fps. H.265 fragments are
+listed with a note instead of an MP4.
+
 ## Known limitations
 
 * Two recordings with identical SPS bytes that abut with no EOS and less than

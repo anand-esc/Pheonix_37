@@ -430,6 +430,61 @@ def test_vendor_marker_variants_carve_identically(tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# Lossless MP4 wrapping
+# ---------------------------------------------------------------------------
+def test_mp4_wrap_is_lossless_and_well_formed(tmp_path):
+    from backend.adapters.generic_carver.mp4 import (
+        iter_annexb_nals,
+        parse_boxes,
+        wrap_fragment_file,
+    )
+
+    stream = build_h264_stream(frames=25, seed=5, with_aud=True)
+    src = tmp_path / "frag.h264"
+    src.write_bytes(stream)
+    before = hashlib.sha256(stream).hexdigest()
+
+    info = wrap_fragment_file(src, tmp_path / "frag.mp4", fps=25.0)
+    assert hashlib.sha256(src.read_bytes()).hexdigest() == before  # untouched
+    assert info.samples == 25 and info.sync_samples == 3
+    assert info.stream.width == 704 and info.duration_seconds == 1.0
+    assert info.dropped_nal_types[9] == 25  # AUDs are not samples
+
+    mp4 = (tmp_path / "frag.mp4").read_bytes()
+    top = [(k, s, n) for k, s, n in parse_boxes(mp4)]
+    assert [k for k, _, _ in top] == [b"ftyp", b"moov", b"mdat"]
+    assert sum(n for _, _, n in top) == len(mp4)
+
+    # every VCL NAL appears byte for byte in mdat, length-prefixed
+    _, mdat_start, mdat_size = top[2]
+    mdat = mp4[mdat_start + 8 : mdat_start + mdat_size]
+    vcl = [n for n in iter_annexb_nals(stream) if 1 <= (n[0] & 0x1F) <= 5]
+    pos = 0
+    for nal in vcl:
+        length = int.from_bytes(mdat[pos : pos + 4], "big")
+        assert mdat[pos + 4 : pos + 4 + length] == nal
+        pos += 4 + length
+    assert pos == len(mdat)
+
+    # avcC carries the SPS/PPS; stco points at the mdat payload
+    assert b"avcC" in mp4 and b"stss" in mp4
+    stco_at = mp4.index(b"stco")
+    chunk_offset = int.from_bytes(mp4[stco_at + 12 : stco_at + 16], "big")
+    assert chunk_offset == mdat_start + 8
+
+
+def test_mp4_wrap_rejects_streams_without_parameter_sets(tmp_path):
+    from backend.adapters.generic_carver.mp4 import wrap_annexb
+
+    full = build_h264_stream(frames=6, seed=8)
+    headerless = full[full.index(b"\x00\x00\x00\x01\x65") :]
+    with pytest.raises(ValueError):
+        wrap_annexb(headerless)
+    with pytest.raises(NotImplementedError):
+        wrap_annexb(b"\x00\x00\x00\x01\x40\x01\x0c\x01\xff\xff")
+
+
+# ---------------------------------------------------------------------------
 # Committed sample fixtures must match the builder (drift guard)
 # ---------------------------------------------------------------------------
 def test_committed_sample_image_matches_builder(tmp_path):

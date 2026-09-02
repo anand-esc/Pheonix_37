@@ -77,6 +77,33 @@ def test_full_run_end_to_end(tmp_path):
     assert stages[:3] == ["intake", "intake", "intake_verify"]
     assert stages[3:] == [f"pre_encryption/fragment_{i:04d}" for i in range(3)]
 
+    # whole image: streamed AES-GCM with the same case key, decryptable
+    img = result.image_encrypted
+    assert img is not None and img.fragment_index == -1
+    assert img.plaintext_sha256 == manifest.sha256
+    assert img.ciphertext_bytes == img.plaintext_bytes + 28
+    from backend.crypto.encryption import decrypt_file
+
+    decrypt_file(
+        img.encrypted_path,
+        tmp_path / "back.img",
+        bytes(crypto._get_key_for_case("CASE-001")),
+    )
+    assert (
+        hashlib.sha256((tmp_path / "back.img").read_bytes()).hexdigest()
+        == manifest.sha256
+    )
+    assert result.summary()["image_encrypted"] is True
+
+    # playable MP4 views exist for every H.264 fragment; raw fragments untouched
+    assert len(result.playable) == 3 and all(p.mp4_path for p in result.playable)
+    for view, art in zip(result.playable, result.encrypted, strict=True):
+        assert Path(view.mp4_path).read_bytes()[4:8] == b"ftyp"
+        assert hashlib.sha256(Path(view.fragment_path).read_bytes()).hexdigest() == (
+            art.plaintext_sha256
+        )
+    assert result.summary()["playable"] == 3
+
     # events, in order
     types = [e.event_type for e in sink.events]
     assert types[:4] == [
@@ -87,7 +114,8 @@ def test_full_run_end_to_end(tmp_path):
     ]
     assert types[4:6] == ["recovery_started", "recovery_completed"]
     assert types[6:9] == ["fragment_exported"] * 3
-    assert types[9:] == ["encryption_completed"] * 3
+    assert types[9:] == ["encryption_completed"] * 4  # image + 3 fragments
+    assert sink.events[9].payload["fragment_index"] == -1
     assert result.events == sink.events
 
     # persisted artefacts
