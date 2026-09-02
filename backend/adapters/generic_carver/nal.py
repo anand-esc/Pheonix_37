@@ -123,12 +123,8 @@ def scan_start_codes(fh: BinaryIO, file_size: int, block_size: int) -> Iterator[
         if not (probe.is_h264 or probe.is_h265):
             return None
         start = p - 1 if p >= 1 and buffer[p - 1] == 0 else p
-        zeros = 0
-        q = start - 1
-        while q >= 0 and buffer[q] == 0:
-            zeros += 1
-            q -= 1
-        if q < 0 and not first:
+        zeros = _zeros_before(buffer, start)
+        if zeros == start and not first:
             zeros += max(0, prev_trailing_zeros - len(carry))
         return RawNal(
             offset=position + start,
@@ -171,12 +167,22 @@ def scan_start_codes(fh: BinaryIO, file_size: int, block_size: int) -> Iterator[
 
 
 def _trailing_zero_count(buf: bytes) -> int:
-    n = 0
-    for i in range(len(buf) - 1, -1, -1):
-        if buf[i] != 0:
+    return len(buf) - len(buf.rstrip(b"\x00"))
+
+
+def _zeros_before(buf: bytes, end: int, step: int = 4096) -> int:
+    """Number of consecutive zero bytes immediately before ``buf[end]``."""
+    zeros = 0
+    q = end
+    while q > 0:
+        lo = max(0, q - step)
+        seg = buf[lo:q]
+        stripped = seg.rstrip(b"\x00")
+        zeros += len(seg) - len(stripped)
+        if stripped:
             break
-        n += 1
-    return n
+        q = lo
+    return zeros
 
 
 def trailing_zeros_of_file(fh: BinaryIO, file_size: int, block_size: int) -> int:

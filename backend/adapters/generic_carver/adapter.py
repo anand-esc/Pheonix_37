@@ -28,14 +28,19 @@ class GenericCarverAdapter(BaseAdapter):
         sink: EventSink | None = None,
         case_id: str | None = None,
         evidence_id: str | None = None,
+        report: DetectionReport | None = None,
     ) -> None:
         self.options = options or CarveOptions()
         self.detector = detector or FormatDetector()
         self.sink = sink
         self.case_id = case_id
         self.evidence_id = evidence_id
+        # A report computed by the caller for the same source; avoids running
+        # (and emitting) detection twice inside a pipeline.
+        self.precomputed_report = report
         self.last_report: DetectionReport | None = None
         self.last_result: CarveResult | None = None
+        self.last_carver: GenericNalCarver | None = None
 
     def detect(self, source_path: str) -> bool:
         """True when the source contains any plausible Annex-B NAL units."""
@@ -48,9 +53,13 @@ class GenericCarverAdapter(BaseAdapter):
 
     def parse(self, source_path: str) -> EvidenceItem:
         path = Path(source_path)
-        report = self.detector.detect(
-            path, case_id=self.case_id, evidence_id=self.evidence_id, sink=self.sink
-        )
+        pre = self.precomputed_report
+        if pre is not None and Path(pre.source_path) == path:
+            report = pre
+        else:
+            report = self.detector.detect(
+                path, case_id=self.case_id, evidence_id=self.evidence_id, sink=self.sink
+            )
         self.last_report = report
         evidence_id = self.evidence_id or _default_evidence_id(path)
 
@@ -62,6 +71,7 @@ class GenericCarverAdapter(BaseAdapter):
         )
         result = carver.carve(path)
         self.last_result = result
+        self.last_carver = carver
 
         metadata = {
             "adapter": "generic_carver",
