@@ -1,0 +1,339 @@
+{
+  "summary": {
+    "case_id": "CASE-DEMO-001",
+    "evidence_id": "ev-acq-92c9b98f-3549-4b6d-8985-70d04edd4288",
+    "image_sha256": "786c5f7dd7d5a2e5159c7b688793dd7e6bb12e0d33aba481f265a77d3788b878",
+    "image_md5": "ad3ff27eeb6c8b6adfec2f222f45643d",
+    "vendor": "Hikvision",
+    "validation_status": "VALIDATED",
+    "detection_confidence": 0.9,
+    "adapter": "backend.adapters.generic_carver.GenericCarverAdapter",
+    "fallback": true,
+    "fragments": 4,
+    "exported": 4,
+    "encrypted": 4,
+    "events": 14,
+    "seconds": 0.28664230000867974
+  },
+  "started_utc": "2026-09-02T20:11:28.969206+00:00",
+  "finished_utc": "2026-09-02T20:11:29.256963+00:00",
+  "timings": [
+    {
+      "stage": "intake",
+      "seconds": 0.1094539999976405
+    },
+    {
+      "stage": "detection",
+      "seconds": 0.00843150000582682
+    },
+    {
+      "stage": "recovery",
+      "seconds": 0.13156739999976708
+    },
+    {
+      "stage": "encryption",
+      "seconds": 0.03718940000544535
+    }
+  ],
+  "detection_rationale": [
+    "Hikvision: hikvision_master_sector@0x210; summed weight 0.90",
+    "NAL scan: 4/32 windows contain valid Annex-B start codes (density 0.12), codec guess h264 (h264 votes 22, h265 votes 0)",
+    "decision: Hikvision (VALIDATED), confidence 0.90"
+  ],
+  "fragments": [
+    {
+      "index": 0,
+      "byte_offset_start": 524288,
+      "byte_offset_end": 1109565,
+      "codec_info": "H.264 Baseline (profile_idc 66) level 3.0 1280x720",
+      "confidence_score": 0.95,
+      "confidence_rationale": "base 0.25: contiguous run of valid Annex-B NAL units; +0.25: SPS parsed, resolution and profile known; +0.10: PPS present; +0.15: first picture is an IDR/IRAP (decodable start); +0.10: 300/361 NALs carry picture data; +0.10: ended by eos; = 0.95"
+    },
+    {
+      "index": 1,
+      "byte_offset_start": 1310720,
+      "byte_offset_end": 1898807,
+      "codec_info": "H.264 Baseline (profile_idc 66) level 3.0 1280x720",
+      "confidence_score": 0.95,
+      "confidence_rationale": "base 0.25: contiguous run of valid Annex-B NAL units; +0.25: SPS parsed, resolution and profile known; +0.10: PPS present; +0.15: first picture is an IDR/IRAP (decodable start); +0.10: 300/361 NALs carry picture data; +0.10: ended by eos; = 0.95"
+    },
+    {
+      "index": 2,
+      "byte_offset_start": 2097152,
+      "byte_offset_end": 2679165,
+      "codec_info": "H.264 Baseline (profile_idc 66) level 3.0 704x576",
+      "confidence_score": 0.95,
+      "confidence_rationale": "base 0.25: contiguous run of valid Annex-B NAL units; +0.25: SPS parsed, resolution and profile known; +0.10: PPS present; +0.15: first picture is an IDR/IRAP (decodable start); +0.10: 300/361 NALs carry picture data; +0.10: ended by eos; = 0.95"
+    },
+    {
+      "index": 3,
+      "byte_offset_start": 2883584,
+      "byte_offset_end": 3083584,
+      "codec_info": "H.264 Baseline (profile_idc 66) level 3.0 704x576",
+      "confidence_score": 0.9,
+      "confidence_rationale": "base 0.25: contiguous run of valid Annex-B NAL units; +0.25: SPS parsed, resolution and profile known; +0.10: PPS present; +0.15: first picture is an IDR/IRAP (decodable start); +0.10: 104/126 NALs carry picture data; +0.05: ended by zero filler; = 0.90"
+    }
+  ],
+  "hash_lineage": [
+    {
+      "pipeline_stage": "intake",
+      "algorithm": "SHA-256",
+      "hex_digest": "786c5f7dd7d5a2e5159c7b688793dd7e6bb12e0d33aba481f265a77d3788b878",
+      "timestamp_utc": "2026-09-02T20:11:29.044073Z"
+    },
+    {
+      "pipeline_stage": "intake",
+      "algorithm": "MD5",
+      "hex_digest": "ad3ff27eeb6c8b6adfec2f222f45643d",
+      "timestamp_utc": "2026-09-02T20:11:29.044073Z"
+    },
+    {
+      "pipeline_stage": "intake_verify",
+      "algorithm": "SHA-256",
+      "hex_digest": "786c5f7dd7d5a2e5159c7b688793dd7e6bb12e0d33aba481f265a77d3788b878",
+      "timestamp_utc": "2026-09-02T20:11:29.077758Z"
+    },
+    {
+      "pipeline_stage": "pre_encryption/fragment_0000",
+      "algorithm": "SHA-256",
+      "hex_digest": "4ad5f3db5622000f60bdfa81903942afad64d8f307388df1a2c1dee0136a0838",
+      "timestamp_utc": "2026-09-02T20:11:29.244042Z"
+    },
+    {
+      "pipeline_stage": "pre_encryption/fragment_0001",
+      "algorithm": "SHA-256",
+      "hex_digest": "53aa831f1110dfd2eb0a998de01e715b3f49198cf0d8bf22ea7bdd4371c9b24c",
+      "timestamp_utc": "2026-09-02T20:11:29.249976Z"
+    },
+    {
+      "pipeline_stage": "pre_encryption/fragment_0002",
+      "algorithm": "SHA-256",
+      "hex_digest": "15c0d14c35eb8ee97f9496afc8d797f555015177eab3840770357fcc22d9aa31",
+      "timestamp_utc": "2026-09-02T20:11:29.252919Z"
+    },
+    {
+      "pipeline_stage": "pre_encryption/fragment_0003",
+      "algorithm": "SHA-256",
+      "hex_digest": "2a2e3cf6c4d92d1ebd8dabef9a6511e3c439dbfddec1b24b9ab2a9a130438f82",
+      "timestamp_utc": "2026-09-02T20:11:29.255925Z"
+    }
+  ],
+  "events": [
+    {
+      "event_type": "intake_started",
+      "case_id": "CASE-DEMO-001",
+      "evidence_id": null,
+      "stage": "intake",
+      "payload": {
+        "acquisition_id": "acq-92c9b98f-3549-4b6d-8985-70d04edd4288",
+        "source": "C:\\Users\\amrit\\AppData\\Local\\Temp\\claude\\d--sih\\74e6aba4-6469-4e26-94a1-24cf6d817714\\scratchpad\\rig16b\\dvr_image.img",
+        "destination": "C:\\Users\\amrit\\AppData\\Local\\Temp\\claude\\d--sih\\74e6aba4-6469-4e26-94a1-24cf6d817714\\scratchpad\\rig16b\\run\\evidence.img",
+        "operator_id": "op-amritansh"
+      },
+      "timestamp_utc": "2026-09-02T20:11:28.973170Z"
+    },
+    {
+      "event_type": "intake_completed",
+      "case_id": "CASE-DEMO-001",
+      "evidence_id": null,
+      "stage": "intake",
+      "payload": {
+        "acquisition_id": "acq-92c9b98f-3549-4b6d-8985-70d04edd4288",
+        "bytes_read": 16777216,
+        "sha256": "786c5f7dd7d5a2e5159c7b688793dd7e6bb12e0d33aba481f265a77d3788b878",
+        "md5": "ad3ff27eeb6c8b6adfec2f222f45643d",
+        "image_path": "C:\\Users\\amrit\\AppData\\Local\\Temp\\claude\\d--sih\\74e6aba4-6469-4e26-94a1-24cf6d817714\\scratchpad\\rig16b\\run\\evidence.img",
+        "sidecar": "C:\\Users\\amrit\\AppData\\Local\\Temp\\claude\\d--sih\\74e6aba4-6469-4e26-94a1-24cf6d817714\\scratchpad\\rig16b\\run\\evidence.img.acquisition.json"
+      },
+      "timestamp_utc": "2026-09-02T20:11:29.077758Z"
+    },
+    {
+      "event_type": "format_detected",
+      "case_id": "CASE-DEMO-001",
+      "evidence_id": "ev-acq-92c9b98f-3549-4b6d-8985-70d04edd4288",
+      "stage": "detection",
+      "payload": {
+        "source": "C:\\Users\\amrit\\AppData\\Local\\Temp\\claude\\d--sih\\74e6aba4-6469-4e26-94a1-24cf6d817714\\scratchpad\\rig16b\\run\\evidence.img",
+        "vendor": "Hikvision",
+        "signature": "hikvision_master_sector@0x210",
+        "validation_status": "VALIDATED",
+        "confidence": 0.9,
+        "codec_guess": "h264",
+        "nal_density": 0.125,
+        "matched": [
+          "hikvision_master_sector"
+        ],
+        "adapter_module": "backend.adapters.hikvision"
+      },
+      "timestamp_utc": "2026-09-02T20:11:29.087279Z"
+    },
+    {
+      "event_type": "adapter_resolved",
+      "case_id": "CASE-DEMO-001",
+      "evidence_id": "ev-acq-92c9b98f-3549-4b6d-8985-70d04edd4288",
+      "stage": "detection",
+      "payload": {
+        "adapter": "backend.adapters.generic_carver.GenericCarverAdapter",
+        "fallback": true,
+        "available": true,
+        "reason": "backend.adapters.hikvision.HikvisionAdapter unavailable (AttributeError: module 'backend.adapters.hikvision' has no attribute 'HikvisionAdapter'); using generic carver"
+      },
+      "timestamp_utc": "2026-09-02T20:11:29.088282Z"
+    },
+    {
+      "event_type": "recovery_started",
+      "case_id": "CASE-DEMO-001",
+      "evidence_id": "ev-acq-92c9b98f-3549-4b6d-8985-70d04edd4288",
+      "stage": "recovery",
+      "payload": {
+        "image_path": "C:\\Users\\amrit\\AppData\\Local\\Temp\\claude\\d--sih\\74e6aba4-6469-4e26-94a1-24cf6d817714\\scratchpad\\rig16b\\run\\evidence.img",
+        "file_size": 16777216
+      },
+      "timestamp_utc": "2026-09-02T20:11:29.088282Z"
+    },
+    {
+      "event_type": "recovery_completed",
+      "case_id": "CASE-DEMO-001",
+      "evidence_id": "ev-acq-92c9b98f-3549-4b6d-8985-70d04edd4288",
+      "stage": "recovery",
+      "payload": {
+        "image_path": "C:\\Users\\amrit\\AppData\\Local\\Temp\\claude\\d--sih\\74e6aba4-6469-4e26-94a1-24cf6d817714\\scratchpad\\rig16b\\run\\evidence.img",
+        "fragment_count": 4,
+        "recovery_hash": "09e11f786fc805aeaf5d9d8149b4bf8d772c20964808e090cb426e9ca8451420",
+        "recovery_method": "annexb_nal_carve",
+        "file_size": 16777216,
+        "start_codes_seen": 1209,
+        "valid_nals": 1209,
+        "orphan_nals": 0,
+        "oversized_nals": 0,
+        "discarded_fragments": 0,
+        "codec": "h264"
+      },
+      "timestamp_utc": "2026-09-02T20:11:29.159766Z"
+    },
+    {
+      "event_type": "fragment_exported",
+      "case_id": "CASE-DEMO-001",
+      "evidence_id": "ev-acq-92c9b98f-3549-4b6d-8985-70d04edd4288",
+      "stage": "recovery",
+      "payload": {
+        "index": 0,
+        "out_path": "C:\\Users\\amrit\\AppData\\Local\\Temp\\claude\\d--sih\\74e6aba4-6469-4e26-94a1-24cf6d817714\\scratchpad\\rig16b\\run\\fragments\\fragment_0000_000000080000.h264",
+        "byte_offset_start": 524288,
+        "byte_offset_end": 1109565,
+        "sha256": "4ad5f3db5622000f60bdfa81903942afad64d8f307388df1a2c1dee0136a0838",
+        "length": 585277
+      },
+      "timestamp_utc": "2026-09-02T20:11:29.174756Z"
+    },
+    {
+      "event_type": "fragment_exported",
+      "case_id": "CASE-DEMO-001",
+      "evidence_id": "ev-acq-92c9b98f-3549-4b6d-8985-70d04edd4288",
+      "stage": "recovery",
+      "payload": {
+        "index": 1,
+        "out_path": "C:\\Users\\amrit\\AppData\\Local\\Temp\\claude\\d--sih\\74e6aba4-6469-4e26-94a1-24cf6d817714\\scratchpad\\rig16b\\run\\fragments\\fragment_0001_000000140000.h264",
+        "byte_offset_start": 1310720,
+        "byte_offset_end": 1898807,
+        "sha256": "53aa831f1110dfd2eb0a998de01e715b3f49198cf0d8bf22ea7bdd4371c9b24c",
+        "length": 588087
+      },
+      "timestamp_utc": "2026-09-02T20:11:29.192718Z"
+    },
+    {
+      "event_type": "fragment_exported",
+      "case_id": "CASE-DEMO-001",
+      "evidence_id": "ev-acq-92c9b98f-3549-4b6d-8985-70d04edd4288",
+      "stage": "recovery",
+      "payload": {
+        "index": 2,
+        "out_path": "C:\\Users\\amrit\\AppData\\Local\\Temp\\claude\\d--sih\\74e6aba4-6469-4e26-94a1-24cf6d817714\\scratchpad\\rig16b\\run\\fragments\\fragment_0002_000000200000.h264",
+        "byte_offset_start": 2097152,
+        "byte_offset_end": 2679165,
+        "sha256": "15c0d14c35eb8ee97f9496afc8d797f555015177eab3840770357fcc22d9aa31",
+        "length": 582013
+      },
+      "timestamp_utc": "2026-09-02T20:11:29.206275Z"
+    },
+    {
+      "event_type": "fragment_exported",
+      "case_id": "CASE-DEMO-001",
+      "evidence_id": "ev-acq-92c9b98f-3549-4b6d-8985-70d04edd4288",
+      "stage": "recovery",
+      "payload": {
+        "index": 3,
+        "out_path": "C:\\Users\\amrit\\AppData\\Local\\Temp\\claude\\d--sih\\74e6aba4-6469-4e26-94a1-24cf6d817714\\scratchpad\\rig16b\\run\\fragments\\fragment_0003_0000002c0000.h264",
+        "byte_offset_start": 2883584,
+        "byte_offset_end": 3083584,
+        "sha256": "2a2e3cf6c4d92d1ebd8dabef9a6511e3c439dbfddec1b24b9ab2a9a130438f82",
+        "length": 200000
+      },
+      "timestamp_utc": "2026-09-02T20:11:29.219526Z"
+    },
+    {
+      "event_type": "encryption_completed",
+      "case_id": "CASE-DEMO-001",
+      "evidence_id": "ev-acq-92c9b98f-3549-4b6d-8985-70d04edd4288",
+      "stage": "encryption",
+      "payload": {
+        "fragment_index": 0,
+        "plaintext_path": "C:\\Users\\amrit\\AppData\\Local\\Temp\\claude\\d--sih\\74e6aba4-6469-4e26-94a1-24cf6d817714\\scratchpad\\rig16b\\run\\fragments\\fragment_0000_000000080000.h264",
+        "encrypted_path": "C:\\Users\\amrit\\AppData\\Local\\Temp\\claude\\d--sih\\74e6aba4-6469-4e26-94a1-24cf6d817714\\scratchpad\\rig16b\\run\\vault\\fragment_0000_000000080000.h264.enc",
+        "plaintext_sha256": "4ad5f3db5622000f60bdfa81903942afad64d8f307388df1a2c1dee0136a0838",
+        "ciphertext_sha256": "5005940330355b1279623c2068327211303f4999d23d3b42c8ce70c5c308ab51",
+        "plaintext_bytes": 585277,
+        "ciphertext_bytes": 585305
+      },
+      "timestamp_utc": "2026-09-02T20:11:29.248964Z"
+    },
+    {
+      "event_type": "encryption_completed",
+      "case_id": "CASE-DEMO-001",
+      "evidence_id": "ev-acq-92c9b98f-3549-4b6d-8985-70d04edd4288",
+      "stage": "encryption",
+      "payload": {
+        "fragment_index": 1,
+        "plaintext_path": "C:\\Users\\amrit\\AppData\\Local\\Temp\\claude\\d--sih\\74e6aba4-6469-4e26-94a1-24cf6d817714\\scratchpad\\rig16b\\run\\fragments\\fragment_0001_000000140000.h264",
+        "encrypted_path": "C:\\Users\\amrit\\AppData\\Local\\Temp\\claude\\d--sih\\74e6aba4-6469-4e26-94a1-24cf6d817714\\scratchpad\\rig16b\\run\\vault\\fragment_0001_000000140000.h264.enc",
+        "plaintext_sha256": "53aa831f1110dfd2eb0a998de01e715b3f49198cf0d8bf22ea7bdd4371c9b24c",
+        "ciphertext_sha256": "8a8bb1fbafb7ba89bdeb3a1f8ae5a0f48288c64f6d4368938a05a64a60e9a9fe",
+        "plaintext_bytes": 588087,
+        "ciphertext_bytes": 588115
+      },
+      "timestamp_utc": "2026-09-02T20:11:29.251913Z"
+    },
+    {
+      "event_type": "encryption_completed",
+      "case_id": "CASE-DEMO-001",
+      "evidence_id": "ev-acq-92c9b98f-3549-4b6d-8985-70d04edd4288",
+      "stage": "encryption",
+      "payload": {
+        "fragment_index": 2,
+        "plaintext_path": "C:\\Users\\amrit\\AppData\\Local\\Temp\\claude\\d--sih\\74e6aba4-6469-4e26-94a1-24cf6d817714\\scratchpad\\rig16b\\run\\fragments\\fragment_0002_000000200000.h264",
+        "encrypted_path": "C:\\Users\\amrit\\AppData\\Local\\Temp\\claude\\d--sih\\74e6aba4-6469-4e26-94a1-24cf6d817714\\scratchpad\\rig16b\\run\\vault\\fragment_0002_000000200000.h264.enc",
+        "plaintext_sha256": "15c0d14c35eb8ee97f9496afc8d797f555015177eab3840770357fcc22d9aa31",
+        "ciphertext_sha256": "ad084005e42f75a6861199db8f327f2f5ee38cca6c1948f8c379e5a37a25c650",
+        "plaintext_bytes": 582013,
+        "ciphertext_bytes": 582041
+      },
+      "timestamp_utc": "2026-09-02T20:11:29.254927Z"
+    },
+    {
+      "event_type": "encryption_completed",
+      "case_id": "CASE-DEMO-001",
+      "evidence_id": "ev-acq-92c9b98f-3549-4b6d-8985-70d04edd4288",
+      "stage": "encryption",
+      "payload": {
+        "fragment_index": 3,
+        "plaintext_path": "C:\\Users\\amrit\\AppData\\Local\\Temp\\claude\\d--sih\\74e6aba4-6469-4e26-94a1-24cf6d817714\\scratchpad\\rig16b\\run\\fragments\\fragment_0003_0000002c0000.h264",
+        "encrypted_path": "C:\\Users\\amrit\\AppData\\Local\\Temp\\claude\\d--sih\\74e6aba4-6469-4e26-94a1-24cf6d817714\\scratchpad\\rig16b\\run\\vault\\fragment_0003_0000002c0000.h264.enc",
+        "plaintext_sha256": "2a2e3cf6c4d92d1ebd8dabef9a6511e3c439dbfddec1b24b9ab2a9a130438f82",
+        "ciphertext_sha256": "5f6741870a135455a087fadda919c97310ceabae9c9047a01111660a2fa93059",
+        "plaintext_bytes": 200000,
+        "ciphertext_bytes": 200028
+      },
+      "timestamp_utc": "2026-09-02T20:11:29.256963Z"
+    }
+  ]
+}
