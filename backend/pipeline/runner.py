@@ -17,6 +17,7 @@ import hashlib
 import json
 import logging
 import time
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -134,6 +135,7 @@ def run_pipeline(
     encrypt: bool = True,
     adapter_map: dict[str, tuple[str, str]] | None = None,
     generic: tuple[str, str] | None = None,
+    progress_cb: Callable[[int], None] | None = None,
 ) -> PipelineResult:
     """Run the full acquisition-side pipeline on ``source``.
 
@@ -158,6 +160,7 @@ def run_pipeline(
         operator_id=operator_id,
         device_info=device_info or f"source {source}",
         sink=sink,
+        progress_cb=progress_cb,
     )
     evidence_id = f"ev-{record.acquisition_id}"
     timings.append(StageTiming(stage="intake", seconds=time.perf_counter() - t0))
