@@ -9,8 +9,8 @@ modules on this branch into one auditable run:
 |---|---|---|---|
 | 1 intake | `backend.acquisition.acquire` | `<out>/evidence.img` + `.acquisition.json` sidecar | `intake_started`, `intake_completed` / `intake_failed` |
 | 2 detection | `backend.detection.FormatDetector`, `resolve_adapter` | `DetectionReport`, `AdapterResolution` | `format_detected`, `adapter_resolved` |
-| 3 recovery | vendor adapter if importable, else `GenericCarverAdapter` | `EvidenceItem` fragments; `<out>/fragments/*.h264` | `recovery_started`, `recovery_completed`, `fragment_exported` |
-| 4 hash-then-encrypt | shared `CryptoProvider` (`PhoenixCryptoProvider` by default) | `<out>/vault/*.enc` | `encryption_completed` |
+| 3 recovery | vendor adapter if importable, else `GenericCarverAdapter` | `EvidenceItem` fragments; `<out>/fragments/*.h264`; lossless MP4 views in `<out>/playable/` (`wrap_mp4=True`) | `recovery_started`, `recovery_completed`, `fragment_exported` |
+| 4 hash-then-encrypt | shared `CryptoProvider` (`PhoenixCryptoProvider` by default) plus streaming `encrypt_file` for the image | `<out>/vault/evidence.img.enc`, `<out>/vault/*.enc` | `encryption_completed` (image has `fragment_index = -1`) |
 | 5 persist | runner | `<out>/pipeline_result.json`, `<out>/run_transcript.json` | |
 
 ## Hash lineage
