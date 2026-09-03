@@ -1,5 +1,6 @@
 from datetime import datetime
 from enum import Enum
+from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -36,10 +37,15 @@ class HashRecord(BaseModel):
 
 
 class Fragment(BaseModel):
-    """A recovered or original video fragment from the source image."""
+    """A recovered or original video fragment from the source image.
+
+    fragment_id is auto-generated as a UUID4 if not supplied, so existing
+    adapter stubs do not need to change to keep working.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
+    fragment_id: str = Field(default_factory=lambda: str(uuid4()))
     byte_offset_start: int
     byte_offset_end: int
     codec_info: str
