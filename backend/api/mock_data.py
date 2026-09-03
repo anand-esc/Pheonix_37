@@ -124,6 +124,8 @@ MOCK_CASE = Case(
 # Mock ledger — hash-chained list so the frontend can visualise the chain
 # ---------------------------------------------------------------------------
 def make_mock_ledger_chain() -> list[dict]:
+    import hashlib
+
     events = [
         ("intake", "Evidence disk image acquired and SHA-256 hash recorded"),
         ("format_detect", "Hikvision WFS v3 signature detected"),
@@ -138,16 +140,21 @@ def make_mock_ledger_chain() -> list[dict]:
     prev_hash = "0" * 64
     base_time = datetime.now(UTC) - timedelta(minutes=120)
     for i, (event_type, description) in enumerate(events):
-        entry_hash = hex(hash((event_type, prev_hash, i)))[2:].zfill(64)[:64]
+        timestamp = (base_time + timedelta(minutes=i * 14)).isoformat()
+        # Genuine SHA-256 over the entry content — matches what the real ledger branch will do
+        entry_hash = hashlib.sha256(
+            f"{i + 1}{event_type}{timestamp}{prev_hash}".encode()
+        ).hexdigest()
         chain.append(
             {
                 "seq": i + 1,
                 "event_type": event_type,
                 "description": description,
-                "timestamp_utc": (base_time + timedelta(minutes=i * 14)).isoformat(),
+                "timestamp_utc": timestamp,
                 "entry_hash": entry_hash,
                 "prev_hash": prev_hash,
             }
         )
         prev_hash = entry_hash
     return chain
+
