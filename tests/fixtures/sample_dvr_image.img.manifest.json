@@ -1,0 +1,50 @@
+{
+  "image_path": "tests\\fixtures\\sample_dvr_image.img",
+  "size_bytes": 458752,
+  "sha256": "24a85156621eefebb1422bedb19692e58e75c6cc085d0afdd7165e5ce9993246",
+  "seed": 2026,
+  "vendor_variant": "hikvision",
+  "block_size": 16384,
+  "noise_region": [
+    212992,
+    278528
+  ],
+  "segments": [
+    {
+      "index": 0,
+      "offset": 32768,
+      "length": 56733,
+      "sha256": "53da6bd10bcbca515cf29212e2e1348750706e08cd2205a977de4276b70f0bbb",
+      "deleted": false,
+      "truncated": false,
+      "frames": 30,
+      "width": 704,
+      "height": 576,
+      "channel": "ch01"
+    },
+    {
+      "index": 1,
+      "offset": 98304,
+      "length": 39058,
+      "sha256": "928d3f0c3d2ecd944871c4ddfe2eb89642b70005f10b8815c87e5eac95c19643",
+      "deleted": true,
+      "truncated": false,
+      "frames": 20,
+      "width": 704,
+      "height": 576,
+      "channel": "ch02"
+    },
+    {
+      "index": 2,
+      "offset": 147456,
+      "length": 56718,
+      "sha256": "9ca43f8f9add0acf84c6a1017f4c96515b8822ef90f43d65156ea12f6008c13c",
+      "deleted": false,
+      "truncated": false,
+      "frames": 25,
+      "width": 704,
+      "height": 576,
+      "channel": "ch03"
+    }
+  ]
+}
