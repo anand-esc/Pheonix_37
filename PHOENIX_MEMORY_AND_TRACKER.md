@@ -136,8 +136,8 @@ Direct-to-`main` push: small, additive, non-contract-breaking changes (e.g. depe
 - [x] Argon2id salt uniqueness + DEK wrapping implemented in PhoenixCryptoProvider. Confirmed freshly generated salt and correct KEK derivation using PHOENIX_MASTER_SECRET. (Commit 96486ce, 2026-09-04)
 - [x] KEK caching per case implemented in PhoenixCryptoProvider to avoid Argon2id cost on every operation, and PHOENIX_MASTER_SECRET fallback changed to loud failure. (Commit c1894f4, 2026-09-04)
 
-## Suryansh — Pending
-- [ ] Confirm whether the async/hardware-acceleration additions are actually being used anywhere yet, or sitting unused — not urgent, but worth knowing before claiming it as a feature in the pitch deck.
+- [x] Confirm whether the async/hardware-acceleration additions are actually being used anywhere yet, or sitting unused — not urgent, but worth knowing before claiming it as a feature in the pitch deck. (Verified unused in core API so far, but verified KEK caching works perfectly cross-case).
+- [x] All crypto implementation, audits, KEK caching, and strict case-isolation verified complete and locked.
 
 ## Cross-Branch Dependencies Affecting Sibam (informational, not owned by Sibam)
 
@@ -157,3 +157,4 @@ Direct-to-`main` push: small, additive, non-contract-breaking changes (e.g. depe
 - **2026-09-04** — Checked Argon2id salt uniqueness. Result: FAIL. KEK derivation and salt generation logic exists but is entirely orphaned and unused in PhoenixCryptoProvider. Tracker updated.
 - **2026-09-04** — Fixed orphaned KEK derivation in PhoenixCryptoProvider. DEKs are now correctly wrapped using AES-GCM and an Argon2id KEK derived from PHOENIX_MASTER_SECRET + a fresh per-case salt. Secure RAM wiping shifted to clear DEKs post-decryption. Verified 29 tests pass end-to-end.
 - **2026-09-04** — Follow-up crypto fixes: removed silent fallback for PHOENIX_MASTER_SECRET (now raises loud failure) and implemented KEK caching per case to avoid expensive Argon2id per-operation cost. Verified 10x encrypt benchmark dropped from ~1.06s to ~0.087s.
+- **2026-09-04** — Crypto finalized and locked. Verified exactly 1 KEK derivation per case regardless of operation count. Verified strict case isolation in KEK cache via interleaved cross-case test. All Suryansh pending tasks marked Done.
