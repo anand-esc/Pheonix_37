@@ -18,3 +18,9 @@ htmlcov/
 
 # Ruff
 .ruff_cache/
+
+# Node
+node_modules/
+dist/
+build/
+
