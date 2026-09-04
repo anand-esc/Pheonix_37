@@ -31,20 +31,14 @@ def _load_secret() -> str:
     """Read the HMAC signing key from the environment.
 
     In production, set ``PHOENIX_LEDGER_SECRET`` to a vault-managed value.
-    When the variable is absent a deterministic dev/test key is used and a
-    warning is emitted so the gap is visible in logs.
+    No default is provided — the application must fail loudly if unset.
     """
     secret = os.environ.get("PHOENIX_LEDGER_SECRET")
     if secret:
         return secret
-    logger.warning(
-        "PHOENIX_LEDGER_SECRET is not set — using a non-production default key. "
-        "Set this variable before deploying to production."
+    raise RuntimeError(
+        "PHOENIX_LEDGER_SECRET must be set — no default is provided for security reasons"
     )
-    return "CHANGE-ME-NOT-FOR-PRODUCTION"
-
-
-_DEFAULT_SECRET = _load_secret()
 
 
 class LedgerEntry(BaseModel):
@@ -61,9 +55,9 @@ class AuditLedger:
     def __init__(
         self,
         event_sink: Optional[InMemoryEventSink] = None,
-        secret: str = _DEFAULT_SECRET,
+        secret: str | None = None,
     ) -> None:
-        self._secret = secret
+        self._secret = secret or _load_secret()
         self._lock = threading.Lock()
         self._chain: list[LedgerEntry] = []
         self._backup: list[dict] = []

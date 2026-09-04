@@ -12,6 +12,7 @@ Tests cover:
 from __future__ import annotations
 import struct
 import hashlib
+import os
 import pytest
 from fastapi import HTTPException
 
@@ -19,6 +20,15 @@ from backend.adapters.dahua import DahuaAdapter
 from backend.ledger.event_bus import InMemoryEventSink
 from backend.ledger.audit_ledger import AuditLedger, LedgerEntry
 from backend.ledger.rbac import RBACController, Role, ROLE_PERMISSIONS
+
+
+# ---------------------------------------------------------------------------
+# Test setup: ensure PHOENIX_LEDGER_SECRET is set for all tests
+# ---------------------------------------------------------------------------
+@pytest.fixture(autouse=True)
+def setup_ledger_secret(monkeypatch):
+    """Sets the required ledger secret env var for all ledger tests."""
+    monkeypatch.setenv("PHOENIX_LEDGER_SECRET", "test-ledger-secret-12345")
 
 
 def _make_dhav_frame(payload: bytes, seq: int = 1, ts: int = 1000) -> bytes:
