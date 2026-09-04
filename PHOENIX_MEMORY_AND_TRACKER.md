@@ -62,7 +62,12 @@ Abstract base classes, `abc.ABC` + `@abstractmethod`. Cannot be instantiated dir
 - `Ledger` — `write_event(event_type, payload) -> str`, `verify_chain() -> bool`, `get_history(case_id) -> list[dict]`
 - `CryptoProvider` — `hash_plaintext(data, stage) -> HashRecord`, `encrypt(data, case_id) -> bytes`, `decrypt(data, case_id) -> bytes`
 
-Ledger `event_type` strings are locked to: `intake`, `recovery`, `encryption`, `access`, `denial`, `export`, `report` — do not invent new ones without a heads-up to the team.
+**Pipeline event types** (canonical list — `backend/pipeline/events.py`). This list grows as more stages are added; do not invent new names without a team heads-up.
+- *Acquisition/recovery stage (Amritansh's branch):* `intake_started`, `intake_completed`, `intake_failed`, `format_detected`, `adapter_resolved`, `recovery_started`, `recovery_completed`, `fragment_exported`, `encryption_completed`
+- *RBAC stage (Satya — pending):* `access`, `denial` — to be defined when RBAC lands
+- *Reporting stage (Varsha — pending):* `report`, `export` — to be defined when certificate-draft work lands
+
+The `Ledger` interface (`write_event`, `verify_chain`, `get_history`) consumes these event types. Satya's ledger must subscribe to the `InMemoryEventSink` (not the `EventSink` Protocol directly — `subscribe()` is only on the concrete class).
 
 ## Current Repo State (as of last verified session — see Checkpoint Log for date)
 
@@ -75,12 +80,21 @@ main branch has:
   pyproject.toml   [cryptography + argon2-cffi added]
   tests/  [28+ tests, all passing]
 
-Other branches, not yet merged:
-  feat/acquisition-recovery (Amritansh) — real generic_carver: adapter.py, carver.py,
-    nal.py, scoring.py, mp4.py. Status: appears functional, not yet reviewed by us,
-    not yet merged to main.
+Pending merge (PR open, approved, fragment_id fix applied):
+  feat/acquisition-recovery (Amritansh) — REVIEWED, CLEARED FOR MERGE.
+    Adds:
+      backend/adapters/generic_carver/{adapter,carver,nal,scoring,mp4}.py
+      backend/acquisition/         [intake, imaging, pipeline runner]
+      backend/detection/           [byte-signature format detector — vendor ID, NAL density,
+                                    explainable confidence. DISTINCT from backend/ai/triage.py
+                                    which is Suryansh's YOLO frame inference layer.]
+      backend/pipeline/events.py   [EventSink Protocol + InMemoryEventSink.
+                                    Satya's ledger hooks in via sink.subscribe(callback).
+                                    subscribe() is on InMemoryEventSink only, not the Protocol.]
+    97 tests, all passing. fragment_id restored in evidence_model.py (commit d07774f).
+
   feat/audit-ledger (Satya) — real ledger implementation status unconfirmed from our
-    side; proposed InMemoryEventSink.subscribe() pattern for ledger event ingestion.
+    side. Must build its event consumer against the canonical event_type list above.
     DahuaAdapter real implementation also his, once he replaces the stub.
 
 Not yet started (to our knowledge):
@@ -118,7 +132,7 @@ Direct-to-`main` push: small, additive, non-contract-breaking changes (e.g. depe
 - [ ] **Case intake/upload endpoint** — 🔴 **BLOCKED ON A DECISION, not on code.** Open question, unanswered: does the demo need to accept a live disk-image upload through the UI, or does the dashboard just display a pre-loaded case? This determines whether this is real work or gets explicitly cut. Resolve before Day 6–7.
 - [ ] **Mid-build end-to-end integration checkpoint** — the plan explicitly assigns Sibam to force a rough, full pipeline run early (originally Day 6–7) to catch integration bugs while there's still time to fix them. Not yet run — worth scheduling deliberately, not letting it slip.
 - [ ] **Get Shayanna's real endpoint/field requirements** and reconcile against the current mock shape — current endpoints are an educated guess, not her confirmed spec.
-- [ ] **Review `feat/acquisition-recovery`** (Amritansh's real carver) before it merges — same audit rigor as the crypto branch got.
+- [x] **Review `feat/acquisition-recovery`** (Amritansh's real carver) — full audit completed 2026-09-04. One blocker found and fixed: `fragment_id` removed from contract (restored, commit d07774f). Detection/triage confirmed non-duplicated. EventSink interface documented. PR open: https://github.com/anand-esc/Pheonix_37/compare/main...feat/acquisition-recovery
 - [ ] **Review `feat/audit-ledger`** (Satya's real implementation) before it merges.
 
 ## Suryansh — Done
@@ -158,3 +172,4 @@ Direct-to-`main` push: small, additive, non-contract-breaking changes (e.g. depe
 - **2026-09-04** — Fixed orphaned KEK derivation in PhoenixCryptoProvider. DEKs are now correctly wrapped using AES-GCM and an Argon2id KEK derived from PHOENIX_MASTER_SECRET + a fresh per-case salt. Secure RAM wiping shifted to clear DEKs post-decryption. Verified 29 tests pass end-to-end.
 - **2026-09-04** — Follow-up crypto fixes: removed silent fallback for PHOENIX_MASTER_SECRET (now raises loud failure) and implemented KEK caching per case to avoid expensive Argon2id per-operation cost. Verified 10x encrypt benchmark dropped from ~1.06s to ~0.087s.
 - **2026-09-04** — Crypto finalized and locked. Verified exactly 1 KEK derivation per case regardless of operation count. Verified strict case isolation in KEK cache via interleaved cross-case test. All Suryansh pending tasks marked Done.
+- **2026-09-04** — Full audit of `feat/acquisition-recovery` completed. Findings: (1) `fragment_id` was incorrectly removed from the locked `Fragment` contract — restored in commit d07774f, 97/97 tests pass post-fix. (2) `backend/detection/` confirmed non-duplicated with Suryansh's `backend/ai/triage.py` — detection is byte-signature format ID; triage is YOLO frame inference; different pipeline stages. (3) `backend/pipeline/events.py` EventSink interface documented: canonical event vocabulary reconciled with Amritansh's real implementation; `subscribe()` is on `InMemoryEventSink` only, not the Protocol — flagged to Satya. PR open for merge: https://github.com/anand-esc/Pheonix_37/compare/main...feat/acquisition-recovery
