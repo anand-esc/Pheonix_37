@@ -133,10 +133,9 @@ Direct-to-`main` push: small, additive, non-contract-breaking changes (e.g. depe
 - [x] `pyproject.toml` dependencies (`cryptography`, `argon2-cffi`) fixed and pushed to `main`
 - [x] Custom security exceptions + secure RAM key wiping
 - [x] YOLOv8 detections mapped to strict Pydantic `DetectionResult` models
+- [x] Argon2id salt uniqueness + DEK wrapping implemented in PhoenixCryptoProvider. Confirmed freshly generated salt and correct KEK derivation using PHOENIX_MASTER_SECRET. (Commit 96486ce, 2026-09-04)
 
 ## Suryansh — Pending
-
-- [x] **Argon2id salt uniqueness — flagged twice, never actually confirmed.** Verify the salt used in KEK derivation is freshly generated per case (`os.urandom`-based) and stored alongside the wrapped DEK, not hardcoded or reused. If salts repeat across cases with the same passphrase, KEKs collide — a real weakness even with a correct KDF choice. **Do this next — it's a 5-minute check that's been deferred twice.** (FAIL: logic orphaned in provider; e36c5c8 on 2026-09-04)
 - [ ] Confirm whether the async/hardware-acceleration additions are actually being used anywhere yet, or sitting unused — not urgent, but worth knowing before claiming it as a feature in the pitch deck.
 
 ## Cross-Branch Dependencies Affecting Sibam (informational, not owned by Sibam)
@@ -155,3 +154,4 @@ Direct-to-`main` push: small, additive, non-contract-breaking changes (e.g. depe
 - **2026-09-01/02** — Crypto branch merged (PR #2). Full audit passed: contract untouched, ABC satisfied, DEK/KEK/nonce all correct. `pyproject.toml` dependency gap found and fixed.
 - **2026-09-02** — `fragment_id` added to contract, pushed to `main`. Hikvision + Dahua stubs created. Mock API layer built (5 endpoints), ledger hash format bug found and fixed, chain verified PASS. `feature/api-mock-layer` ready to merge.
 - **2026-09-04** — Checked Argon2id salt uniqueness. Result: FAIL. KEK derivation and salt generation logic exists but is entirely orphaned and unused in PhoenixCryptoProvider. Tracker updated.
+- **2026-09-04** — Fixed orphaned KEK derivation in PhoenixCryptoProvider. DEKs are now correctly wrapped using AES-GCM and an Argon2id KEK derived from PHOENIX_MASTER_SECRET + a fresh per-case salt. Secure RAM wiping shifted to clear DEKs post-decryption. Verified 29 tests pass end-to-end.
