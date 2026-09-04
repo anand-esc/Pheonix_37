@@ -160,6 +160,41 @@ def test_phoenix_crypto_provider_salt_uniqueness():
     # The wrapped DEKs will be different (even if raw DEKs were identical, though they aren't)
     assert record1["wrapped_dek"] != record2["wrapped_dek"]
 
+def test_kek_caching_call_count():
+    """Proves that derive_kek is called exactly once per case, even across 10 operations."""
+    from unittest.mock import patch
+    provider = PhoenixCryptoProvider()
+    case_id = "CASE-CACHE-TEST"
+    
+    with patch("backend.crypto.provider.derive_kek", wraps=derive_kek) as mock_derive:
+        for _ in range(10):
+            provider.encrypt(b"cache-test-data", case_id)
+        
+        # It must be called exactly once during the first _ensure_case_initialized
+        assert mock_derive.call_count == 1
+
+def test_cross_case_interleaving():
+    """Proves that interleaving operations between cases respects the per-case cache
+    and properly decrypts data with the correct respective KEKs."""
+    provider = PhoenixCryptoProvider()
+    
+    data_a = b"evidence for case A"
+    data_b = b"evidence for case B"
+    
+    # Interleave encryption
+    enc_a1 = provider.encrypt(data_a, "CASE-A")
+    enc_b1 = provider.encrypt(data_b, "CASE-B")
+    enc_a2 = provider.encrypt(data_a, "CASE-A")
+    
+    # Verify Decryption
+    assert provider.decrypt(enc_a1, "CASE-A") == data_a
+    assert provider.decrypt(enc_b1, "CASE-B") == data_b
+    assert provider.decrypt(enc_a2, "CASE-A") == data_a
+    
+    # Attempting to decrypt case A's data with case B's context must fail
+    with pytest.raises(ForensicIntegrityError):
+        provider.decrypt(enc_a1, "CASE-B")
+
 # ---------------------------------------------------------
 # 6. Timestamp Engine Tests
 # ---------------------------------------------------------
