@@ -218,6 +218,37 @@ def test_vendor_adapter_is_used_when_available(tmp_path):
     )
 
 
+class HalfBuiltAdapter(StubVendorAdapter):
+    """detect() works, parse() does not: the shape of a vendor stub mid-build."""
+
+    def parse(self, source_path: str) -> EvidenceItem:
+        raise NotImplementedError("parser pending")
+
+
+def test_vendor_adapter_without_parser_falls_back_to_generic(tmp_path):
+    src, manifest = _image(tmp_path)
+    sink = InMemoryEventSink()
+    result = run_pipeline(
+        src,
+        case_id="CASE-006",
+        operator_id="op-1",
+        out_dir=tmp_path / "run",
+        sink=sink,
+        detector=DETECTOR,
+        carve_options=CARVE,
+        encrypt=False,
+        adapter_map={"Hikvision": ("tests.test_pipeline_runner", "HalfBuiltAdapter")},
+    )
+    assert result.adapter.fallback is True
+    assert result.adapter.class_name == "GenericCarverAdapter"
+    assert "NotImplementedError" in result.adapter.reason
+    assert [c.sha256 for c in result.carve.fragments] == [
+        s.sha256 for s in manifest.segments
+    ]
+    resolved = [e for e in sink.events if e.event_type == "adapter_resolved"]
+    assert [e.payload["fallback"] for e in resolved] == [False, True]
+
+
 def test_no_adapter_at_all_is_a_pipeline_error(tmp_path):
     src, _ = _image(tmp_path)
     with pytest.raises(PipelineError):

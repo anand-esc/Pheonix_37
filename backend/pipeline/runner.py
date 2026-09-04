@@ -212,6 +212,36 @@ def run_pipeline(
     carve_result: CarveResult | None = None
     exported: list[ExportedFragment] = []
     playable: list[PlayableView] = []
+    parsed: EvidenceItem | None = None
+    if not isinstance(adapter, GenericCarverAdapter):
+        try:
+            parsed = adapter.parse(str(image_path))
+        except NotImplementedError as exc:
+            # Safety net: a vendor adapter that passed the probe but has no
+            # parser yet must not stop intake. Route to the generic carver
+            # and record the change of plan.
+            resolution = resolution.model_copy(
+                update={
+                    "resolved_module": GenericCarverAdapter.__module__,
+                    "resolved_class": GenericCarverAdapter.__name__,
+                    "fallback": True,
+                    "reason": f"{resolution.reason}; parse raised "
+                    f"NotImplementedError ({exc}); using generic carver",
+                    "adapter": None,
+                }
+            )
+            emit(
+                sink,
+                "adapter_resolved",
+                case_id,
+                stage="detection",
+                evidence_id=evidence_id,
+                adapter=f"{resolution.resolved_module}.{resolution.resolved_class}",
+                fallback=True,
+                available=True,
+                reason=resolution.reason,
+            )
+            adapter = GenericCarverAdapter()
     if isinstance(adapter, GenericCarverAdapter):
         options = carve_options or CarveOptions()
         adapter = GenericCarverAdapter(
@@ -229,8 +259,7 @@ def run_pipeline(
         )
         if wrap_mp4:
             playable = _wrap_playable(exported, out_dir / PLAYABLE_DIR)
-    else:
-        parsed = adapter.parse(str(image_path))
+    assert parsed is not None  # either branch above produced an item
 
     evidence = evidence.model_copy(
         update={

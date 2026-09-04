@@ -329,6 +329,58 @@ def test_resolve_reports_when_nothing_is_available(tmp_path):
     assert res.fallback and not res.available and res.adapter is None
 
 
+class StubAdapter(BaseAdapter):
+    """Looks like a vendor adapter but has no implementation yet."""
+
+    def detect(self, source_path: str) -> bool:
+        raise NotImplementedError("pending")
+
+    def parse(self, source_path: str) -> EvidenceItem:
+        raise NotImplementedError("pending")
+
+    def list_channels(self, source_path: str) -> list[ChannelInfo]:
+        raise NotImplementedError("pending")
+
+
+class DecliningAdapter(DummyAdapter):
+    def detect(self, source_path: str) -> bool:
+        return False
+
+
+class CrashingAdapter(DummyAdapter):
+    def detect(self, source_path: str) -> bool:
+        raise OSError("device gone")
+
+
+@pytest.mark.parametrize(
+    "cls,expected",
+    [
+        ("StubAdapter", "is a stub"),
+        ("DecliningAdapter", "declined"),
+        ("CrashingAdapter", "probe failed"),
+    ],
+)
+def test_probe_routes_unusable_vendor_adapters_to_generic(tmp_path, cls, expected):
+    report = DETECTOR.detect(_write(tmp_path, "hik.img", _hikvision_image()))
+    res = resolve_adapter(
+        report,
+        adapter_map={"Hikvision": (HERE, cls)},
+        generic=(HERE, "DummyAdapter"),
+    )
+    assert res.fallback and res.available
+    assert res.resolved_class == "DummyAdapter"
+    assert expected in res.reason
+
+    # probing can be switched off, in which case the stub is handed back as-is
+    res = resolve_adapter(
+        report,
+        adapter_map={"Hikvision": (HERE, cls)},
+        generic=(HERE, "DummyAdapter"),
+        probe=False,
+    )
+    assert not res.fallback and type(res.adapter).__name__ == cls
+
+
 def test_real_registry_never_raises_on_this_branch(tmp_path):
     """Vendor adapters belong to other branches; resolution must degrade, not crash."""
     report = DETECTOR.detect(_write(tmp_path, "hik.img", _hikvision_image()))

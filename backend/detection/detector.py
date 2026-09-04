@@ -341,17 +341,25 @@ def resolve_adapter(
     sink: EventSink | None = None,
     adapter_map: dict[str, tuple[str, str]] | None = None,
     generic: tuple[str, str] | None = None,
+    probe: bool = True,
 ) -> AdapterResolution:
     """Load the adapter for ``report`` lazily; fall back to the generic carver.
 
     Vendor adapters are owned by other branches and may not be importable
-    here. That is a normal, reported condition, not an error.
+    here. That is a normal, reported condition, not an error. When ``probe``
+    is set, a loaded vendor adapter is asked ``detect(source)`` first: a stub
+    that raises ``NotImplementedError``, an adapter that raises anything else,
+    or one that declines the source all route to the generic carver.
     """
     generic = generic or GENERIC_ADAPTER
     table = adapter_map if adapter_map is not None else ADAPTER_FOR_VENDOR
     module, cls = table.get(report.vendor_info.vendor_name, generic)
 
     adapter, err = _load_adapter(module, cls)
+    if adapter is not None and probe and (module, cls) != generic:
+        probe_err = _probe_adapter(adapter, report.source_path)
+        if probe_err is not None:
+            adapter, err = None, probe_err
     if adapter is not None:
         fallback = report.vendor_info.vendor_name not in table
         resolution = AdapterResolution(
@@ -401,6 +409,19 @@ def resolve_adapter(
             reason=resolution.reason,
         )
     return resolution
+
+
+def _probe_adapter(adapter: BaseAdapter, source_path: str) -> str | None:
+    """Ask a vendor adapter whether it handles ``source_path``; None means yes."""
+    try:
+        accepted = adapter.detect(source_path)
+    except NotImplementedError as exc:
+        return f"vendor adapter is a stub ({exc})"
+    except Exception as exc:  # noqa: BLE001 - a failing probe must not stop intake
+        return f"vendor adapter probe failed ({type(exc).__name__}: {exc})"
+    if not accepted:
+        return "vendor adapter declined the source"
+    return None
 
 
 def _load_adapter(module: str, cls: str) -> tuple[BaseAdapter | None, str | None]:
