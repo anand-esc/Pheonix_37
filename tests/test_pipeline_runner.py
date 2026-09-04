@@ -103,6 +103,10 @@ def test_full_run_end_to_end(tmp_path):
             art.plaintext_sha256
         )
     assert result.summary()["playable"] == 3
+    # fragment ids link evidence, playable views and AI detections
+    ids = [f.fragment_id for f in result.evidence.fragments]
+    assert [p.fragment_id for p in result.playable] == ids
+    assert all(i.startswith("frag-") for i in ids)
 
     # events, in order
     types = [e.event_type for e in sink.events]

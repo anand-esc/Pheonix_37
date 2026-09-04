@@ -396,6 +396,13 @@ def test_generic_adapter_parses_into_evidence_item(tmp_path):
         item.channels == [] and adapter.list_channels(str(tmp_path / "dvr.img")) == []
     )
     assert item.metadata["recovery_hash"] == adapter.last_result.recovery_hash
+    # fragment ids are content-derived and stable across re-runs
+    ids = [f.fragment_id for f in item.fragments]
+    assert ids == [f"frag-{c.sha256[:16]}" for c in adapter.last_result.fragments]
+    assert len(set(ids)) == len(ids)
+    again = GenericCarverAdapter(SMALL).parse(str(tmp_path / "dvr.img"))
+    assert [f.fragment_id for f in again.fragments] == ids
+    assert item.metadata["fragment_0000_id"] == ids[0]
     assert (
         item.metadata["fragment_0000_sha256"] == adapter.last_result.fragments[0].sha256
     )

@@ -432,7 +432,11 @@ class GenericNalCarver(RecoveryEngine):
         else:
             label = "H.264" if b.codec == "h264" else "H.265"
             codec_info = f"{label} (SPS {'unparseable: ' + b.sps_error if b.sps_error else 'absent'})"
+        digest = _hash_range(fh, b.start, b.end)
         fragment = Fragment(
+            # Deterministic id derived from content, so AI triage results and
+            # reports can reference a fragment across re-runs of the carver.
+            fragment_id=f"frag-{digest[:16]}",
             byte_offset_start=b.start,
             byte_offset_end=b.end,
             codec_info=codec_info,
@@ -441,7 +445,6 @@ class GenericNalCarver(RecoveryEngine):
             confidence_rationale=rationale,
         )
         self._features[(b.start, b.end)] = features
-        digest = _hash_range(fh, b.start, b.end)
         return CarvedFragment(
             index=index,
             fragment=fragment,

@@ -91,11 +91,15 @@ would make that cleaner.
 ## AI triage (Suryansh)
 
 Exported fragments are raw Annex-B `.h264`/`.h265` elementary streams under
-`<out_dir>/fragments/`. OpenCV with an FFmpeg backend reads raw H.264
-directly; if MP4 is easier, see `docs/generic_carver.md` for the lossless
-wrapper. Fragment identity for `DetectionResult` linkage is the fragment's
-SHA-256 (also in `EvidenceItem.metadata["fragment_NNNN_sha256"]`) until the
-shared contract gains a `fragment_id`.
+`<out_dir>/fragments/`, and lossless MP4 views under `<out_dir>/playable/`.
+OpenCV with an FFmpeg backend reads either.
+
+Set `DetectionResult.fragment_id` to the `Fragment.fragment_id` of the
+fragment the detection came from. The carver derives it from the fragment's
+own bytes (`frag-<first 16 hex of its SHA-256>`), so it is stable across
+re-runs and across machines, unlike a random UUID. The same id appears in
+`PipelineResult.playable[].fragment_id` and in
+`EvidenceItem.metadata["fragment_NNNN_id"]`.
 
 ## Running it
 

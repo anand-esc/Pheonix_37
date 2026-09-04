@@ -71,6 +71,7 @@ class PlayableView(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
+    fragment_id: str | None = None
     fragment_index: int
     fragment_path: str
     mp4_path: str | None
@@ -258,7 +259,13 @@ def run_pipeline(
             image_path, carve_result, out_dir / FRAGMENT_DIR
         )
         if wrap_mp4:
-            playable = _wrap_playable(exported, out_dir / PLAYABLE_DIR)
+            playable = _wrap_playable(
+                exported,
+                out_dir / PLAYABLE_DIR,
+                fragment_ids={
+                    c.index: c.fragment.fragment_id for c in carve_result.fragments
+                },
+            )
     assert parsed is not None  # either branch above produced an item
 
     evidence = evidence.model_copy(
@@ -373,18 +380,23 @@ def run_pipeline(
 
 
 def _wrap_playable(
-    exported: list[ExportedFragment], out_dir: Path, fps: float = 25.0
+    exported: list[ExportedFragment],
+    out_dir: Path,
+    fps: float = 25.0,
+    fragment_ids: dict[int, str] | None = None,
 ) -> list[PlayableView]:
     """Lossless MP4 views of H.264 fragments; failures are recorded, not raised."""
     from backend.adapters.generic_carver.mp4 import wrap_fragment_file
 
     out_dir.mkdir(parents=True, exist_ok=True)
+    ids = fragment_ids or {}
     views: list[PlayableView] = []
     for item in exported:
         src = Path(item.out_path)
         if src.suffix != ".h264":
             views.append(
                 PlayableView(
+                    fragment_id=ids.get(item.index),
                     fragment_index=item.index,
                     fragment_path=item.out_path,
                     mp4_path=None,
@@ -398,6 +410,7 @@ def _wrap_playable(
         except (ValueError, NotImplementedError) as exc:
             views.append(
                 PlayableView(
+                    fragment_id=ids.get(item.index),
                     fragment_index=item.index,
                     fragment_path=item.out_path,
                     mp4_path=None,
@@ -407,6 +420,7 @@ def _wrap_playable(
             continue
         views.append(
             PlayableView(
+                fragment_id=ids.get(item.index),
                 fragment_index=item.index,
                 fragment_path=item.out_path,
                 mp4_path=str(dst),

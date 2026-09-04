@@ -86,6 +86,7 @@ class GenericCarverAdapter(BaseAdapter):
         }
         for frag in result.fragments:
             metadata[f"fragment_{frag.index:04d}_sha256"] = frag.sha256
+            metadata[f"fragment_{frag.index:04d}_id"] = frag.fragment.fragment_id
 
         return EvidenceItem(
             evidence_id=evidence_id,
