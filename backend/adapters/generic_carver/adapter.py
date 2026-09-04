@@ -12,6 +12,11 @@ from pathlib import Path
 
 from backend.adapters.generic_carver.carver import GenericNalCarver
 from backend.adapters.generic_carver.models import CarveOptions, CarveResult
+from backend.adapters.generic_carver.timeline import (
+    DEFAULT_ASSUMED_FPS,
+    Timeline,
+    build_timeline,
+)
 from backend.core.evidence_model import ChannelInfo, EvidenceItem
 from backend.core.interfaces import BaseAdapter
 from backend.detection.detector import FormatDetector
@@ -29,6 +34,7 @@ class GenericCarverAdapter(BaseAdapter):
         case_id: str | None = None,
         evidence_id: str | None = None,
         report: DetectionReport | None = None,
+        assumed_fps: float = DEFAULT_ASSUMED_FPS,
     ) -> None:
         self.options = options or CarveOptions()
         self.detector = detector or FormatDetector()
@@ -38,9 +44,11 @@ class GenericCarverAdapter(BaseAdapter):
         # A report computed by the caller for the same source; avoids running
         # (and emitting) detection twice inside a pipeline.
         self.precomputed_report = report
+        self.assumed_fps = assumed_fps
         self.last_report: DetectionReport | None = None
         self.last_result: CarveResult | None = None
         self.last_carver: GenericNalCarver | None = None
+        self.last_timeline: Timeline | None = None
 
     def detect(self, source_path: str) -> bool:
         """True when the source contains any plausible Annex-B NAL units."""
@@ -49,7 +57,15 @@ class GenericCarverAdapter(BaseAdapter):
         return report.nal_stats.start_codes > 0
 
     def list_channels(self, source_path: str) -> list[ChannelInfo]:
-        return []
+        """Probable channels, inferred from encoder configuration.
+
+        A bare stream carries no channel map, so these are grouped by SPS
+        bytes and named ``probable-chNN``; see ``timeline.py`` for the limits.
+        """
+        result = self.last_result
+        if result is None or result.source_path != str(Path(source_path)):
+            result = GenericNalCarver(self.options).carve(source_path)
+        return build_timeline(result, assumed_fps=self.assumed_fps).to_channel_info()
 
     def parse(self, source_path: str) -> EvidenceItem:
         path = Path(source_path)
@@ -72,6 +88,8 @@ class GenericCarverAdapter(BaseAdapter):
         result = carver.carve(path)
         self.last_result = result
         self.last_carver = carver
+        timeline = build_timeline(result, assumed_fps=self.assumed_fps)
+        self.last_timeline = timeline
 
         metadata = {
             "adapter": "generic_carver",
@@ -84,15 +102,28 @@ class GenericCarverAdapter(BaseAdapter):
             "carve_discarded_fragments": str(result.stats.discarded_fragments),
             "recovery_hash": result.recovery_hash,
         }
+        metadata["channels_inferred"] = str(len(timeline.channels))
+        if timeline.total_estimated_seconds is not None:
+            metadata["estimated_footage_seconds"] = (
+                f"{timeline.total_estimated_seconds:.3f}"
+            )
+        metadata["timeline_notes"] = " | ".join(timeline.notes)
         for frag in result.fragments:
             metadata[f"fragment_{frag.index:04d}_sha256"] = frag.sha256
             metadata[f"fragment_{frag.index:04d}_id"] = frag.fragment.fragment_id
+        for entry in timeline.entries:
+            key = f"fragment_{entry.fragment_index:04d}"
+            metadata[f"{key}_channel"] = entry.channel_id
+            if entry.estimated_seconds is not None:
+                metadata[f"{key}_seconds"] = (
+                    f"{entry.estimated_seconds:.3f} ({entry.duration_basis})"
+                )
 
         return EvidenceItem(
             evidence_id=evidence_id,
             source_device_info=f"generic carve of {path.name}",
             vendor_info=report.vendor_info,
-            channels=[],
+            channels=timeline.to_channel_info(),
             fragments=[frag.fragment for frag in result.fragments],
             hash_lineage=[],
             metadata=metadata,

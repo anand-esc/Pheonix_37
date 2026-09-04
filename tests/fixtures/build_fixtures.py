@@ -100,6 +100,7 @@ def build_sps(
     profile_idc: int = 66,
     level_idc: int = 30,
     log2_max_frame_num: int = 4,
+    fps: float | None = None,
 ) -> bytes:
     """SPS NAL (header + escaped RBSP), frame_mbs_only, POC type 2."""
     w_mbs = (width + 15) // 16
@@ -125,7 +126,19 @@ def build_sps(
         bw.u(1, 1).ue(0).ue(crop_right).ue(0).ue(crop_bottom)
     else:
         bw.u(1, 0)
-    bw.u(1, 0)  # vui_parameters_present_flag
+    if fps is None:
+        bw.u(1, 0)  # vui_parameters_present_flag
+    else:
+        # VUI carrying only timing info, the way most recorders write it.
+        bw.u(1, 1)
+        bw.u(1, 0)  # aspect_ratio_info_present_flag
+        bw.u(1, 0)  # overscan_info_present_flag
+        bw.u(1, 0)  # video_signal_type_present_flag
+        bw.u(1, 0)  # chroma_loc_info_present_flag
+        bw.u(1, 1)  # timing_info_present_flag
+        bw.u(32, 1000)  # num_units_in_tick
+        bw.u(32, round(fps * 2000))  # time_scale -> fps = ts / (2 * units)
+        bw.u(1, 1)  # fixed_frame_rate_flag
     bw.rbsp_trailing()
     return bytes([NAL_SPS]) + escape_emulation(bw.to_bytes())
 
@@ -193,10 +206,11 @@ def build_h264_stream(
     with_aud: bool = False,
     with_eos: bool = True,
     profile_idc: int = 66,
+    declared_fps: float | None = None,
 ) -> bytes:
     """Annex-B byte stream: [AUD] SPS PPS IDR, then P frames, per GOP; EOS."""
     rng = random.Random(seed)
-    sps = build_sps(width, height, profile_idc=profile_idc)
+    sps = build_sps(width, height, profile_idc=profile_idc, fps=declared_fps)
     pps = build_pps()
     out = bytearray()
     for i in range(frames):
@@ -278,6 +292,7 @@ class SegmentSpec:
     truncate_bytes: int | None = None  # cut the stream short (simulates overwrite)
     with_eos: bool = True
     seed: int | None = None
+    declared_fps: float | None = None
 
 
 @dataclass
@@ -378,6 +393,7 @@ def build_dvr_image(
             height=spec.height,
             seed=spec.seed if spec.seed is not None else seed * 100 + idx,
             with_eos=spec.with_eos,
+            declared_fps=spec.declared_fps,
         )
         truncated = False
         if spec.truncate_bytes is not None and spec.truncate_bytes < len(stream):

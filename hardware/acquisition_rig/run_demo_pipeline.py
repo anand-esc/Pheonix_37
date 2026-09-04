@@ -57,6 +57,28 @@ def _print_transcript(transcript: dict) -> None:
             f"  #{f['index']:02d} 0x{f['byte_offset_start']:09x}-0x{f['byte_offset_end']:09x} "
             f"{f['codec_info']}  conf {f['confidence_score']:.2f}"
         )
+    timeline = transcript.get("timeline")
+    if timeline:
+        print("-" * 72)
+        for ch in timeline["channels"]:
+            seconds = ch["estimated_seconds"]
+            print(
+                f"  {ch['channel_id']}  {ch['resolution'] or 'unknown size'}  "
+                f"{len(ch['fragment_indexes'])} recording(s)  "
+                + (f"~{seconds:.1f}s" if seconds else "duration unknown")
+            )
+        for e in timeline["entries"]:
+            start = e["relative_start_seconds"]
+            seconds = e["estimated_seconds"]
+            when = f"+{start:7.2f}s" if start is not None else "  unknown"
+            span = f"{seconds:6.2f}s" if seconds is not None else "     ?s"
+            flag = "" if e["complete"] else "  [incomplete]"
+            print(
+                f"  {e['sequence']:02d} {e['channel_id']} {when} {span} "
+                f"({e['duration_basis']}) {e['pictures']} pic{flag}"
+            )
+        for note in timeline["notes"]:
+            print(f"  note: {note}")
     print("-" * 72)
     for t in transcript["timings"]:
         print(f"  {t['stage']:<11} {t['seconds']:7.2f}s")

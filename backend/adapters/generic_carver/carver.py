@@ -86,6 +86,7 @@ class _Builder:
     stream: StreamInfo | None = None
     sps_error: str | None = field(default=None)
     pps_count: int = 0
+    picture_count: int = 0
     # GOP bookkeeping for the short-GOP split heuristic
     gop_pictures: int = 0  # pictures since (and including) the last IDR
     gop_lengths: list[int] = field(default_factory=list)
@@ -389,6 +390,7 @@ class GenericNalCarver(RecoveryEngine):
             if kind == "idr":
                 builder.idr_count += 1
             if picture_start:
+                builder.picture_count += 1
                 if kind == "idr":
                     if builder.gop_pictures > 0:
                         builder.gop_lengths.append(builder.gop_pictures)
@@ -424,6 +426,7 @@ class GenericNalCarver(RecoveryEngine):
             nal_count=b.nal_count,
             vcl_count=b.vcl_count,
             idr_count=b.idr_count,
+            picture_count=b.picture_count,
             parameter_set_repeats=b.parameter_set_repeats,
         )
         confidence, rationale = score(features)
@@ -448,6 +451,9 @@ class GenericNalCarver(RecoveryEngine):
         return CarvedFragment(
             index=index,
             fragment=fragment,
+            sps_sha256=(
+                hashlib.sha256(b.sps_bytes).hexdigest() if b.sps_bytes else None
+            ),
             features=features,
             stream=b.stream,
             sha256=digest,

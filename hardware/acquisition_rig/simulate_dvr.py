@@ -49,11 +49,15 @@ def default_segments(size_bytes: int) -> list[SegmentSpec]:
     specs: list[SegmentSpec] = []
     for i in range(count):
         width, height = (1280, 720) if i % 4 in (0, 1) else (704, 576)
+        # Mixed on purpose: most recorders write VUI timing, some do not, and
+        # the timeline has to be honest about which durations are estimates.
+        declared_fps = {0: 25.0, 1: 25.0, 2: 12.5, 3: None}[i % 4]
         specs.append(
             SegmentSpec(
                 frames=per_segment,
                 width=width,
                 height=height,
+                declared_fps=declared_fps,
                 deleted=i % 5 == 2,  # every fifth recording was "deleted"
                 truncate_bytes=200_000 if i == count - 1 else None,
                 with_eos=i % 7 != 3,  # some recordings end without EOS

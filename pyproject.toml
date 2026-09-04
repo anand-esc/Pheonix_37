@@ -20,6 +20,7 @@ dev = [
     "pytest>=7.0.0",
     "ruff>=0.1.0",
     "black>=23.0.0",
+    "httpx>=0.24.0",  # fastapi.testclient needs it; API route tests skip without it
 ]
 
 [tool.hatch.build.targets.wheel]

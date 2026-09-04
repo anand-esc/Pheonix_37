@@ -330,6 +330,9 @@ def parse_sps_h264(nal: bytes) -> StreamInfo:
     height = (2 - frame_mbs_only) * height_map_units * 16 - crop_unit_y * (
         crop_top + crop_bottom
     )
+    fps = None
+    if br.u(1):  # vui_parameters_present_flag
+        fps = _h264_vui_fps(br)
     return StreamInfo(
         codec="H.264",
         profile_idc=profile_idc,
@@ -337,7 +340,38 @@ def parse_sps_h264(nal: bytes) -> StreamInfo:
         level_idc=level_idc,
         width=width,
         height=height,
+        declared_fps=fps,
     )
+
+
+def _h264_vui_fps(br: BitReader) -> float | None:
+    """Frame rate from VUI timing info (H.264 E.2.1), or None if absent.
+
+    A malformed VUI must not invalidate the picture size we already have, so
+    any parse error here is swallowed and reported as "no declared rate".
+    """
+    try:
+        if br.u(1) and br.u(8) == 255:  # aspect_ratio present, Extended_SAR
+            br.skip(32)  # sar_width, sar_height
+        if br.u(1):  # overscan_info_present_flag
+            br.skip(1)
+        if br.u(1):  # video_signal_type_present_flag
+            br.skip(4)  # video_format + video_full_range_flag
+            if br.u(1):  # colour_description_present_flag
+                br.skip(24)
+        if br.u(1):  # chroma_loc_info_present_flag
+            br.ue()
+            br.ue()
+        if not br.u(1):  # timing_info_present_flag
+            return None
+        num_units_in_tick = br.u(32)
+        time_scale = br.u(32)
+        if num_units_in_tick == 0 or time_scale == 0:
+            return None
+        fps = time_scale / (2 * num_units_in_tick)
+        return round(fps, 3) if 0 < fps <= 1000 else None
+    except (ValueError, IndexError):
+        return None
 
 
 def parse_sps_h265(nal: bytes) -> StreamInfo:

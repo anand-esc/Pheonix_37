@@ -34,6 +34,7 @@ from backend.adapters.generic_carver.models import (
     CarveResult,
     ExportedFragment,
 )
+from backend.adapters.generic_carver.timeline import Timeline
 from backend.core.evidence_model import EvidenceItem, HashRecord
 from backend.core.interfaces import CryptoProvider
 from backend.detection.detector import FormatDetector, resolve_adapter
@@ -114,6 +115,7 @@ class PipelineResult(BaseModel):
     adapter: AdapterSummary
     evidence: EvidenceItem
     carve: CarveResult | None = None
+    timeline: Timeline | None = None
     exported: list[ExportedFragment] = Field(default_factory=list)
     encrypted: list[EncryptedArtifact] = Field(default_factory=list)
     image_encrypted: EncryptedArtifact | None = None
@@ -137,6 +139,10 @@ class PipelineResult(BaseModel):
             "encrypted": len(self.encrypted),
             "image_encrypted": self.image_encrypted is not None,
             "playable": sum(1 for p in self.playable if p.mp4_path),
+            "channels": len(self.evidence.channels),
+            "estimated_seconds": (
+                self.timeline.total_estimated_seconds if self.timeline else None
+            ),
             "events": len(self.events),
             "seconds": sum(t.seconds for t in self.timings),
         }
@@ -211,6 +217,7 @@ def run_pipeline(
     t0 = time.perf_counter()
     adapter = resolution.adapter
     carve_result: CarveResult | None = None
+    timeline: Timeline | None = None
     exported: list[ExportedFragment] = []
     playable: list[PlayableView] = []
     parsed: EvidenceItem | None = None
@@ -255,6 +262,7 @@ def run_pipeline(
         )
         parsed = adapter.parse(str(image_path))
         carve_result = adapter.last_result
+        timeline = adapter.last_timeline
         exported = adapter.last_carver.export(
             image_path, carve_result, out_dir / FRAGMENT_DIR
         )
@@ -364,6 +372,7 @@ def run_pipeline(
         ),
         evidence=evidence,
         carve=carve_result,
+        timeline=timeline,
         exported=exported,
         encrypted=encrypted,
         image_encrypted=image_encrypted,
@@ -493,6 +502,10 @@ def write_transcript(result: PipelineResult, path: str | Path) -> Path:
             }
             for i, f in enumerate(result.evidence.fragments)
         ],
+        "channels": [c.model_dump(mode="json") for c in result.evidence.channels],
+        "timeline": (
+            result.timeline.model_dump(mode="json") if result.timeline else None
+        ),
         "hash_lineage": [
             h.model_dump(mode="json") for h in result.evidence.hash_lineage
         ],
