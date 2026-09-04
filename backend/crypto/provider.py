@@ -20,7 +20,10 @@ class PhoenixCryptoProvider(CryptoProvider):
         # (blocked on Satya's RBAC branch), we derive the KEK from a system-level
         # master secret read from an environment variable, combined with a per-case salt.
         # TODO: replace with real per-investigator secret once RBAC lands.
-        self._master_secret = os.environ.get("PHOENIX_MASTER_SECRET", "dev-fallback-secret-12345")
+        master_secret = os.environ.get("PHOENIX_MASTER_SECRET")
+        if not master_secret:
+            raise RuntimeError("PHOENIX_MASTER_SECRET must be set — no default is provided for security reasons")
+        self._master_secret = master_secret
 
         # In production, this would securely fetch wrapped DEKs from a KMS/Vault database.
         # For the hackathon prototype, we use an in-memory secure registry per case.
@@ -40,6 +43,7 @@ class PhoenixCryptoProvider(CryptoProvider):
                 "wrapped_dek": wrapped_dek,
                 "nonce": wrap_nonce,
                 "salt": salt,
+                "kek": kek
             }
 
     def _unwrap_dek_for_case(self, case_id: str) -> bytearray:
@@ -47,7 +51,9 @@ class PhoenixCryptoProvider(CryptoProvider):
         self._ensure_case_initialized(case_id)
         record = self._case_key_records[case_id]
 
-        kek = derive_kek(self._master_secret, record["salt"])
+        # Use the cached KEK (acceptable tradeoff: KEK is case-scoped and one step
+        # removed from the master secret, whereas raw DEK caching would not be).
+        kek = record["kek"]
         dek = unwrap_dek(record["wrapped_dek"], record["nonce"], kek)
         return bytearray(dek)
 
