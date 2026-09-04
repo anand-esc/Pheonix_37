@@ -52,6 +52,9 @@ Useful anchors for chaining: `intake_completed.sha256` (image identity),
 
 Read, in order of convenience:
 
+0. `PipelineResult.timeline` (also in the transcript): ordered recordings,
+   probable channels, duration estimates with their basis, and the honesty
+   notes that belong in the report verbatim. See `docs/timeline.md`.
 1. `<out_dir>/pipeline_result.json`: the full `PipelineResult`
    (`backend/pipeline/runner.py`). Contains the acquisition record, detection
    report with rationale lines, adapter decision, evidence item with
@@ -62,7 +65,11 @@ Read, in order of convenience:
 3. `<out_dir>/run_transcript.json`: the compact human-readable version.
 
 Strings to quote verbatim in a report: `detection.rationale` (list),
-`fragments[i].confidence_rationale`, `vendor_info.validation_status`.
+`fragments[i].confidence_rationale`, `vendor_info.validation_status`,
+`timeline.notes`, and each `timeline.channels[i].rationale`. Durations must
+always be shown with their `duration_basis`: `declared_fps` is what the
+recorder itself declared, `assumed_fps` is our assumption and would scale if
+the real rate differs.
 
 ## Frontend (Shayanna)
 
@@ -91,11 +98,18 @@ would make that cleaner.
 ## AI triage (Suryansh)
 
 Exported fragments are raw Annex-B `.h264`/`.h265` elementary streams under
-`<out_dir>/fragments/`. OpenCV with an FFmpeg backend reads raw H.264
-directly; if MP4 is easier, see `docs/generic_carver.md` for the lossless
-wrapper. Fragment identity for `DetectionResult` linkage is the fragment's
-SHA-256 (also in `EvidenceItem.metadata["fragment_NNNN_sha256"]`) until the
-shared contract gains a `fragment_id`.
+`<out_dir>/fragments/`, and lossless MP4 views under `<out_dir>/playable/`.
+OpenCV with an FFmpeg backend reads either.
+
+Channel and time context for a fragment is in `PipelineResult.timeline`
+(`channel_of(fragment_id)` maps a fragment to its probable channel).
+
+Set `DetectionResult.fragment_id` to the `Fragment.fragment_id` of the
+fragment the detection came from. The carver derives it from the fragment's
+own bytes (`frag-<first 16 hex of its SHA-256>`), so it is stable across
+re-runs and across machines, unlike a random UUID. The same id appears in
+`PipelineResult.playable[].fragment_id` and in
+`EvidenceItem.metadata["fragment_NNNN_id"]`.
 
 ## Running it
 

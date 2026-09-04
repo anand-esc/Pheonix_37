@@ -33,13 +33,17 @@ class StreamInfo(BaseModel):
     level_idc: int
     width: int
     height: int
+    declared_fps: float | None = None  # from SPS VUI timing, when the encoder wrote it
 
     def describe(self) -> str:
         level = self.level_idc / 30 if self.codec == "H.265" else self.level_idc / 10
-        return (
+        text = (
             f"{self.codec} {self.profile_name} (profile_idc {self.profile_idc}) "
             f"level {level:.1f} {self.width}x{self.height}"
         )
+        if self.declared_fps is not None:
+            text += f" @ {self.declared_fps:g} fps (declared)"
+        return text
 
 
 class FragmentFeatures(BaseModel):
@@ -57,7 +61,8 @@ class FragmentFeatures(BaseModel):
     nal_count: int
     vcl_count: int
     idr_count: int
-    parameter_set_repeats: int
+    picture_count: int = 0
+    parameter_set_repeats: int = 0
 
 
 class CarvedFragment(BaseModel):
@@ -69,6 +74,7 @@ class CarvedFragment(BaseModel):
     fragment: Fragment
     features: FragmentFeatures
     stream: StreamInfo | None = None
+    sps_sha256: str | None = None  # identity of the encoder configuration
     sha256: str
     length: int
 

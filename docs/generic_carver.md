@@ -18,10 +18,16 @@ and raises `CarverExportError` on any mismatch.
 
 `byte_offset_end` is exclusive: `end - start` is the fragment length.
 
+`Fragment.fragment_id` is set to `frag-<first 16 hex characters of the
+fragment's SHA-256>` rather than the contract's default random UUID: two runs
+of the carver over the same image produce the same ids, so AI triage results
+and reports stay valid when a case is re-processed.
+
 `GenericCarverAdapter` wraps the detector and the carver as a `BaseAdapter`.
-It reports the vendor exactly as detection did (never upgraded), returns no
-channels (a bare stream has no channel map), and puts per-fragment hashes and
-carve statistics into `EvidenceItem.metadata`.
+It reports the vendor exactly as detection did (never upgraded), returns
+*probable* channels inferred from encoder configuration (see
+`docs/timeline.md`), and puts per-fragment hashes, timeline facts and carve
+statistics into `EvidenceItem.metadata`.
 
 ## Rules, in order
 

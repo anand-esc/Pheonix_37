@@ -86,6 +86,7 @@ class _Builder:
     stream: StreamInfo | None = None
     sps_error: str | None = field(default=None)
     pps_count: int = 0
+    picture_count: int = 0
     # GOP bookkeeping for the short-GOP split heuristic
     gop_pictures: int = 0  # pictures since (and including) the last IDR
     gop_lengths: list[int] = field(default_factory=list)
@@ -389,6 +390,7 @@ class GenericNalCarver(RecoveryEngine):
             if kind == "idr":
                 builder.idr_count += 1
             if picture_start:
+                builder.picture_count += 1
                 if kind == "idr":
                     if builder.gop_pictures > 0:
                         builder.gop_lengths.append(builder.gop_pictures)
@@ -424,6 +426,7 @@ class GenericNalCarver(RecoveryEngine):
             nal_count=b.nal_count,
             vcl_count=b.vcl_count,
             idr_count=b.idr_count,
+            picture_count=b.picture_count,
             parameter_set_repeats=b.parameter_set_repeats,
         )
         confidence, rationale = score(features)
@@ -432,7 +435,11 @@ class GenericNalCarver(RecoveryEngine):
         else:
             label = "H.264" if b.codec == "h264" else "H.265"
             codec_info = f"{label} (SPS {'unparseable: ' + b.sps_error if b.sps_error else 'absent'})"
+        digest = _hash_range(fh, b.start, b.end)
         fragment = Fragment(
+            # Deterministic id derived from content, so AI triage results and
+            # reports can reference a fragment across re-runs of the carver.
+            fragment_id=f"frag-{digest[:16]}",
             byte_offset_start=b.start,
             byte_offset_end=b.end,
             codec_info=codec_info,
@@ -441,10 +448,12 @@ class GenericNalCarver(RecoveryEngine):
             confidence_rationale=rationale,
         )
         self._features[(b.start, b.end)] = features
-        digest = _hash_range(fh, b.start, b.end)
         return CarvedFragment(
             index=index,
             fragment=fragment,
+            sps_sha256=(
+                hashlib.sha256(b.sps_bytes).hexdigest() if b.sps_bytes else None
+            ),
             features=features,
             stream=b.stream,
             sha256=digest,

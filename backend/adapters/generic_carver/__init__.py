@@ -16,6 +16,12 @@ from backend.adapters.generic_carver.models import (
     FragmentFeatures,
     StreamInfo,
 )
+from backend.adapters.generic_carver.timeline import (
+    ChannelGroup,
+    Timeline,
+    TimelineEntry,
+    build_timeline,
+)
 
 __all__ = [
     "CarveOptions",
@@ -25,9 +31,13 @@ __all__ = [
     "CarverError",
     "CarverExportError",
     "CarverSourceError",
+    "ChannelGroup",
     "ExportedFragment",
     "FragmentFeatures",
     "GenericCarverAdapter",
     "GenericNalCarver",
     "StreamInfo",
+    "Timeline",
+    "TimelineEntry",
+    "build_timeline",
 ]

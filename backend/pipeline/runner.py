@@ -34,6 +34,7 @@ from backend.adapters.generic_carver.models import (
     CarveResult,
     ExportedFragment,
 )
+from backend.adapters.generic_carver.timeline import Timeline
 from backend.core.evidence_model import EvidenceItem, HashRecord
 from backend.core.interfaces import CryptoProvider
 from backend.detection.detector import FormatDetector, resolve_adapter
@@ -71,6 +72,7 @@ class PlayableView(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
+    fragment_id: str | None = None
     fragment_index: int
     fragment_path: str
     mp4_path: str | None
@@ -113,6 +115,7 @@ class PipelineResult(BaseModel):
     adapter: AdapterSummary
     evidence: EvidenceItem
     carve: CarveResult | None = None
+    timeline: Timeline | None = None
     exported: list[ExportedFragment] = Field(default_factory=list)
     encrypted: list[EncryptedArtifact] = Field(default_factory=list)
     image_encrypted: EncryptedArtifact | None = None
@@ -136,6 +139,10 @@ class PipelineResult(BaseModel):
             "encrypted": len(self.encrypted),
             "image_encrypted": self.image_encrypted is not None,
             "playable": sum(1 for p in self.playable if p.mp4_path),
+            "channels": len(self.evidence.channels),
+            "estimated_seconds": (
+                self.timeline.total_estimated_seconds if self.timeline else None
+            ),
             "events": len(self.events),
             "seconds": sum(t.seconds for t in self.timings),
         }
@@ -210,8 +217,39 @@ def run_pipeline(
     t0 = time.perf_counter()
     adapter = resolution.adapter
     carve_result: CarveResult | None = None
+    timeline: Timeline | None = None
     exported: list[ExportedFragment] = []
     playable: list[PlayableView] = []
+    parsed: EvidenceItem | None = None
+    if not isinstance(adapter, GenericCarverAdapter):
+        try:
+            parsed = adapter.parse(str(image_path))
+        except NotImplementedError as exc:
+            # Safety net: a vendor adapter that passed the probe but has no
+            # parser yet must not stop intake. Route to the generic carver
+            # and record the change of plan.
+            resolution = resolution.model_copy(
+                update={
+                    "resolved_module": GenericCarverAdapter.__module__,
+                    "resolved_class": GenericCarverAdapter.__name__,
+                    "fallback": True,
+                    "reason": f"{resolution.reason}; parse raised "
+                    f"NotImplementedError ({exc}); using generic carver",
+                    "adapter": None,
+                }
+            )
+            emit(
+                sink,
+                "adapter_resolved",
+                case_id,
+                stage="detection",
+                evidence_id=evidence_id,
+                adapter=f"{resolution.resolved_module}.{resolution.resolved_class}",
+                fallback=True,
+                available=True,
+                reason=resolution.reason,
+            )
+            adapter = GenericCarverAdapter()
     if isinstance(adapter, GenericCarverAdapter):
         options = carve_options or CarveOptions()
         adapter = GenericCarverAdapter(
@@ -224,13 +262,19 @@ def run_pipeline(
         )
         parsed = adapter.parse(str(image_path))
         carve_result = adapter.last_result
+        timeline = adapter.last_timeline
         exported = adapter.last_carver.export(
             image_path, carve_result, out_dir / FRAGMENT_DIR
         )
         if wrap_mp4:
-            playable = _wrap_playable(exported, out_dir / PLAYABLE_DIR)
-    else:
-        parsed = adapter.parse(str(image_path))
+            playable = _wrap_playable(
+                exported,
+                out_dir / PLAYABLE_DIR,
+                fragment_ids={
+                    c.index: c.fragment.fragment_id for c in carve_result.fragments
+                },
+            )
+    assert parsed is not None  # either branch above produced an item
 
     evidence = evidence.model_copy(
         update={
@@ -328,6 +372,7 @@ def run_pipeline(
         ),
         evidence=evidence,
         carve=carve_result,
+        timeline=timeline,
         exported=exported,
         encrypted=encrypted,
         image_encrypted=image_encrypted,
@@ -344,18 +389,23 @@ def run_pipeline(
 
 
 def _wrap_playable(
-    exported: list[ExportedFragment], out_dir: Path, fps: float = 25.0
+    exported: list[ExportedFragment],
+    out_dir: Path,
+    fps: float = 25.0,
+    fragment_ids: dict[int, str] | None = None,
 ) -> list[PlayableView]:
     """Lossless MP4 views of H.264 fragments; failures are recorded, not raised."""
     from backend.adapters.generic_carver.mp4 import wrap_fragment_file
 
     out_dir.mkdir(parents=True, exist_ok=True)
+    ids = fragment_ids or {}
     views: list[PlayableView] = []
     for item in exported:
         src = Path(item.out_path)
         if src.suffix != ".h264":
             views.append(
                 PlayableView(
+                    fragment_id=ids.get(item.index),
                     fragment_index=item.index,
                     fragment_path=item.out_path,
                     mp4_path=None,
@@ -369,6 +419,7 @@ def _wrap_playable(
         except (ValueError, NotImplementedError) as exc:
             views.append(
                 PlayableView(
+                    fragment_id=ids.get(item.index),
                     fragment_index=item.index,
                     fragment_path=item.out_path,
                     mp4_path=None,
@@ -378,6 +429,7 @@ def _wrap_playable(
             continue
         views.append(
             PlayableView(
+                fragment_id=ids.get(item.index),
                 fragment_index=item.index,
                 fragment_path=item.out_path,
                 mp4_path=str(dst),
@@ -450,6 +502,10 @@ def write_transcript(result: PipelineResult, path: str | Path) -> Path:
             }
             for i, f in enumerate(result.evidence.fragments)
         ],
+        "channels": [c.model_dump(mode="json") for c in result.evidence.channels],
+        "timeline": (
+            result.timeline.model_dump(mode="json") if result.timeline else None
+        ),
         "hash_lineage": [
             h.model_dump(mode="json") for h in result.evidence.hash_lineage
         ],

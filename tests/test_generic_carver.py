@@ -392,10 +392,18 @@ def test_generic_adapter_parses_into_evidence_item(tmp_path):
     assert item.vendor_info.vendor_name == "Generic Annex-B stream"
     assert item.vendor_info.validation_status is ValidationStatus.GENERIC_FALLBACK
     assert len(item.fragments) == 3
-    assert (
-        item.channels == [] and adapter.list_channels(str(tmp_path / "dvr.img")) == []
-    )
+    # channels are inferred from encoder configuration, not read from an index
+    assert [c.channel_id for c in item.channels] == ["probable-ch01"]
+    assert item.channels[0].declared_resolution == "704x576"
+    assert item.channels == adapter.list_channels(str(tmp_path / "dvr.img"))
     assert item.metadata["recovery_hash"] == adapter.last_result.recovery_hash
+    # fragment ids are content-derived and stable across re-runs
+    ids = [f.fragment_id for f in item.fragments]
+    assert ids == [f"frag-{c.sha256[:16]}" for c in adapter.last_result.fragments]
+    assert len(set(ids)) == len(ids)
+    again = GenericCarverAdapter(SMALL).parse(str(tmp_path / "dvr.img"))
+    assert [f.fragment_id for f in again.fragments] == ids
+    assert item.metadata["fragment_0000_id"] == ids[0]
     assert (
         item.metadata["fragment_0000_sha256"] == adapter.last_result.fragments[0].sha256
     )
