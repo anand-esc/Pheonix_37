@@ -429,12 +429,6 @@ def _load_adapter(module: str, cls: str) -> tuple[BaseAdapter | None, str | None
         mod = importlib.import_module(module)
         factory = getattr(mod, cls)
         adapter = factory()
-        try:
-            adapter.detect("/nonexistent/probe/path")
-        except NotImplementedError:
-            return None, f"{module}.{cls} raises NotImplementedError"
-        except Exception:
-            pass
     except Exception as exc:  # noqa: BLE001 - any failure means "not available"
         return None, f"{type(exc).__name__}: {exc}"
     if not isinstance(adapter, BaseAdapter):

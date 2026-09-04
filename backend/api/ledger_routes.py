@@ -1,5 +1,7 @@
 """
 Ledger & RBAC API routes — FastAPI router.
+
+Uses global shared instances from backend.api.main
 """
 
 from __future__ import annotations
@@ -9,16 +11,18 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from backend.ledger.event_bus import InMemoryEventSink
-from backend.ledger.audit_ledger import AuditLedger
-from backend.ledger.rbac import RBACController, Role
+from backend.api.shared import get_event_sink, get_ledger, get_rbac_controller
+from backend.ledger.rbac import Role
 from backend.adapters.dahua import DahuaAdapter
 
-event_sink = InMemoryEventSink()
-ledger = AuditLedger(event_sink=event_sink)
-rbac = RBACController(event_sink=event_sink)
+
+# Get shared instances
+event_sink = get_event_sink()
+ledger = get_ledger()
+rbac = get_rbac_controller()
 dahua = DahuaAdapter()
 
+# Assign default roles to the shared RBAC controller
 rbac.assign_role("sat-01", Role.INVESTIGATOR)
 rbac.assign_role("tech-02", Role.TECHNICAL_EXPERT)
 rbac.assign_role("audit-03", Role.AUDITOR)
