@@ -127,10 +127,30 @@ def test_phoenix_crypto_provider():
     decrypted = provider.decrypt(encrypted_blob, case_id)
     assert decrypted == data
     
-    # Test Secure Key Wiping
-    assert case_id in provider._case_keys
+    # Test Secure Key Wiping (now wiping the stored wrapped key record)
+    assert case_id in provider._case_key_records
     provider.revoke_case_keys(case_id)
-    assert case_id not in provider._case_keys
+    assert case_id not in provider._case_key_records
+
+def test_phoenix_crypto_provider_salt_uniqueness():
+    """Proves that two cases using the same master secret get different salts
+    and thus different KEKs and wrapped DEKs."""
+    provider = PhoenixCryptoProvider()
+    case1 = "CASE-A"
+    case2 = "CASE-B"
+
+    # Trigger initialization by doing a dummy encryption
+    provider.encrypt(b"data", case1)
+    provider.encrypt(b"data", case2)
+
+    record1 = provider._case_key_records[case1]
+    record2 = provider._case_key_records[case2]
+
+    # The salts must be unique per case
+    assert record1["salt"] != record2["salt"]
+    
+    # The wrapped DEKs will be different (even if raw DEKs were identical, though they aren't)
+    assert record1["wrapped_dek"] != record2["wrapped_dek"]
 
 # ---------------------------------------------------------
 # 6. Timestamp Engine Tests
