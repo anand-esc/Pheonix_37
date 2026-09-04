@@ -11,6 +11,14 @@ from backend.crypto.provider import PhoenixCryptoProvider
 from backend.utils.timestamps import normalize_dvr_timestamp
 
 # ---------------------------------------------------------
+# 0. Test Setup
+# ---------------------------------------------------------
+@pytest.fixture(autouse=True)
+def setup_master_secret(monkeypatch):
+    """Sets the required master secret env var for all crypto tests."""
+    monkeypatch.setenv("PHOENIX_MASTER_SECRET", "test-master-secret-12345")
+
+# ---------------------------------------------------------
 # 1. Hashing Tests
 # ---------------------------------------------------------
 def test_hashing_consistency():
