@@ -1,0 +1,501 @@
+{
+  "summary": {
+    "case_id": "CASE-DEMO-001",
+    "evidence_id": "ev-acq-57ab3b7e-5e02-42ac-8d2b-2f720ac7e6e4",
+    "image_sha256": "323807c372acc262ee44d3a343def39ae4465d78761ad4de4608755a65d6e323",
+    "image_md5": "a111429ae878418e9da119d27bf3f902",
+    "vendor": "Hikvision",
+    "validation_status": "VALIDATED",
+    "detection_confidence": 0.9,
+    "adapter": "backend.adapters.generic_carver.GenericCarverAdapter",
+    "fallback": true,
+    "fragments": 4,
+    "exported": 4,
+    "encrypted": 4,
+    "image_encrypted": true,
+    "playable": 4,
+    "channels": 3,
+    "estimated_seconds": 52.16,
+    "events": 15,
+    "seconds": 0.4323653000001286
+  },
+  "started_utc": "2026-09-04T13:06:11.280007+00:00",
+  "finished_utc": "2026-09-04T13:06:11.712982+00:00",
+  "timings": [
+    {
+      "stage": "intake",
+      "seconds": 0.1254673000000821
+    },
+    {
+      "stage": "detection",
+      "seconds": 0.010262799999964045
+    },
+    {
+      "stage": "recovery",
+      "seconds": 0.1902881000000889
+    },
+    {
+      "stage": "encryption",
+      "seconds": 0.10634709999999359
+    }
+  ],
+  "detection_rationale": [
+    "Hikvision: hikvision_master_sector@0x210; summed weight 0.90",
+    "NAL scan: 4/32 windows contain valid Annex-B start codes (density 0.12), codec guess h264 (h264 votes 22, h265 votes 0)",
+    "decision: Hikvision (VALIDATED), confidence 0.90"
+  ],
+  "fragments": [
+    {
+      "index": 0,
+      "byte_offset_start": 524288,
+      "byte_offset_end": 1109835,
+      "codec_info": "H.264 Baseline (profile_idc 66) level 3.0 1280x720 @ 25 fps (declared)",
+      "confidence_score": 0.95,
+      "confidence_rationale": "base 0.25: contiguous run of valid Annex-B NAL units; +0.25: SPS parsed, resolution and profile known; +0.10: PPS present; +0.15: first picture is an IDR/IRAP (decodable start); +0.10: 300/361 NALs carry picture data; +0.10: ended by eos; = 0.95"
+    },
+    {
+      "index": 1,
+      "byte_offset_start": 1310720,
+      "byte_offset_end": 1899077,
+      "codec_info": "H.264 Baseline (profile_idc 66) level 3.0 1280x720 @ 25 fps (declared)",
+      "confidence_score": 0.95,
+      "confidence_rationale": "base 0.25: contiguous run of valid Annex-B NAL units; +0.25: SPS parsed, resolution and profile known; +0.10: PPS present; +0.15: first picture is an IDR/IRAP (decodable start); +0.10: 300/361 NALs carry picture data; +0.10: ended by eos; = 0.95"
+    },
+    {
+      "index": 2,
+      "byte_offset_start": 2097152,
+      "byte_offset_end": 2679465,
+      "codec_info": "H.264 Baseline (profile_idc 66) level 3.0 704x576 @ 12.5 fps (declared)",
+      "confidence_score": 0.95,
+      "confidence_rationale": "base 0.25: contiguous run of valid Annex-B NAL units; +0.25: SPS parsed, resolution and profile known; +0.10: PPS present; +0.15: first picture is an IDR/IRAP (decodable start); +0.10: 300/361 NALs carry picture data; +0.10: ended by eos; = 0.95"
+    },
+    {
+      "index": 3,
+      "byte_offset_start": 2883584,
+      "byte_offset_end": 3083584,
+      "codec_info": "H.264 Baseline (profile_idc 66) level 3.0 704x576",
+      "confidence_score": 0.9,
+      "confidence_rationale": "base 0.25: contiguous run of valid Annex-B NAL units; +0.25: SPS parsed, resolution and profile known; +0.10: PPS present; +0.15: first picture is an IDR/IRAP (decodable start); +0.10: 104/126 NALs carry picture data; +0.05: ended by zero filler; = 0.90"
+    }
+  ],
+  "channels": [
+    {
+      "channel_id": "probable-ch01",
+      "declared_frame_rate": 25.0,
+      "declared_resolution": "1280x720",
+      "clock_offset_seconds": null
+    },
+    {
+      "channel_id": "probable-ch02",
+      "declared_frame_rate": 12.5,
+      "declared_resolution": "704x576",
+      "clock_offset_seconds": null
+    },
+    {
+      "channel_id": "probable-ch03",
+      "declared_frame_rate": null,
+      "declared_resolution": "704x576",
+      "clock_offset_seconds": null
+    }
+  ],
+  "timeline": {
+    "entries": [
+      {
+        "sequence": 1,
+        "fragment_index": 0,
+        "fragment_id": "frag-2bd05ff914890da9",
+        "channel_id": "probable-ch01",
+        "byte_offset_start": 524288,
+        "byte_offset_end": 1109835,
+        "pictures": 300,
+        "idr_count": 30,
+        "fps": 25.0,
+        "duration_basis": "declared_fps",
+        "estimated_seconds": 12.0,
+        "channel_position": 1,
+        "relative_start_seconds": 0.0,
+        "complete": true,
+        "rationale": "position 0 by byte offset 0x80000; 300 picture(s), 30 key frame(s); duration 12.00s at 25 fps declared in the SPS VUI; grouped into probable-ch01 by encoder configuration"
+      },
+      {
+        "sequence": 2,
+        "fragment_index": 1,
+        "fragment_id": "frag-8db88bce50029ba7",
+        "channel_id": "probable-ch01",
+        "byte_offset_start": 1310720,
+        "byte_offset_end": 1899077,
+        "pictures": 300,
+        "idr_count": 30,
+        "fps": 25.0,
+        "duration_basis": "declared_fps",
+        "estimated_seconds": 12.0,
+        "channel_position": 2,
+        "relative_start_seconds": 12.0,
+        "complete": true,
+        "rationale": "position 1 by byte offset 0x140000; 300 picture(s), 30 key frame(s); duration 12.00s at 25 fps declared in the SPS VUI; grouped into probable-ch01 by encoder configuration"
+      },
+      {
+        "sequence": 3,
+        "fragment_index": 2,
+        "fragment_id": "frag-093109c50a8c184e",
+        "channel_id": "probable-ch02",
+        "byte_offset_start": 2097152,
+        "byte_offset_end": 2679465,
+        "pictures": 300,
+        "idr_count": 30,
+        "fps": 12.5,
+        "duration_basis": "declared_fps",
+        "estimated_seconds": 24.0,
+        "channel_position": 1,
+        "relative_start_seconds": 0.0,
+        "complete": true,
+        "rationale": "position 2 by byte offset 0x200000; 300 picture(s), 30 key frame(s); duration 24.00s at 12.5 fps declared in the SPS VUI; grouped into probable-ch02 by encoder configuration"
+      },
+      {
+        "sequence": 4,
+        "fragment_index": 3,
+        "fragment_id": "frag-2a2e3cf6c4d92d1e",
+        "channel_id": "probable-ch03",
+        "byte_offset_start": 2883584,
+        "byte_offset_end": 3083584,
+        "pictures": 104,
+        "idr_count": 11,
+        "fps": 25.0,
+        "duration_basis": "assumed_fps",
+        "estimated_seconds": 4.16,
+        "channel_position": 1,
+        "relative_start_seconds": 0.0,
+        "complete": false,
+        "rationale": "position 3 by byte offset 0x2c0000; 104 picture(s), 11 key frame(s); duration 4.16s at an assumed 25 fps; the SPS declares no timing information; grouped into probable-ch03 by encoder configuration; recording is incomplete (ended by zero filler)"
+      }
+    ],
+    "channels": [
+      {
+        "channel_id": "probable-ch01",
+        "stream_signature": "cffa6807e5123e7d652910dc7385152c295fd21f08200358da9e80efcaa4ebee",
+        "codec": "h264",
+        "resolution": "1280x720",
+        "declared_fps": 25.0,
+        "fragment_indexes": [
+          0,
+          1
+        ],
+        "pictures": 600,
+        "estimated_seconds": 24.0,
+        "rationale": "2 fragment(s) share SPS cffa6807e5123e7d; resolution 1280x720; declared 25 fps; this is a probable channel, not a vendor channel number: two cameras configured identically would appear here as one"
+      },
+      {
+        "channel_id": "probable-ch02",
+        "stream_signature": "86e1eee4a5e549d25eed262892762791befaeb99d601f5508d4a8229a0770e6c",
+        "codec": "h264",
+        "resolution": "704x576",
+        "declared_fps": 12.5,
+        "fragment_indexes": [
+          2
+        ],
+        "pictures": 300,
+        "estimated_seconds": 24.0,
+        "rationale": "1 fragment(s) share SPS 86e1eee4a5e549d2; resolution 704x576; declared 12.5 fps; this is a probable channel, not a vendor channel number: two cameras configured identically would appear here as one"
+      },
+      {
+        "channel_id": "probable-ch03",
+        "stream_signature": "25d554f36cd7e61eb2a99609743167723ddca0a2fe0e613d47738101301b6135",
+        "codec": "h264",
+        "resolution": "704x576",
+        "declared_fps": null,
+        "fragment_indexes": [
+          3
+        ],
+        "pictures": 104,
+        "estimated_seconds": 4.16,
+        "rationale": "1 fragment(s) share SPS 25d554f36cd7e61e; resolution 704x576; declared no frame rate; this is a probable channel, not a vendor channel number: two cameras configured identically would appear here as one"
+      }
+    ],
+    "assumed_fps": 25.0,
+    "total_estimated_seconds": 52.16,
+    "notes": [
+      "Order is the order fragments appear in the image, which is the recording order only if the recorder had not wrapped around and started overwriting.",
+      "No wall-clock time is available from a bare elementary stream; all times are relative to the start of their own channel.",
+      "1 of 4 fragment(s) have no declared frame rate; their durations use the assumed rate and would scale linearly with the real one.",
+      "1 fragment(s) do not end at an end-of-stream marker, so footage may be missing at their tail."
+    ]
+  },
+  "hash_lineage": [
+    {
+      "pipeline_stage": "intake",
+      "algorithm": "SHA-256",
+      "hex_digest": "323807c372acc262ee44d3a343def39ae4465d78761ad4de4608755a65d6e323",
+      "timestamp_utc": "2026-09-04T13:06:11.370892Z"
+    },
+    {
+      "pipeline_stage": "intake",
+      "algorithm": "MD5",
+      "hex_digest": "a111429ae878418e9da119d27bf3f902",
+      "timestamp_utc": "2026-09-04T13:06:11.370892Z"
+    },
+    {
+      "pipeline_stage": "intake_verify",
+      "algorithm": "SHA-256",
+      "hex_digest": "323807c372acc262ee44d3a343def39ae4465d78761ad4de4608755a65d6e323",
+      "timestamp_utc": "2026-09-04T13:06:11.403599Z"
+    },
+    {
+      "pipeline_stage": "pre_encryption/fragment_0000",
+      "algorithm": "SHA-256",
+      "hex_digest": "2bd05ff914890da9e6ba34b98bff56f67d4e814a8e0b4ab8294367ae84d25e73",
+      "timestamp_utc": "2026-09-04T13:06:11.703972Z"
+    },
+    {
+      "pipeline_stage": "pre_encryption/fragment_0001",
+      "algorithm": "SHA-256",
+      "hex_digest": "8db88bce50029ba7f710ab8b09cbf151752b2d83bba0ce1c31022f213ff4d4b2",
+      "timestamp_utc": "2026-09-04T13:06:11.706467Z"
+    },
+    {
+      "pipeline_stage": "pre_encryption/fragment_0002",
+      "algorithm": "SHA-256",
+      "hex_digest": "093109c50a8c184e6ce0aa6fe05c2101fb2d3d3bfdd4b928110ebc4a9b8e767c",
+      "timestamp_utc": "2026-09-04T13:06:11.709097Z"
+    },
+    {
+      "pipeline_stage": "pre_encryption/fragment_0003",
+      "algorithm": "SHA-256",
+      "hex_digest": "2a2e3cf6c4d92d1ebd8dabef9a6511e3c439dbfddec1b24b9ab2a9a130438f82",
+      "timestamp_utc": "2026-09-04T13:06:11.709097Z"
+    }
+  ],
+  "events": [
+    {
+      "event_type": "intake_started",
+      "case_id": "CASE-DEMO-001",
+      "evidence_id": null,
+      "stage": "intake",
+      "payload": {
+        "acquisition_id": "acq-57ab3b7e-5e02-42ac-8d2b-2f720ac7e6e4",
+        "source": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\dvr_image.img",
+        "destination": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\run\\evidence.img",
+        "operator_id": "op-amritansh"
+      },
+      "timestamp_utc": "2026-09-04T13:06:11.283961Z"
+    },
+    {
+      "event_type": "intake_completed",
+      "case_id": "CASE-DEMO-001",
+      "evidence_id": null,
+      "stage": "intake",
+      "payload": {
+        "acquisition_id": "acq-57ab3b7e-5e02-42ac-8d2b-2f720ac7e6e4",
+        "bytes_read": 16777216,
+        "sha256": "323807c372acc262ee44d3a343def39ae4465d78761ad4de4608755a65d6e323",
+        "md5": "a111429ae878418e9da119d27bf3f902",
+        "image_path": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\run\\evidence.img",
+        "sidecar": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\run\\evidence.img.acquisition.json"
+      },
+      "timestamp_utc": "2026-09-04T13:06:11.406347Z"
+    },
+    {
+      "event_type": "format_detected",
+      "case_id": "CASE-DEMO-001",
+      "evidence_id": "ev-acq-57ab3b7e-5e02-42ac-8d2b-2f720ac7e6e4",
+      "stage": "detection",
+      "payload": {
+        "source": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\run\\evidence.img",
+        "vendor": "Hikvision",
+        "signature": "hikvision_master_sector@0x210",
+        "validation_status": "VALIDATED",
+        "confidence": 0.9,
+        "codec_guess": "h264",
+        "nal_density": 0.125,
+        "matched": [
+          "hikvision_master_sector"
+        ],
+        "adapter_module": "backend.adapters.hikvision"
+      },
+      "timestamp_utc": "2026-09-04T13:06:11.412032Z"
+    },
+    {
+      "event_type": "adapter_resolved",
+      "case_id": "CASE-DEMO-001",
+      "evidence_id": "ev-acq-57ab3b7e-5e02-42ac-8d2b-2f720ac7e6e4",
+      "stage": "detection",
+      "payload": {
+        "adapter": "backend.adapters.generic_carver.GenericCarverAdapter",
+        "fallback": true,
+        "available": true,
+        "reason": "backend.adapters.hikvision.HikvisionAdapter unavailable (vendor adapter is a stub (Sibam: WFS signature detection pending)); using generic carver"
+      },
+      "timestamp_utc": "2026-09-04T13:06:11.415620Z"
+    },
+    {
+      "event_type": "recovery_started",
+      "case_id": "CASE-DEMO-001",
+      "evidence_id": "ev-acq-57ab3b7e-5e02-42ac-8d2b-2f720ac7e6e4",
+      "stage": "recovery",
+      "payload": {
+        "image_path": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\run\\evidence.img",
+        "file_size": 16777216
+      },
+      "timestamp_utc": "2026-09-04T13:06:11.415620Z"
+    },
+    {
+      "event_type": "recovery_completed",
+      "case_id": "CASE-DEMO-001",
+      "evidence_id": "ev-acq-57ab3b7e-5e02-42ac-8d2b-2f720ac7e6e4",
+      "stage": "recovery",
+      "payload": {
+        "image_path": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\run\\evidence.img",
+        "fragment_count": 4,
+        "recovery_hash": "7c87cec4ba11f6b385b6232371332bba50d36220cfa47701dbd4b803d4bf63a7",
+        "recovery_method": "annexb_nal_carve",
+        "file_size": 16777216,
+        "start_codes_seen": 1209,
+        "valid_nals": 1209,
+        "orphan_nals": 0,
+        "oversized_nals": 0,
+        "discarded_fragments": 0,
+        "codec": "h264"
+      },
+      "timestamp_utc": "2026-09-04T13:06:11.480088Z"
+    },
+    {
+      "event_type": "fragment_exported",
+      "case_id": "CASE-DEMO-001",
+      "evidence_id": "ev-acq-57ab3b7e-5e02-42ac-8d2b-2f720ac7e6e4",
+      "stage": "recovery",
+      "payload": {
+        "index": 0,
+        "out_path": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\run\\fragments\\fragment_0000_000000080000.h264",
+        "byte_offset_start": 524288,
+        "byte_offset_end": 1109835,
+        "sha256": "2bd05ff914890da9e6ba34b98bff56f67d4e814a8e0b4ab8294367ae84d25e73",
+        "length": 585547
+      },
+      "timestamp_utc": "2026-09-04T13:06:11.499897Z"
+    },
+    {
+      "event_type": "fragment_exported",
+      "case_id": "CASE-DEMO-001",
+      "evidence_id": "ev-acq-57ab3b7e-5e02-42ac-8d2b-2f720ac7e6e4",
+      "stage": "recovery",
+      "payload": {
+        "index": 1,
+        "out_path": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\run\\fragments\\fragment_0001_000000140000.h264",
+        "byte_offset_start": 1310720,
+        "byte_offset_end": 1899077,
+        "sha256": "8db88bce50029ba7f710ab8b09cbf151752b2d83bba0ce1c31022f213ff4d4b2",
+        "length": 588357
+      },
+      "timestamp_utc": "2026-09-04T13:06:11.518779Z"
+    },
+    {
+      "event_type": "fragment_exported",
+      "case_id": "CASE-DEMO-001",
+      "evidence_id": "ev-acq-57ab3b7e-5e02-42ac-8d2b-2f720ac7e6e4",
+      "stage": "recovery",
+      "payload": {
+        "index": 2,
+        "out_path": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\run\\fragments\\fragment_0002_000000200000.h264",
+        "byte_offset_start": 2097152,
+        "byte_offset_end": 2679465,
+        "sha256": "093109c50a8c184e6ce0aa6fe05c2101fb2d3d3bfdd4b928110ebc4a9b8e767c",
+        "length": 582313
+      },
+      "timestamp_utc": "2026-09-04T13:06:11.532776Z"
+    },
+    {
+      "event_type": "fragment_exported",
+      "case_id": "CASE-DEMO-001",
+      "evidence_id": "ev-acq-57ab3b7e-5e02-42ac-8d2b-2f720ac7e6e4",
+      "stage": "recovery",
+      "payload": {
+        "index": 3,
+        "out_path": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\run\\fragments\\fragment_0003_0000002c0000.h264",
+        "byte_offset_start": 2883584,
+        "byte_offset_end": 3083584,
+        "sha256": "2a2e3cf6c4d92d1ebd8dabef9a6511e3c439dbfddec1b24b9ab2a9a130438f82",
+        "length": 200000
+      },
+      "timestamp_utc": "2026-09-04T13:06:11.546885Z"
+    },
+    {
+      "event_type": "encryption_completed",
+      "case_id": "CASE-DEMO-001",
+      "evidence_id": "ev-acq-57ab3b7e-5e02-42ac-8d2b-2f720ac7e6e4",
+      "stage": "encryption",
+      "payload": {
+        "fragment_index": -1,
+        "plaintext_path": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\run\\evidence.img",
+        "encrypted_path": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\run\\vault\\evidence.img.enc",
+        "plaintext_sha256": "323807c372acc262ee44d3a343def39ae4465d78761ad4de4608755a65d6e323",
+        "ciphertext_sha256": "51d5780fe2400af1235c419971807bad5ad43a28134aa53ee8ac56da5e349738",
+        "plaintext_bytes": 16777216,
+        "ciphertext_bytes": 16777244
+      },
+      "timestamp_utc": "2026-09-04T13:06:11.703972Z"
+    },
+    {
+      "event_type": "encryption_completed",
+      "case_id": "CASE-DEMO-001",
+      "evidence_id": "ev-acq-57ab3b7e-5e02-42ac-8d2b-2f720ac7e6e4",
+      "stage": "encryption",
+      "payload": {
+        "fragment_index": 0,
+        "plaintext_path": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\run\\fragments\\fragment_0000_000000080000.h264",
+        "encrypted_path": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\run\\vault\\fragment_0000_000000080000.h264.enc",
+        "plaintext_sha256": "2bd05ff914890da9e6ba34b98bff56f67d4e814a8e0b4ab8294367ae84d25e73",
+        "ciphertext_sha256": "43cb80487513bddd80e181a956be10c7c6d640f6519ac92e1dcff7daa45e6187",
+        "plaintext_bytes": 585547,
+        "ciphertext_bytes": 585575
+      },
+      "timestamp_utc": "2026-09-04T13:06:11.706467Z"
+    },
+    {
+      "event_type": "encryption_completed",
+      "case_id": "CASE-DEMO-001",
+      "evidence_id": "ev-acq-57ab3b7e-5e02-42ac-8d2b-2f720ac7e6e4",
+      "stage": "encryption",
+      "payload": {
+        "fragment_index": 1,
+        "plaintext_path": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\run\\fragments\\fragment_0001_000000140000.h264",
+        "encrypted_path": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\run\\vault\\fragment_0001_000000140000.h264.enc",
+        "plaintext_sha256": "8db88bce50029ba7f710ab8b09cbf151752b2d83bba0ce1c31022f213ff4d4b2",
+        "ciphertext_sha256": "bd7fc302b89f0a9df936b7db8d3779bfd3316eabbeda1e40cf7c65038c24a84e",
+        "plaintext_bytes": 588357,
+        "ciphertext_bytes": 588385
+      },
+      "timestamp_utc": "2026-09-04T13:06:11.709097Z"
+    },
+    {
+      "event_type": "encryption_completed",
+      "case_id": "CASE-DEMO-001",
+      "evidence_id": "ev-acq-57ab3b7e-5e02-42ac-8d2b-2f720ac7e6e4",
+      "stage": "encryption",
+      "payload": {
+        "fragment_index": 2,
+        "plaintext_path": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\run\\fragments\\fragment_0002_000000200000.h264",
+        "encrypted_path": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\run\\vault\\fragment_0002_000000200000.h264.enc",
+        "plaintext_sha256": "093109c50a8c184e6ce0aa6fe05c2101fb2d3d3bfdd4b928110ebc4a9b8e767c",
+        "ciphertext_sha256": "e12eae746bca54c84c79d293a0876721eac971aab474b04849fce13f4de05ac4",
+        "plaintext_bytes": 582313,
+        "ciphertext_bytes": 582341
+      },
+      "timestamp_utc": "2026-09-04T13:06:11.709097Z"
+    },
+    {
+      "event_type": "encryption_completed",
+      "case_id": "CASE-DEMO-001",
+      "evidence_id": "ev-acq-57ab3b7e-5e02-42ac-8d2b-2f720ac7e6e4",
+      "stage": "encryption",
+      "payload": {
+        "fragment_index": 3,
+        "plaintext_path": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\run\\fragments\\fragment_0003_0000002c0000.h264",
+        "encrypted_path": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\run\\vault\\fragment_0003_0000002c0000.h264.enc",
+        "plaintext_sha256": "2a2e3cf6c4d92d1ebd8dabef9a6511e3c439dbfddec1b24b9ab2a9a130438f82",
+        "ciphertext_sha256": "9d647180bffe65119c4ac87b8b271c08cf1b47716cc2c603d816d176b2e57726",
+        "plaintext_bytes": 200000,
+        "ciphertext_bytes": 200028
+      },
+      "timestamp_utc": "2026-09-04T13:06:11.712982Z"
+    }
+  ]
+}
