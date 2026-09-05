@@ -240,6 +240,11 @@ def build_h265_sps(width: int = 1280, height: int = 720) -> bytes:
     bw.ue(1)  # chroma 4:2:0
     bw.ue(width).ue(height)
     bw.u(1, 0)  # conformance_window_flag
+    bw.ue(0)  # bit_depth_luma_minus8
+    bw.ue(0)  # bit_depth_chroma_minus8
+    bw.ue(4)  # log2_max_pic_order_cnt_lsb_minus4
+    bw.u(1, 1)  # sps_sub_layer_ordering_info_present_flag
+    bw.ue(1).ue(0).ue(0)  # max_dec_pic_buffering, num_reorder_pics, latency
     bw.rbsp_trailing()
     return b"\x42\x01" + escape_emulation(bw.to_bytes())
 

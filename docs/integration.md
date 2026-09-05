@@ -52,17 +52,21 @@ Useful anchors for chaining: `intake_completed.sha256` (image identity),
 
 Read, in order of convenience:
 
-0. `PipelineResult.timeline` (also in the transcript): ordered recordings,
+0. `<out_dir>/custody_facts.json`: the structured input pack for the BSA
+   section 63 certificate draft - source, custody, method, tooling, integrity,
+   contents, and a `limitations` list that is never empty. Load it with
+   `backend.pipeline.custody.load_custody_facts`. See `docs/custody_facts.md`.
+1. `PipelineResult.timeline` (also in the transcript): ordered recordings,
    probable channels, duration estimates with their basis, and the honesty
    notes that belong in the report verbatim. See `docs/timeline.md`.
-1. `<out_dir>/pipeline_result.json`: the full `PipelineResult`
+2. `<out_dir>/pipeline_result.json`: the full `PipelineResult`
    (`backend/pipeline/runner.py`). Contains the acquisition record, detection
    report with rationale lines, adapter decision, evidence item with
    `hash_lineage`, carve result with per-fragment features and rationale,
    exported and encrypted artefacts, per-stage timings, and all events.
-2. `<out_dir>/evidence.img.acquisition.json`: the custody sidecar alone
+3. `<out_dir>/evidence.img.acquisition.json`: the custody sidecar alone
    (fields in `docs/acquisition.md`).
-3. `<out_dir>/run_transcript.json`: the compact human-readable version.
+4. `<out_dir>/run_transcript.json`: the compact human-readable version.
 
 Strings to quote verbatim in a report: `detection.rationale` (list),
 `fragments[i].confidence_rationale`, `vendor_info.validation_status`,
@@ -99,7 +103,8 @@ would make that cleaner.
 
 Exported fragments are raw Annex-B `.h264`/`.h265` elementary streams under
 `<out_dir>/fragments/`, and lossless MP4 views under `<out_dir>/playable/`.
-OpenCV with an FFmpeg backend reads either.
+OpenCV with an FFmpeg backend reads either. H.264 and H.265 fragments both
+get an MP4 view.
 
 Channel and time context for a fragment is in `PipelineResult.timeline`
 (`channel_of(fragment_id)` maps a fragment to its probable channel).

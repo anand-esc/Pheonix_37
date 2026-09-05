@@ -488,8 +488,10 @@ def test_mp4_wrap_rejects_streams_without_parameter_sets(tmp_path):
     headerless = full[full.index(b"\x00\x00\x00\x01\x65") :]
     with pytest.raises(ValueError):
         wrap_annexb(headerless)
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(ValueError):  # H.265 VPS alone: no SPS/PPS to configure
         wrap_annexb(b"\x00\x00\x00\x01\x40\x01\x0c\x01\xff\xff")
+    with pytest.raises(ValueError):  # nothing at all
+        wrap_annexb(b"\x00" * 64)
 
 
 # ---------------------------------------------------------------------------

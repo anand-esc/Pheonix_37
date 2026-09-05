@@ -57,9 +57,21 @@ cable, destination space) and run again into a new output folder.
 Before the demo:
 
 ```
-python hardware/acquisition_rig/simulate_dvr.py            # writes out/dvr_image.img (128 MiB)
-python hardware/acquisition_rig/run_demo_pipeline.py       # full live run into out/run/
+python hardware/acquisition_rig/simulate_dvr.py --layout wfs --size 32M   # Hikvision-shaped image
+python hardware/acquisition_rig/run_demo_pipeline.py                      # full live run into out/run/
 ```
+
+Two layouts are available:
+
+* `--layout wfs` builds a **Hikvision-shaped** image: a master sector with the
+  vendor magic at 0x210, a `HIKBTREE` index page that lists only the
+  recordings the recorder still knows about, and fixed data blocks. Recordings
+  deleted from the index are still on the disk, which is the point of the
+  demo: the index says six, the disk holds eight, and the carver recovers all
+  eight. It is synthetic and clearly marked as such, never presented as a
+  dump from a real unit.
+* `--layout flat` (default) builds the simpler generic layout, useful for the
+  other vendor marker variants (`--vendor dahua|avi|mp4|mpegts|none`).
 
 During the demo, show `out/run/run_transcript.json` (or the console output)
 and the `vault/` directory. The transcript lists the detection rationale,
@@ -72,9 +84,10 @@ If anything goes wrong on stage:
 python hardware/acquisition_rig/run_demo_pipeline.py --fallback
 ```
 
-replays `fallback_run/run_transcript.json`, a transcript committed from a
-real run of the same pipeline on a simulated 16 MiB image. It is clearly
-labelled as a replay in the output.
+replays `fallback_run/run_transcript.json`, committed from a real run of this
+pipeline on a 32 MiB Hikvision-shaped image, and clearly labelled as a replay
+in the output. `fallback_run/custody_facts.json` from the same run is
+committed beside it for the certificate-draft demo.
 
 ## 4. What the pipeline proves
 
@@ -86,12 +99,16 @@ labelled as a replay in the output.
 * Every fragment is hashed before encryption; ciphertext hashes are recorded
   separately, so tampering with either is detectable.
 * Every stage emits events that a signed ledger can subscribe to.
+* `custody_facts.json` collects everything a BSA section 63 certificate draft
+  needs, including a limitations list that is never empty and a signature
+  block left deliberately blank.
 
 ## 5. Files
 
 | File | Role |
 |---|---|
-| `simulate_dvr.py` | Builds a synthetic DVR disk image plus manifest into `out/` (ignored by git). |
+| `simulate_dvr.py` | Builds a synthetic DVR disk image plus manifest into `out/` (ignored by git). `--layout wfs` gives the Hikvision-shaped variant. |
 | `run_demo_pipeline.py` | Runs `backend.pipeline.runner.run_pipeline` on a source and prints a summary; `--fallback` replays the committed transcript. |
 | `fallback_run/run_transcript.json` | Committed transcript of a successful run for the demo fallback. |
+| `fallback_run/custody_facts.json` | Certificate-draft input pack from the same run. |
 | `out/` | Generated images and run outputs; never committed. |

@@ -436,7 +436,6 @@ def _load_adapter(module: str, cls: str) -> tuple[BaseAdapter | None, str | None
     return adapter, None
 
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

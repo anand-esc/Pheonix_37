@@ -374,6 +374,21 @@ def _h264_vui_fps(br: BitReader) -> float | None:
         return None
 
 
+def h265_general_ptl(sps_nal: bytes) -> bytes:
+    """The 12-byte general ``profile_tier_level`` block of an H.265 SPS.
+
+    ISO/IEC 14496-15 stores exactly these bytes in ``hvcC``, so copying them
+    verbatim keeps the configuration record consistent with the bitstream
+    instead of re-deriving fields that could disagree.
+    """
+    if ((sps_nal[0] >> 1) & 0x3F) != H265_SPS:
+        raise ValueError("not an H.265 SPS")
+    rbsp = unescape(sps_nal[2:])
+    if len(rbsp) < 13:
+        raise ValueError("SPS too short for profile_tier_level")
+    return rbsp[1:13]  # skip vps id + max_sub_layers + nesting flag (1 byte)
+
+
 def parse_sps_h265(nal: bytes) -> StreamInfo:
     """``nal`` is the NAL unit without its start code (2 header bytes first)."""
     if ((nal[0] >> 1) & 0x3F) != H265_SPS:
@@ -381,7 +396,7 @@ def parse_sps_h265(nal: bytes) -> StreamInfo:
     br = BitReader(unescape(nal[2:]))
     br.skip(4)  # sps_video_parameter_set_id
     max_sub_layers_minus1 = br.u(3)
-    br.skip(1)  # sps_temporal_id_nesting_flag
+    temporal_id_nested = bool(br.u(1))  # sps_temporal_id_nesting_flag
     # profile_tier_level(1, max_sub_layers_minus1)
     br.skip(2)  # general_profile_space
     br.skip(1)  # general_tier_flag
@@ -414,11 +429,21 @@ def parse_sps_h265(nal: bytes) -> StreamInfo:
         left, right, top, bottom = br.ue(), br.ue(), br.ue(), br.ue()
         width -= sub_w * (left + right)
         height -= sub_h * (top + bottom)
+    try:
+        bit_depth_luma = br.ue() + 8
+        bit_depth_chroma = br.ue() + 8
+    except (ValueError, IndexError):  # truncated SPS: sizes are already known
+        bit_depth_luma = bit_depth_chroma = None
     return StreamInfo(
         codec="H.265",
         profile_idc=profile_idc,
         profile_name=H265_PROFILES.get(profile_idc, f"profile {profile_idc}"),
         level_idc=level_idc,
+        chroma_format_idc=chroma_format_idc,
+        bit_depth_luma=bit_depth_luma,
+        bit_depth_chroma=bit_depth_chroma,
+        max_sub_layers=max_sub_layers_minus1 + 1,
+        temporal_id_nested=temporal_id_nested,
         width=width,
         height=height,
     )

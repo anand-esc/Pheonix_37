@@ -18,6 +18,7 @@ a filtered callback to the shared sink.
 from __future__ import annotations
 
 import asyncio
+import logging
 import threading
 import uuid
 from datetime import UTC, datetime
@@ -34,6 +35,8 @@ from backend.detection.detector import FormatDetector
 from backend.detection.models import DetectionReport
 from backend.pipeline.events import PipelineEvent
 from backend.pipeline.runner import PipelineError, PipelineResult, run_pipeline
+
+logger = logging.getLogger("phoenix.api.acquisition")
 
 router = APIRouter(prefix="/acquisition", tags=["acquisition"])
 
@@ -99,9 +102,9 @@ class _Job:
             # Filter by case_id - event can be PipelineEvent or dict (from ledger's emit)
             # The ledger's emit converts PipelineEvent to dict with operator_id = case_id
             event_case_id = (
-                getattr(event, "case_id", None) or
-                (event.get("operator_id") if isinstance(event, dict) else None) or
-                (event.get("case_id") if isinstance(event, dict) else None)
+                getattr(event, "case_id", None)
+                or (event.get("operator_id") if isinstance(event, dict) else None)
+                or (event.get("case_id") if isinstance(event, dict) else None)
             )
             if event_case_id == case_id:
                 # Convert to PipelineEvent if needed
@@ -117,13 +120,20 @@ class _Job:
                             case_id=event.get("operator_id", "UNKNOWN"),
                             evidence_id=details.get("evidence_id"),
                             stage=details.get("stage", "unknown"),
-                            payload={k: v for k, v in details.items() 
-                                     if k not in ("evidence_id", "stage", "timestamp_utc")},
+                            payload={
+                                k: v
+                                for k, v in details.items()
+                                if k not in ("evidence_id", "stage", "timestamp_utc")
+                            },
                         )
                         self._events.append(pe)
                     except Exception:
-                        # If conversion fails, skip
-                        pass
+                        # A malformed ledger entry must never break a running
+                        # pipeline; record it and carry on.
+                        logger.warning(
+                            "could not convert ledger entry to a PipelineEvent",
+                            exc_info=True,
+                        )
 
         shared_sink.subscribe(_filtered_callback)
         self._subscription_active = True
