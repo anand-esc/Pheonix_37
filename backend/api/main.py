@@ -251,13 +251,9 @@ def get_case_ledger(case_id: str) -> list[dict]:
     """Returns the real audit ledger chain from the shared AuditLedger."""
     ledger = get_ledger()
     chain = ledger.chain
-    # Filter to this case_id if possible (ledger is global in prototype)
-    filtered = [
-        entry.model_dump() for entry in chain
-        if entry.event_type == "GENESIS"  # Always show genesis
-        # In prototype, ledger is global; production would filter by case_id
-    ]
-    return filtered
+    # In prototype, ledger is global; return all entries for now.
+    # Production would filter by case_id via operator_id or payload.
+    return [entry.model_dump() for entry in chain]
 
 
 # ---------------------------------------------------------------------------

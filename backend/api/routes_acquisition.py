@@ -9,6 +9,10 @@ Runs execute in a worker thread so the event loop stays responsive; the
 in-memory ``JobStore`` tracks them. It is per-process and non-persistent,
 which is fine for the prototype: the durable record is the run directory
 (``pipeline_result.json``, sidecar, transcript), not this table.
+
+All jobs share the global EventSink from backend.api.shared so their events
+feed the global AuditLedger. Per-job event views are provided by subscribing
+a filtered callback to the shared sink.
 """
 
 from __future__ import annotations
@@ -25,9 +29,10 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
 
 from backend.acquisition.exceptions import AcquisitionError
+from backend.api.shared import get_event_sink
 from backend.detection.detector import FormatDetector
 from backend.detection.models import DetectionReport
-from backend.pipeline.events import InMemoryEventSink, PipelineEvent
+from backend.pipeline.events import PipelineEvent
 from backend.pipeline.runner import PipelineError, PipelineResult, run_pipeline
 
 router = APIRouter(prefix="/acquisition", tags=["acquisition"])
@@ -76,14 +81,56 @@ class _Job:
         self.created_utc = datetime.now(UTC)
         self.finished_utc: datetime | None = None
         self.bytes_read = 0
-        self.sink = InMemoryEventSink()
-        self.result: PipelineResult | None = None
+        self._events: list[PipelineEvent] = []
+        self._subscription_active = False
+        self._subscription_lock = threading.Lock()
         self.error: str | None = None
+        self.result: PipelineResult | None = None
         self.lock = threading.Lock()
+
+    def _subscribe_to_shared_sink(self) -> None:
+        """Subscribe a filtered callback to the shared global sink."""
+        if self._subscription_active:
+            return
+        shared_sink = get_event_sink()
+        case_id = self.request.case_id
+
+        def _filtered_callback(event) -> None:
+            # Filter by case_id - event can be PipelineEvent or dict (from ledger's emit)
+            # The ledger's emit converts PipelineEvent to dict with operator_id = case_id
+            event_case_id = (
+                getattr(event, "case_id", None) or
+                (event.get("operator_id") if isinstance(event, dict) else None) or
+                (event.get("case_id") if isinstance(event, dict) else None)
+            )
+            if event_case_id == case_id:
+                # Convert to PipelineEvent if needed
+                if hasattr(event, "model_dump"):
+                    # Already a PipelineEvent
+                    self._events.append(event)
+                elif isinstance(event, dict):
+                    # Convert ledger's dict format to PipelineEvent
+                    try:
+                        details = event.get("details", {})
+                        pe = PipelineEvent(
+                            event_type=event.get("event_type", "UNKNOWN"),
+                            case_id=event.get("operator_id", "UNKNOWN"),
+                            evidence_id=details.get("evidence_id"),
+                            stage=details.get("stage", "unknown"),
+                            payload={k: v for k, v in details.items() 
+                                     if k not in ("evidence_id", "stage", "timestamp_utc")},
+                        )
+                        self._events.append(pe)
+                    except Exception:
+                        # If conversion fails, skip
+                        pass
+
+        shared_sink.subscribe(_filtered_callback)
+        self._subscription_active = True
 
     def view(self) -> JobView:
         with self.lock:
-            events = list(self.sink.events)
+            events = list(self._events)
         return JobView(
             job_id=self.job_id,
             status=self.status,
@@ -101,16 +148,20 @@ class _Job:
         """Blocking; called from a worker thread or directly for ``wait=true``."""
         self.status = JobStatus.RUNNING
 
+        # Subscribe to shared sink to capture this job's events
+        self._subscribe_to_shared_sink()
+
         def progress(n: int) -> None:
             self.bytes_read = n
 
         try:
+            shared_sink = get_event_sink()
             self.result = run_pipeline(
                 self.request.source_path,
                 case_id=self.request.case_id,
                 operator_id=self.request.operator_id,
                 out_dir=self.request.out_dir,
-                sink=self.sink,
+                sink=shared_sink,
                 device_info=self.request.device_info,
                 encrypt=self.request.encrypt,
                 progress_cb=progress,
@@ -194,7 +245,7 @@ async def get_result(job_id: str) -> PipelineResult:
 async def get_events(job_id: str) -> list[PipelineEvent]:
     job = store.get(job_id)
     with job.lock:
-        return list(job.sink.events)
+        return list(job._events)
 
 
 class DetectRequest(BaseModel):
