@@ -46,6 +46,17 @@ class PhoenixCryptoProvider(CryptoProvider):
                 "kek": kek
             }
 
+    def _get_key_for_case(self, case_id: str) -> bytes:
+        """
+        Retrieves the Data Encryption Key (DEK) for a case.
+        Used by the pipeline runner for whole-image streaming encryption.
+        """
+        self._ensure_case_initialized(case_id)
+        record = self._case_key_records[case_id]
+        kek = record["kek"]
+        dek = unwrap_dek(record["wrapped_dek"], record["nonce"], kek)
+        return dek
+
     def _unwrap_dek_for_case(self, case_id: str) -> bytearray:
         """Unwraps the DEK for a case just-in-time."""
         self._ensure_case_initialized(case_id)
