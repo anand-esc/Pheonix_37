@@ -1,0 +1,287 @@
+{
+  "disclaimer": "These are observed facts produced by an automated pipeline. They are input for a certificate draft under BSA 2023 section 63; they are not a certificate, are unsigned, and require review and signature by the person responsible for the device or its operation.",
+  "generated_utc": "2026-09-05T06:23:04.435321Z",
+  "source": {
+    "case_id": "CASE-DEMO-001",
+    "evidence_id": "ev-acq-711f8ebe-32c2-4072-bbfc-b0b10da8df93",
+    "source_path": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\dvr_image.img",
+    "source_device_info": "simulated Hikvision-shaped DVR disk, 32 MiB, seed 2026",
+    "declared_vendor": "Hikvision",
+    "vendor_validation_status": "VALIDATED",
+    "detected_signature": "hikvision_master_sector@0x210",
+    "detection_confidence": 0.95,
+    "detection_rationale": [
+      "Hikvision: hikvision_master_sector@0x210, hikvision_hikbtree@0x400 (unexpected offset); summed weight 0.95",
+      "NAL scan: 7/32 windows contain valid Annex-B start codes (density 0.22), codec guess h264 (h264 votes 48, h265 votes 0)",
+      "decision: Hikvision (VALIDATED), confidence 0.95"
+    ]
+  },
+  "custody": {
+    "operator_id": "op-amritansh",
+    "acquisition_id": "acq-711f8ebe-32c2-4072-bbfc-b0b10da8df93",
+    "started_utc": "2026-09-05T06:23:03.663671Z",
+    "finished_utc": "2026-09-05T06:23:03.836215Z",
+    "acquisition_status": "COMPLETED",
+    "notes": []
+  },
+  "method": {
+    "read_only_acquisition": true,
+    "description": "The source was opened read-only and copied byte for byte into an image file. SHA-256 and MD5 were computed on the plaintext stream while it was read, before any other processing. The written image was re-read and re-hashed to confirm the copy. Recordings were then located by their bitstream structure, not by any index on the source, so recordings deleted from the recorder's index are recovered along with the rest.",
+    "adapter": "backend.adapters.generic_carver.GenericCarverAdapter",
+    "adapter_is_fallback": true,
+    "adapter_reason": "backend.adapters.hikvision.HikvisionAdapter unavailable (vendor adapter is a stub (Sibam: WFS signature detection pending)); using generic carver",
+    "recovery_method": "annexb_nal_carve",
+    "stages": [
+      "intake",
+      "detection",
+      "recovery",
+      "encryption"
+    ]
+  },
+  "tooling": {
+    "tool_name": "Phoenix",
+    "tool_version": "0.1.0",
+    "python_version": "3.12.5",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "run_started_utc": "2026-09-05T06:23:03.663671Z",
+    "run_finished_utc": "2026-09-05T06:23:04.329936Z"
+  },
+  "integrity": {
+    "image_sha256": "768e8d4b7d8def560803a6350f07f9c8240cb02351df88af2e1f8c6fa5fa556b",
+    "image_md5": "38d700ab355afcd069ee6694ed73ff44",
+    "image_bytes": 33554432,
+    "verification_sha256": "768e8d4b7d8def560803a6350f07f9c8240cb02351df88af2e1f8c6fa5fa556b",
+    "verification_matched": true,
+    "hash_lineage": [
+      {
+        "stage": "intake",
+        "algorithm": "SHA-256",
+        "hex_digest": "768e8d4b7d8def560803a6350f07f9c8240cb02351df88af2e1f8c6fa5fa556b",
+        "timestamp_utc": "2026-09-05T06:23:03.792840Z"
+      },
+      {
+        "stage": "intake",
+        "algorithm": "MD5",
+        "hex_digest": "38d700ab355afcd069ee6694ed73ff44",
+        "timestamp_utc": "2026-09-05T06:23:03.792840Z"
+      },
+      {
+        "stage": "intake_verify",
+        "algorithm": "SHA-256",
+        "hex_digest": "768e8d4b7d8def560803a6350f07f9c8240cb02351df88af2e1f8c6fa5fa556b",
+        "timestamp_utc": "2026-09-05T06:23:03.836215Z"
+      },
+      {
+        "stage": "pre_encryption/fragment_0000",
+        "algorithm": "SHA-256",
+        "hex_digest": "c59cc0052616c6756b744c676c8ab8f602d075521229b396a64379078d893f91",
+        "timestamp_utc": "2026-09-05T06:23:04.318259Z"
+      },
+      {
+        "stage": "pre_encryption/fragment_0001",
+        "algorithm": "SHA-256",
+        "hex_digest": "65b9b467decbec9496cd643e503cad601e51c86292c7466321a9d74f285d5194",
+        "timestamp_utc": "2026-09-05T06:23:04.318259Z"
+      },
+      {
+        "stage": "pre_encryption/fragment_0002",
+        "algorithm": "SHA-256",
+        "hex_digest": "ce274967a87bc92e22eded5074795a0b60c9dce5d291222e98bf75d2f4fd54bc",
+        "timestamp_utc": "2026-09-05T06:23:04.320726Z"
+      },
+      {
+        "stage": "pre_encryption/fragment_0003",
+        "algorithm": "SHA-256",
+        "hex_digest": "0fc569d439301f93c6a76c9180373241859470caadca01983878c64dbd1600c0",
+        "timestamp_utc": "2026-09-05T06:23:04.321750Z"
+      },
+      {
+        "stage": "pre_encryption/fragment_0004",
+        "algorithm": "SHA-256",
+        "hex_digest": "dc03aa6681e4a2bf843de39fa6d8beee086b2dbec2230736445928862b783645",
+        "timestamp_utc": "2026-09-05T06:23:04.323731Z"
+      },
+      {
+        "stage": "pre_encryption/fragment_0005",
+        "algorithm": "SHA-256",
+        "hex_digest": "473a9686267681976ec7db333c90c6f3b1196f441a2024a5648c9b920e28a78f",
+        "timestamp_utc": "2026-09-05T06:23:04.325052Z"
+      },
+      {
+        "stage": "pre_encryption/fragment_0006",
+        "algorithm": "SHA-256",
+        "hex_digest": "bafef4a9c7214e1678676296328aaefb47a0a5dbea631bc8c247998770d0f2d6",
+        "timestamp_utc": "2026-09-05T06:23:04.326265Z"
+      },
+      {
+        "stage": "pre_encryption/fragment_0007",
+        "algorithm": "SHA-256",
+        "hex_digest": "bb0a10a9cd0a6b3e3e5583f78ad6fe0cbeb6427c74197a7ea296cd3194975813",
+        "timestamp_utc": "2026-09-05T06:23:04.328429Z"
+      }
+    ],
+    "recovery_hash": "01b574422b990b058094355a771d0d7d120d4e5a641d265b19109149cc618725",
+    "encrypted_artifacts": 8,
+    "image_encrypted": true,
+    "statement": "The image on disk was re-hashed after writing and matched the hash computed while reading the source, so the copy is identical to what was read. Each recovered fragment was hashed from the image before encryption; any later change to a fragment or to the image is detectable by recomputing these digests."
+  },
+  "contents": {
+    "fragment_count": 8,
+    "channel_count": 3,
+    "estimated_footage_seconds": 56.44,
+    "channels": [
+      {
+        "channel_id": "probable-ch01",
+        "declared_resolution": "1280x720",
+        "declared_frame_rate": 25.0,
+        "rationale": "4 fragment(s) share SPS cffa6807e5123e7d; resolution 1280x720; declared 25 fps; this is a probable channel, not a vendor channel number: two cameras configured identically would appear here as one"
+      },
+      {
+        "channel_id": "probable-ch02",
+        "declared_resolution": "704x576",
+        "declared_frame_rate": 12.5,
+        "rationale": "2 fragment(s) share SPS 86e1eee4a5e549d2; resolution 704x576; declared 12.5 fps; this is a probable channel, not a vendor channel number: two cameras configured identically would appear here as one"
+      },
+      {
+        "channel_id": "probable-ch03",
+        "declared_resolution": "704x576",
+        "declared_frame_rate": null,
+        "rationale": "2 fragment(s) share SPS 25d554f36cd7e61e; resolution 704x576; declared no frame rate; this is a probable channel, not a vendor channel number: two cameras configured identically would appear here as one"
+      }
+    ],
+    "fragments": [
+      {
+        "fragment_id": "frag-c59cc0052616c675",
+        "byte_offset_start": 1048600,
+        "byte_offset_end": 1334281,
+        "sha256": "c59cc0052616c6756b744c676c8ab8f602d075521229b396a64379078d893f91",
+        "codec_info": "H.264 Baseline (profile_idc 66) level 3.0 1280x720 @ 25 fps (declared)",
+        "recovery_method": "annexb_nal_carve",
+        "confidence_score": 0.95,
+        "confidence_rationale": "base 0.25: contiguous run of valid Annex-B NAL units; +0.25: SPS parsed, resolution and profile known; +0.10: PPS present; +0.15: first picture is an IDR/IRAP (decodable start); +0.10: 150/181 NALs carry picture data; +0.10: ended by eos; = 0.95",
+        "channel_id": "probable-ch01",
+        "estimated_seconds": 6.0,
+        "duration_basis": "declared_fps",
+        "complete": true
+      },
+      {
+        "fragment_id": "frag-65b9b467decbec94",
+        "byte_offset_start": 2097176,
+        "byte_offset_end": 2390586,
+        "sha256": "65b9b467decbec9496cd643e503cad601e51c86292c7466321a9d74f285d5194",
+        "codec_info": "H.264 Baseline (profile_idc 66) level 3.0 1280x720 @ 25 fps (declared)",
+        "recovery_method": "annexb_nal_carve",
+        "confidence_score": 0.95,
+        "confidence_rationale": "base 0.25: contiguous run of valid Annex-B NAL units; +0.25: SPS parsed, resolution and profile known; +0.10: PPS present; +0.15: first picture is an IDR/IRAP (decodable start); +0.10: 150/181 NALs carry picture data; +0.10: ended by eos; = 0.95",
+        "channel_id": "probable-ch01",
+        "estimated_seconds": 6.0,
+        "duration_basis": "declared_fps",
+        "complete": true
+      },
+      {
+        "fragment_id": "frag-ce274967a87bc92e",
+        "byte_offset_start": 3145752,
+        "byte_offset_end": 3433631,
+        "sha256": "ce274967a87bc92e22eded5074795a0b60c9dce5d291222e98bf75d2f4fd54bc",
+        "codec_info": "H.264 Baseline (profile_idc 66) level 3.0 704x576 @ 12.5 fps (declared)",
+        "recovery_method": "annexb_nal_carve",
+        "confidence_score": 0.95,
+        "confidence_rationale": "base 0.25: contiguous run of valid Annex-B NAL units; +0.25: SPS parsed, resolution and profile known; +0.10: PPS present; +0.15: first picture is an IDR/IRAP (decodable start); +0.10: 150/181 NALs carry picture data; +0.10: ended by eos; = 0.95",
+        "channel_id": "probable-ch02",
+        "estimated_seconds": 12.0,
+        "duration_basis": "declared_fps",
+        "complete": true
+      },
+      {
+        "fragment_id": "frag-0fc569d439301f93",
+        "byte_offset_start": 4194328,
+        "byte_offset_end": 4486664,
+        "sha256": "0fc569d439301f93c6a76c9180373241859470caadca01983878c64dbd1600c0",
+        "codec_info": "H.264 Baseline (profile_idc 66) level 3.0 704x576",
+        "recovery_method": "annexb_nal_carve",
+        "confidence_score": 0.9,
+        "confidence_rationale": "base 0.25: contiguous run of valid Annex-B NAL units; +0.25: SPS parsed, resolution and profile known; +0.10: PPS present; +0.15: first picture is an IDR/IRAP (decodable start); +0.10: 150/180 NALs carry picture data; +0.05: ended by zero filler; = 0.90",
+        "channel_id": "probable-ch03",
+        "estimated_seconds": 6.0,
+        "duration_basis": "assumed_fps",
+        "complete": false
+      },
+      {
+        "fragment_id": "frag-dc03aa6681e4a2bf",
+        "byte_offset_start": 5242904,
+        "byte_offset_end": 5535531,
+        "sha256": "dc03aa6681e4a2bf843de39fa6d8beee086b2dbec2230736445928862b783645",
+        "codec_info": "H.264 Baseline (profile_idc 66) level 3.0 1280x720 @ 25 fps (declared)",
+        "recovery_method": "annexb_nal_carve",
+        "confidence_score": 0.95,
+        "confidence_rationale": "base 0.25: contiguous run of valid Annex-B NAL units; +0.25: SPS parsed, resolution and profile known; +0.10: PPS present; +0.15: first picture is an IDR/IRAP (decodable start); +0.10: 150/181 NALs carry picture data; +0.10: ended by eos; = 0.95",
+        "channel_id": "probable-ch01",
+        "estimated_seconds": 6.0,
+        "duration_basis": "declared_fps",
+        "complete": true
+      },
+      {
+        "fragment_id": "frag-473a968626768197",
+        "byte_offset_start": 6291480,
+        "byte_offset_end": 6583180,
+        "sha256": "473a9686267681976ec7db333c90c6f3b1196f441a2024a5648c9b920e28a78f",
+        "codec_info": "H.264 Baseline (profile_idc 66) level 3.0 1280x720 @ 25 fps (declared)",
+        "recovery_method": "annexb_nal_carve",
+        "confidence_score": 0.95,
+        "confidence_rationale": "base 0.25: contiguous run of valid Annex-B NAL units; +0.25: SPS parsed, resolution and profile known; +0.10: PPS present; +0.15: first picture is an IDR/IRAP (decodable start); +0.10: 150/181 NALs carry picture data; +0.10: ended by eos; = 0.95",
+        "channel_id": "probable-ch01",
+        "estimated_seconds": 6.0,
+        "duration_basis": "declared_fps",
+        "complete": true
+      },
+      {
+        "fragment_id": "frag-bafef4a9c7214e16",
+        "byte_offset_start": 7340056,
+        "byte_offset_end": 7633457,
+        "sha256": "bafef4a9c7214e1678676296328aaefb47a0a5dbea631bc8c247998770d0f2d6",
+        "codec_info": "H.264 Baseline (profile_idc 66) level 3.0 704x576 @ 12.5 fps (declared)",
+        "recovery_method": "annexb_nal_carve",
+        "confidence_score": 0.95,
+        "confidence_rationale": "base 0.25: contiguous run of valid Annex-B NAL units; +0.25: SPS parsed, resolution and profile known; +0.10: PPS present; +0.15: first picture is an IDR/IRAP (decodable start); +0.10: 150/181 NALs carry picture data; +0.10: ended by eos; = 0.95",
+        "channel_id": "probable-ch02",
+        "estimated_seconds": 12.0,
+        "duration_basis": "declared_fps",
+        "complete": true
+      },
+      {
+        "fragment_id": "frag-bb0a10a9cd0a6b3e",
+        "byte_offset_start": 8388632,
+        "byte_offset_end": 8508632,
+        "sha256": "bb0a10a9cd0a6b3e3e5583f78ad6fe0cbeb6427c74197a7ea296cd3194975813",
+        "codec_info": "H.264 Baseline (profile_idc 66) level 3.0 704x576",
+        "recovery_method": "annexb_nal_carve",
+        "confidence_score": 0.8,
+        "confidence_rationale": "base 0.25: contiguous run of valid Annex-B NAL units; +0.25: SPS parsed, resolution and profile known; +0.10: PPS present; +0.15: first picture is an IDR/IRAP (decodable start); +0.10: 61/75 NALs carry picture data; -0.05: ended by end of data; = 0.80",
+        "channel_id": "probable-ch03",
+        "estimated_seconds": 2.44,
+        "duration_basis": "assumed_fps",
+        "complete": false
+      }
+    ]
+  },
+  "limitations": [
+    "The source was classified as Hikvision (VALIDATED), but no validated native parser for it was used in this run: backend.adapters.hikvision.HikvisionAdapter unavailable (vendor adapter is a stub (Sibam: WFS signature detection pending)); using generic carver. Recordings were recovered by generic bitstream carving, which reads the video structure itself and not the recorder's own index.",
+    "No wall-clock time is recoverable from the video bitstream alone. Any date or time in this material must come from the recorder's own index or from the operator, and the recorder's clock should be compared with a reference clock before times are relied on.",
+    "Order is the order fragments appear in the image, which is the recording order only if the recorder had not wrapped around and started overwriting.",
+    "No wall-clock time is available from a bare elementary stream; all times are relative to the start of their own channel.",
+    "2 of 8 fragment(s) have no declared frame rate; their durations use the assumed rate and would scale linearly with the real one.",
+    "2 fragment(s) do not end at an end-of-stream marker, so footage may be missing at their tail.",
+    "2 recording(s) declare no frame rate; their durations assume 25 frames per second and scale directly with the true rate.",
+    "2 recording(s) do not end at an end-of-stream marker, so material may be missing from their end.",
+    "Confidence scores are structural: they describe how completely a recording was reconstructed, not whether its content is authentic."
+  ],
+  "signature_block": {
+    "certifying_person_name": "",
+    "designation": "",
+    "responsible_for": "",
+    "place": "",
+    "date": "",
+    "signature": "",
+    "note": "Left blank deliberately. A certificate under BSA 2023 section 63 is valid only when completed and signed by a person occupying a responsible official position in relation to the device or its management."
+  }
+}

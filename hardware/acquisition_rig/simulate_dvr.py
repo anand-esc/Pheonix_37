@@ -29,6 +29,7 @@ from tests.fixtures.build_fixtures import (
     SegmentSpec,
     build_dvr_image,
 )
+from tests.fixtures.hikvision_wfs import build_hikvision_image
 
 DEFAULT_OUT = Path(__file__).resolve().parent / "out"
 DEFAULT_SIZE = 128 * 1024 * 1024
@@ -73,7 +74,20 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--size", type=_parse_size, default=DEFAULT_SIZE, help="e.g. 128M")
     ap.add_argument("--seed", type=int, default=2026)
     ap.add_argument("--vendor", choices=VENDOR_VARIANTS, default="hikvision")
+    ap.add_argument(
+        "--layout",
+        choices=("flat", "wfs"),
+        default="flat",
+        help=(
+            "flat: generic block layout with a vendor header. "
+            "wfs: Hikvision-SHAPED layout (master sector, HIKBTREE index, "
+            "fixed data blocks). Synthetic, not a real filesystem."
+        ),
+    )
     args = ap.parse_args(argv)
+
+    if args.layout == "wfs":
+        return _build_wfs(args)
 
     args.out.mkdir(parents=True, exist_ok=True)
     target = args.out / args.name
@@ -98,6 +112,26 @@ def main(argv: list[str] | None = None) -> int:
         f"segments  : {len(manifest.segments)} "
         f"({deleted} deleted from index, {truncated} truncated)"
     )
+    print(f"manifest  : {target}.manifest.json")
+    return 0
+
+
+def _build_wfs(args) -> int:
+    args.out.mkdir(parents=True, exist_ok=True)
+    target = args.out / args.name
+    t0 = time.perf_counter()
+    manifest = build_hikvision_image(target, size_bytes=args.size, seed=args.seed)
+    dt = time.perf_counter() - t0
+    deleted = sum(1 for r in manifest.recordings if r.deleted)
+    listed = len(manifest.recordings) - deleted
+    print(f"image     : {target} ({args.size / 1024 / 1024:.0f} MiB, {dt:.1f}s)")
+    print(f"sha256    : {manifest.sha256}")
+    print(f"layout    : {manifest.layout} (synthetic, not a real Hikvision filesystem)")
+    print(
+        f"recordings: {len(manifest.recordings)} on disk, {listed} listed in the "
+        f"index, {deleted} deleted from it"
+    )
+    print(f"channels  : {len({r.channel for r in manifest.recordings})}")
     print(f"manifest  : {target}.manifest.json")
     return 0
 

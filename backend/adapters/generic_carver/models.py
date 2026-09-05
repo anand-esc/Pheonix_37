@@ -34,6 +34,11 @@ class StreamInfo(BaseModel):
     width: int
     height: int
     declared_fps: float | None = None  # from SPS VUI timing, when the encoder wrote it
+    chroma_format_idc: int | None = None
+    bit_depth_luma: int | None = None
+    bit_depth_chroma: int | None = None
+    max_sub_layers: int | None = None  # H.265 only
+    temporal_id_nested: bool | None = None  # H.265 only
 
     def describe(self) -> str:
         level = self.level_idc / 30 if self.codec == "H.265" else self.level_idc / 10

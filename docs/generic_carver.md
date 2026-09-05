@@ -124,9 +124,17 @@ that holds every VCL and SEI NAL byte for byte with a 4-byte length prefix
 in place of the Annex-B start code. Nothing is decoded or re-encoded, and the
 raw fragment on disk is never touched, so the evidence hash stays valid; the
 MP4 is a viewing aid and carries its own SHA-256 in `PipelineResult.playable`.
-The frame rate is supplied, not measured: elementary streams from recorders
-rarely carry timing, so the wrapper defaults to 25 fps. H.265 fragments are
-listed with a note instead of an MP4.
+H.265 fragments are wrapped the same way into an `hvc1` track whose `hvcC`
+record copies the SPS's 12-byte `profile_tier_level` block verbatim, so the
+configuration record cannot disagree with the bitstream.
+
+The frame rate is supplied, not measured, unless the SPS declares one: the
+wrapper takes `fps` from the caller (25 by default), while the timeline uses
+the rate declared in the SPS VUI when the encoder wrote one.
+
+Not yet verified in a player: the box structure is checked byte for byte by
+tests, but no MP4 produced here has been opened in VLC or ffprobe, because
+neither is installed in the build environment.
 
 ## Known limitations
 

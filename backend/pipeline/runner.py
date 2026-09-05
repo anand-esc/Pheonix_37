@@ -39,6 +39,7 @@ from backend.core.evidence_model import EvidenceItem, HashRecord
 from backend.core.interfaces import CryptoProvider
 from backend.detection.detector import FormatDetector, resolve_adapter
 from backend.detection.models import DetectionReport
+from backend.pipeline.custody import write_custody_facts
 from backend.pipeline.events import EventSink, InMemoryEventSink, PipelineEvent, emit
 
 logger = logging.getLogger("phoenix.pipeline.runner")
@@ -48,6 +49,7 @@ FRAGMENT_DIR = "fragments"
 VAULT_DIR = "vault"
 PLAYABLE_DIR = "playable"
 RESULT_NAME = "pipeline_result.json"
+CUSTODY_NAME = "custody_facts.json"
 TRANSCRIPT_NAME = "run_transcript.json"
 
 
@@ -380,6 +382,7 @@ def run_pipeline(
         timings=timings,
         events=events,
     )
+    write_custody_facts(result, out_dir / CUSTODY_NAME)
     (out_dir / RESULT_NAME).write_text(
         result.model_dump_json(indent=2), encoding="utf-8"
     )
@@ -402,17 +405,6 @@ def _wrap_playable(
     views: list[PlayableView] = []
     for item in exported:
         src = Path(item.out_path)
-        if src.suffix != ".h264":
-            views.append(
-                PlayableView(
-                    fragment_id=ids.get(item.index),
-                    fragment_index=item.index,
-                    fragment_path=item.out_path,
-                    mp4_path=None,
-                    note="only H.264 fragments are wrapped",
-                )
-            )
-            continue
         dst = out_dir / (src.stem + ".mp4")
         try:
             info = wrap_fragment_file(src, dst, fps=fps)

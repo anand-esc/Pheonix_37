@@ -68,6 +68,20 @@ SIGNATURES: tuple[Signature, ...] = (
         ),
     ),
     Signature(
+        name="hikvision_hikbtree",
+        vendor="Hikvision",
+        kind=SignatureKind.VENDOR,
+        pattern=b"HIKBTREE",
+        weight=0.55,
+        validation_status=ValidationStatus.VALIDATED,
+        source_note=(
+            "Tag of the data-block index pages of the Hikvision proprietary "
+            "filesystem, reported in the same public write-ups as the master "
+            "sector magic. Position varies by firmware, so it is matched "
+            "anywhere. Not confirmed against a physical unit on this branch."
+        ),
+    ),
+    Signature(
         name="dahua_dhfs_header",
         vendor="Dahua",
         kind=SignatureKind.VENDOR,

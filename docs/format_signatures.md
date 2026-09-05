@@ -12,6 +12,7 @@ is this, how sure are we, and which adapter should parse it.
 | Name | Vendor | Kind | Pattern | Expected offset | Weight | Status | Verified on device |
 |---|---|---|---|---|---|---|---|
 | `hikvision_master_sector` | Hikvision | vendor | `HIKVISION@HANGZHOU` | 0x210 | 0.90 | VALIDATED (adapter on Hikvision branch) | No |
+| `hikvision_hikbtree` | Hikvision | vendor | `HIKBTREE` | anywhere | 0.55 | VALIDATED | No |
 | `dahua_dhfs_header` | Dahua | vendor | `DHFS4.1` | 0 | 0.85 | VALIDATED (adapter on Dahua branch) | No |
 | `dahua_dhav_frame` | Dahua | vendor | `DHAV` | anywhere | 0.60 | VALIDATED | No |
 | `dahua_dhav_trailer` | Dahua | vendor | `dhav` | anywhere | 0.25 | VALIDATED | No |
