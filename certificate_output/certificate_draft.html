@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Electronic Evidence Certificate Draft — DRAFT</title>
+  <style>
+    /* ── Reset + base ────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Georgia', 'Times New Roman', serif;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #1a1a1a;
+      background: #f5f5f0;
+      padding: 24px;
+    }
+    .page {
+      max-width: 860px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 48px 56px;
+      border: 1px solid #ccc;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.10);
+      position: relative;
+    }
+
+    /* ── DRAFT watermark ─────────────────────────────────────────────────── */
+    .draft-watermark {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 0;
+    }
+    .draft-watermark span {
+      font-size: 120px;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      color: rgba(220,50,50,0.08);
+      transform: rotate(-35deg);
+      user-select: none;
+    }
+
+    /* ── DRAFT banner (top of page) ──────────────────────────────────────── */
+    .draft-banner {
+      background: #b91c1c;
+      color: #fff;
+      text-align: center;
+      padding: 12px 24px;
+      font-family: 'Arial', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 32px;
+      border-radius: 4px;
+    }
+
+    /* ── Document header ─────────────────────────────────────────────────── */
+    .doc-header { text-align: center; margin-bottom: 32px; }
+    .doc-header .jurisdiction {
+      font-family: 'Arial', sans-serif;
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #555;
+      margin-bottom: 8px;
+    }
+    .doc-header h1 {
+      font-size: 18px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 4px;
+    }
+    .doc-header .subtitle {
+      font-size: 12px;
+      color: #555;
+      font-style: italic;
+    }
+    .doc-header .ref-line {
+      margin-top: 12px;
+      font-size: 11px;
+      color: #333;
+    }
+    hr.divider {
+      border: none;
+      border-top: 2px solid #1a1a1a;
+      margin: 24px 0;
+    }
+    hr.divider-thin {
+      border: none;
+      border-top: 1px solid #ccc;
+      margin: 16px 0;
+    }
+
+    /* ── Sections ────────────────────────────────────────────────────────── */
+    .section { margin-bottom: 28px; }
+    .section-title {
+      font-family: 'Arial', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #1a1a1a;
+      background: #f0f0e8;
+      padding: 5px 10px;
+      border-left: 4px solid #333;
+      margin-bottom: 12px;
+    }
+    .field-grid {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 4px 12px;
+    }
+    .field-label {
+      font-weight: 600;
+      font-size: 12px;
+      color: #333;
+      padding: 3px 0;
+      border-bottom: 1px dotted #ddd;
+    }
+    .field-value {
+      font-size: 12px;
+      padding: 3px 0;
+      border-bottom: 1px dotted #ddd;
+      word-break: break-all;
+    }
+    .field-value.mono {
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      word-break: break-all;
+    }
+    .field-value.status-validated { color: #166534; font-weight: 600; }
+    .field-value.status-fallback  { color: #92400e; font-weight: 600; }
+    .field-value.status-research  { color: #6d28d9; font-weight: 600; }
+    .field-value.status-ok { color: #166534; font-weight: 600; }
+    .field-value.status-fail { color: #991b1b; font-weight: 600; }
+
+    /* ── Hash lineage table ──────────────────────────────────────────────── */
+    table.hash-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+      font-family: 'Arial', sans-serif;
+      margin-top: 8px;
+    }
+    table.hash-table th {
+      background: #e8e8e0;
+      text-align: left;
+      padding: 5px 8px;
+      font-weight: 700;
+      border: 1px solid #ccc;
+    }
+    table.hash-table td {
+      padding: 4px 8px;
+      border: 1px solid #ddd;
+      vertical-align: top;
+    }
+    table.hash-table tr:nth-child(even) td { background: #fafaf8; }
+    .mono-small { font-family: 'Courier New', monospace; font-size: 10px; word-break: break-all; }
+
+    /* ── Limitations ─────────────────────────────────────────────────────── */
+    .limitations-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .limitations-list li {
+      padding: 6px 0 6px 18px;
+      border-bottom: 1px dotted #ddd;
+      position: relative;
+      font-size: 12px;
+    }
+    .limitations-list li::before {
+      content: '⚠';
+      position: absolute;
+      left: 0;
+      color: #b45309;
+      font-size: 11px;
+    }
+
+    /* ── Fragment table ──────────────────────────────────────────────────── */
+    table.fragment-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+      margin-top: 8px;
+      font-family: 'Arial', sans-serif;
+    }
+    table.fragment-table th {
+      background: #e8e8e0;
+      padding: 5px 6px;
+      text-align: left;
+      border: 1px solid #ccc;
+      font-weight: 700;
+    }
+    table.fragment-table td {
+      padding: 4px 6px;
+      border: 1px solid #ddd;
+      vertical-align: top;
+    }
+    table.fragment-table tr:nth-child(even) td { background: #fafaf8; }
+    .confidence-high { color: #166534; font-weight: 700; }
+    .confidence-med  { color: #92400e; }
+    .confidence-low  { color: #991b1b; }
+
+    /* ── Legal basis ─────────────────────────────────────────────────────── */
+    .legal-basis {
+      background: #f8f8f0;
+      border: 1px solid #ddd;
+      border-left: 4px solid #555;
+      padding: 12px 16px;
+      font-size: 11.5px;
+      line-height: 1.7;
+      margin-top: 8px;
+    }
+
+    /* ── Disclaimer box ──────────────────────────────────────────────────── */
+    .disclaimer-box {
+      background: #fff8e1;
+      border: 1px solid #f59e0b;
+      border-radius: 4px;
+      padding: 12px 16px;
+      font-size: 11.5px;
+      font-style: italic;
+      color: #78350f;
+      margin-bottom: 24px;
+    }
+
+    /* ── Signature block ─────────────────────────────────────────────────── */
+    .sig-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px 40px;
+      margin-top: 8px;
+    }
+    .sig-field { border-bottom: 1px solid #333; padding: 4px 0; min-height: 28px; font-size: 12px; }
+    .sig-label { font-size: 10px; color: #555; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.1em; }
+    .sig-note {
+      font-size: 11px;
+      font-style: italic;
+      color: #555;
+      margin-top: 16px;
+      border-top: 1px dotted #ccc;
+      padding-top: 10px;
+    }
+
+    /* ── Footer ──────────────────────────────────────────────────────────── */
+    .doc-footer {
+      margin-top: 32px;
+      font-family: 'Arial', sans-serif;
+      font-size: 10px;
+      color: #888;
+      text-align: center;
+      border-top: 1px solid #ddd;
+      padding-top: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="draft-watermark"><span>DRAFT</span></div>
+  <div class="page">
+
+    <!-- DRAFT Banner -->
+    <div class="draft-banner">
+      ⚠ DRAFT — REQUIRES HUMAN REVIEW AND SIGNATURE — NOT A VALID CERTIFICATE ⚠
+    </div>
+
+    <!-- Document Header -->
+    <div class="doc-header">
+      <div class="jurisdiction">Bharatiya Sakshya Adhiniyam 2023 — Section 63</div>
+      <h1>Electronic Evidence Certificate Draft</h1>
+      <div class="subtitle">Certificate Draft — Pending Review and Signature by Responsible Person</div>
+      <div class="ref-line">
+        Draft Reference: DEMO-2026-001 &nbsp;|&nbsp;
+        Generated: 2026-09-06 04:47:54 UTC &nbsp;|&nbsp;
+        Tool: Phoenix 0.1.0
+      </div>
+    </div>
+    <hr class="divider" />
+
+    <!-- Disclaimer box -->
+    <div class="disclaimer-box">
+      These are observed facts produced by an automated pipeline. They are input for a certificate draft under BSA 2023 section 63; they are not a certificate, are unsigned, and require review and signature by the person responsible for the device or its operation.
+    </div>
+
+    <!-- ═══ PART A — CUSTODIAN / OPERATOR FIELDS ═══════════════════════════ -->
+    <div class="section">
+      <div class="section-title">Part A — Device Identity and Custody</div>
+      <div class="field-grid">
+        <div class="field-label">Case ID</div>
+        <div class="field-value">CASE-DEMO-001</div>
+
+        <div class="field-label">Evidence ID</div>
+        <div class="field-value mono">ev-acq-711f8ebe-32c2-4072-bbfc-b0b10da8df93</div>
+
+        <div class="field-label">Source Device</div>
+        <div class="field-value">simulated Hikvision-shaped DVR disk, 32 MiB, seed 2026</div>
+
+        <div class="field-label">Source Path</div>
+        <div class="field-value mono">D:\sih\Pheonix_37\hardware\acquisition_rig\out\dvr_image.img</div>
+
+        <div class="field-label">Declared Vendor</div>
+        <div class="field-value">Hikvision</div>
+
+        <div class="field-label">Vendor Support Status</div>
+        <div class="field-value
+          status-validated
+          ">
+          Native parser, tested against synthetic and reference samples (validated prototype)
+        </div>
+
+        <div class="field-label">Detection Confidence</div>
+        <div class="field-value">95%</div>
+
+        <div class="field-label">Detection Rationale</div>
+        <div class="field-value">
+          <ul style="list-style:disc; padding-left:16px; margin:0;">
+          
+            <li>Hikvision: hikvision_master_sector@0x210, hikvision_hikbtree@0x400 (unexpected offset); summed weight 0.95</li>
+          
+            <li>NAL scan: 7/32 windows contain valid Annex-B start codes (density 0.22), codec guess h264 (h264 votes 48, h265 votes 0)</li>
+          
+            <li>decision: Hikvision (VALIDATED), confidence 0.95</li>
+          
+          </ul>
+        </div>
+
+        <div class="field-label">Acquisition Operator</div>
+        <div class="field-value">op-amritansh</div>
+
+        <div class="field-label">Acquisition ID</div>
+        <div class="field-value mono">acq-711f8ebe-32c2-4072-bbfc-b0b10da8df93</div>
+
+        <div class="field-label">Acquisition Started (UTC)</div>
+        <div class="field-value">2026-09-05 06:23:03</div>
+
+        <div class="field-label">Acquisition Finished (UTC)</div>
+        <div class="field-value">2026-09-05 06:23:03</div>
+
+        <div class="field-label">Acquisition Status</div>
+        <div class="field-value">COMPLETED</div>
+
+        
+
+        <div class="field-label">Read-Only Acquisition</div>
+        <div class="field-value status-ok">
+          Yes
+        </div>
+
+        <div class="field-label">Method</div>
+        <div class="field-value">The source was opened read-only and copied byte for byte into an image file. SHA-256 and MD5 were computed on the plaintext stream while it was read, before any other processing. The written image was re-read and re-hashed to confirm the copy. Recordings were then located by their bitstream structure, not by any index on the source, so recordings deleted from the recorder&#39;s index are recovered along with the rest.</div>
+
+        <div class="field-label">Adapter Used</div>
+        <div class="field-value mono">backend.adapters.generic_carver.GenericCarverAdapter</div>
+
+        <div class="field-label">Generic Fallback?</div>
+        <div class="field-value status-fallback">
+          Yes — backend.adapters.hikvision.HikvisionAdapter unavailable (vendor adapter is a stub (Sibam: WFS signature detection pending)); using generic carver
+        </div>
+
+        <div class="field-label">Pipeline Stages</div>
+        <div class="field-value">intake → detection → recovery → encryption</div>
+
+        <div class="field-label">Run Platform</div>
+        <div class="field-value">Windows-11-10.0.26200-SP0 (Python 3.12.5)</div>
+      </div>
+    </div>
+
+    <!-- ═══ PART B — EXPERT / TECHNICAL FIELDS ════════════════════════════ -->
+    <div class="section">
+      <div class="section-title">Part B — Technical Integrity and Recovery</div>
+      <div class="field-grid">
+        <div class="field-label">Source Image SHA-256</div>
+        <div class="field-value mono">768e8d4b7d8def560803a6350f07f9c8240cb02351df88af2e1f8c6fa5fa556b</div>
+
+        <div class="field-label">Source Image MD5</div>
+        <div class="field-value mono">38d700ab355afcd069ee6694ed73ff44</div>
+
+        <div class="field-label">Image Size</div>
+        <div class="field-value">32.0 MiB (33554432 bytes)</div>
+
+        <div class="field-label">Verification Matched</div>
+        <div class="field-value status-ok">
+          YES — copy verified against source hash
+        </div>
+
+        <div class="field-label">Integrity Statement</div>
+        <div class="field-value">The image on disk was re-hashed after writing and matched the hash computed while reading the source, so the copy is identical to what was read. Each recovered fragment was hashed from the image before encryption; any later change to a fragment or to the image is detectable by recomputing these digests.</div>
+
+        
+        <div class="field-label">Recovery Hash</div>
+        <div class="field-value mono">01b574422b990b058094355a771d0d7d120d4e5a641d265b19109149cc618725</div>
+        
+
+        <div class="field-label">Encrypted Artifacts</div>
+        <div class="field-value">8 fragment(s) + full image</div>
+
+        <div class="field-label">Recovered Fragments</div>
+        <div class="field-value">8</div>
+
+        <div class="field-label">Probable Channels</div>
+        <div class="field-value">3</div>
+
+        <div class="field-label">Estimated Footage</div>
+        <div class="field-value">
+          
+            56.44 seconds
+          
+        </div>
+      </div>
+
+      <!-- Hash Lineage -->
+      <div style="margin-top:16px;">
+        <div class="field-label" style="border:none; margin-bottom:6px;">Hash Lineage (all pipeline stages, plaintext before encryption)</div>
+        <table class="hash-table">
+          <thead>
+            <tr><th>Stage</th><th>Algorithm</th><th>Hex Digest</th><th>Timestamp (UTC)</th></tr>
+          </thead>
+          <tbody>
+            
+            <tr>
+              <td>intake</td>
+              <td>SHA-256</td>
+              <td class="mono-small">768e8d4b7d8def560803a6350f07f9c8240cb02351df88af2e1f8c6fa5fa556b</td>
+              <td>2026-09-05 06:23:03</td>
+            </tr>
+            
+            <tr>
+              <td>intake</td>
+              <td>MD5</td>
+              <td class="mono-small">38d700ab355afcd069ee6694ed73ff44</td>
+              <td>2026-09-05 06:23:03</td>
+            </tr>
+            
+            <tr>
+              <td>intake_verify</td>
+              <td>SHA-256</td>
+              <td class="mono-small">768e8d4b7d8def560803a6350f07f9c8240cb02351df88af2e1f8c6fa5fa556b</td>
+              <td>2026-09-05 06:23:03</td>
+            </tr>
+            
+            <tr>
+              <td>pre_encryption/fragment_0000</td>
+              <td>SHA-256</td>
+              <td class="mono-small">c59cc0052616c6756b744c676c8ab8f602d075521229b396a64379078d893f91</td>
+              <td>2026-09-05 06:23:04</td>
+            </tr>
+            
+            <tr>
+              <td>pre_encryption/fragment_0001</td>
+              <td>SHA-256</td>
+              <td class="mono-small">65b9b467decbec9496cd643e503cad601e51c86292c7466321a9d74f285d5194</td>
+              <td>2026-09-05 06:23:04</td>
+            </tr>
+            
+            <tr>
+              <td>pre_encryption/fragment_0002</td>
+              <td>SHA-256</td>
+              <td class="mono-small">ce274967a87bc92e22eded5074795a0b60c9dce5d291222e98bf75d2f4fd54bc</td>
+              <td>2026-09-05 06:23:04</td>
+            </tr>
+            
+            <tr>
+              <td>pre_encryption/fragment_0003</td>
+              <td>SHA-256</td>
+              <td class="mono-small">0fc569d439301f93c6a76c9180373241859470caadca01983878c64dbd1600c0</td>
+              <td>2026-09-05 06:23:04</td>
+            </tr>
+            
+            <tr>
+              <td>pre_encryption/fragment_0004</td>
+              <td>SHA-256</td>
+              <td class="mono-small">dc03aa6681e4a2bf843de39fa6d8beee086b2dbec2230736445928862b783645</td>
+              <td>2026-09-05 06:23:04</td>
+            </tr>
+            
+            <tr>
+              <td>pre_encryption/fragment_0005</td>
+              <td>SHA-256</td>
+              <td class="mono-small">473a9686267681976ec7db333c90c6f3b1196f441a2024a5648c9b920e28a78f</td>
+              <td>2026-09-05 06:23:04</td>
+            </tr>
+            
+            <tr>
+              <td>pre_encryption/fragment_0006</td>
+              <td>SHA-256</td>
+              <td class="mono-small">bafef4a9c7214e1678676296328aaefb47a0a5dbea631bc8c247998770d0f2d6</td>
+              <td>2026-09-05 06:23:04</td>
+            </tr>
+            
+            <tr>
+              <td>pre_encryption/fragment_0007</td>
+              <td>SHA-256</td>
+              <td class="mono-small">bb0a10a9cd0a6b3e3e5583f78ad6fe0cbeb6427c74197a7ea296cd3194975813</td>
+              <td>2026-09-05 06:23:04</td>
+            </tr>
+            
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Channel Summary -->
+      
+      <div style="margin-top:16px;">
+        <div class="field-label" style="border:none; margin-bottom:6px;">Channel Summary</div>
+        <table class="fragment-table">
+          <thead>
+            <tr><th>Channel ID</th><th>Resolution</th><th>Frame Rate</th><th>Rationale</th></tr>
+          </thead>
+          <tbody>
+            
+            <tr>
+              <td>probable-ch01</td>
+              <td>1280x720</td>
+              <td>25.0 fps</td>
+              <td style="font-size:10px;">4 fragment(s) share SPS cffa6807e5123e7d; resolution 1280x720; declared 25 fps; this is a probable channel, not a vendor channel number: two cameras configured identically would appear here as one</td>
+            </tr>
+            
+            <tr>
+              <td>probable-ch02</td>
+              <td>704x576</td>
+              <td>12.5 fps</td>
+              <td style="font-size:10px;">2 fragment(s) share SPS 86e1eee4a5e549d2; resolution 704x576; declared 12.5 fps; this is a probable channel, not a vendor channel number: two cameras configured identically would appear here as one</td>
+            </tr>
+            
+            <tr>
+              <td>probable-ch03</td>
+              <td>704x576</td>
+              <td>[not declared]</td>
+              <td style="font-size:10px;">2 fragment(s) share SPS 25d554f36cd7e61e; resolution 704x576; declared no frame rate; this is a probable channel, not a vendor channel number: two cameras configured identically would appear here as one</td>
+            </tr>
+            
+          </tbody>
+        </table>
+      </div>
+      
+
+      <!-- Fragment Inventory -->
+      
+      <div style="margin-top:16px;">
+        <div class="field-label" style="border:none; margin-bottom:6px;">Recovered Fragment Inventory</div>
+        <table class="fragment-table">
+          <thead>
+            <tr>
+              <th>#</th><th>Fragment ID</th><th>Byte Range</th><th>Codec</th>
+              <th>Channel</th><th>Est. Duration</th><th>Confidence</th><th>SHA-256</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+            
+            <tr>
+              <td>1</td>
+              <td class="mono-small">frag-c59cc0052616c675</td>
+              <td class="mono-small">1048600–1334281</td>
+              <td style="font-size:10px;">H.264 Baseline (profile_idc 66) level 3.0 1280x720 @ 25 fps (declared)</td>
+              <td>probable-ch01</td>
+              <td>6.00s</td>
+              <td class="confidence-high">95%</td>
+              <td class="mono-small">c59cc0052616c6756b744c676c8ab8f602d075521229b396a64379078d893f91</td>
+            </tr>
+            
+            
+            <tr>
+              <td>2</td>
+              <td class="mono-small">frag-65b9b467decbec94</td>
+              <td class="mono-small">2097176–2390586</td>
+              <td style="font-size:10px;">H.264 Baseline (profile_idc 66) level 3.0 1280x720 @ 25 fps (declared)</td>
+              <td>probable-ch01</td>
+              <td>6.00s</td>
+              <td class="confidence-high">95%</td>
+              <td class="mono-small">65b9b467decbec9496cd643e503cad601e51c86292c7466321a9d74f285d5194</td>
+            </tr>
+            
+            
+            <tr>
+              <td>3</td>
+              <td class="mono-small">frag-ce274967a87bc92e</td>
+              <td class="mono-small">3145752–3433631</td>
+              <td style="font-size:10px;">H.264 Baseline (profile_idc 66) level 3.0 704x576 @ 12.5 fps (declared)</td>
+              <td>probable-ch02</td>
+              <td>12.00s</td>
+              <td class="confidence-high">95%</td>
+              <td class="mono-small">ce274967a87bc92e22eded5074795a0b60c9dce5d291222e98bf75d2f4fd54bc</td>
+            </tr>
+            
+            
+            <tr>
+              <td>4</td>
+              <td class="mono-small">frag-0fc569d439301f93</td>
+              <td class="mono-small">4194328–4486664</td>
+              <td style="font-size:10px;">H.264 Baseline (profile_idc 66) level 3.0 704x576</td>
+              <td>probable-ch03</td>
+              <td>6.00s</td>
+              <td class="confidence-high">90%</td>
+              <td class="mono-small">0fc569d439301f93c6a76c9180373241859470caadca01983878c64dbd1600c0</td>
+            </tr>
+            
+            
+            <tr>
+              <td>5</td>
+              <td class="mono-small">frag-dc03aa6681e4a2bf</td>
+              <td class="mono-small">5242904–5535531</td>
+              <td style="font-size:10px;">H.264 Baseline (profile_idc 66) level 3.0 1280x720 @ 25 fps (declared)</td>
+              <td>probable-ch01</td>
+              <td>6.00s</td>
+              <td class="confidence-high">95%</td>
+              <td class="mono-small">dc03aa6681e4a2bf843de39fa6d8beee086b2dbec2230736445928862b783645</td>
+            </tr>
+            
+            
+            <tr>
+              <td>6</td>
+              <td class="mono-small">frag-473a968626768197</td>
+              <td class="mono-small">6291480–6583180</td>
+              <td style="font-size:10px;">H.264 Baseline (profile_idc 66) level 3.0 1280x720 @ 25 fps (declared)</td>
+              <td>probable-ch01</td>
+              <td>6.00s</td>
+              <td class="confidence-high">95%</td>
+              <td class="mono-small">473a9686267681976ec7db333c90c6f3b1196f441a2024a5648c9b920e28a78f</td>
+            </tr>
+            
+            
+            <tr>
+              <td>7</td>
+              <td class="mono-small">frag-bafef4a9c7214e16</td>
+              <td class="mono-small">7340056–7633457</td>
+              <td style="font-size:10px;">H.264 Baseline (profile_idc 66) level 3.0 704x576 @ 12.5 fps (declared)</td>
+              <td>probable-ch02</td>
+              <td>12.00s</td>
+              <td class="confidence-high">95%</td>
+              <td class="mono-small">bafef4a9c7214e1678676296328aaefb47a0a5dbea631bc8c247998770d0f2d6</td>
+            </tr>
+            
+            
+            <tr>
+              <td>8</td>
+              <td class="mono-small">frag-bb0a10a9cd0a6b3e</td>
+              <td class="mono-small">8388632–8508632</td>
+              <td style="font-size:10px;">H.264 Baseline (profile_idc 66) level 3.0 704x576</td>
+              <td>probable-ch03</td>
+              <td>2.44s</td>
+              <td class="confidence-med">80%</td>
+              <td class="mono-small">bb0a10a9cd0a6b3e3e5583f78ad6fe0cbeb6427c74197a7ea296cd3194975813</td>
+            </tr>
+            
+          </tbody>
+        </table>
+        <div style="font-size:10px; color:#555; margin-top:6px; font-style:italic;">
+          Confidence scores are structural (reconstruction completeness), not content authenticity claims.
+        </div>
+      </div>
+      
+    </div>
+
+    <!-- ═══ LIMITATIONS (mandatory — verbatim) ═══════════════════════════ -->
+    <div class="section">
+      <div class="section-title">Limitations — Verbatim from Pipeline</div>
+      <ul class="limitations-list">
+        
+        <li>The source was classified as Hikvision (VALIDATED), but no validated native parser for it was used in this run: backend.adapters.hikvision.HikvisionAdapter unavailable (vendor adapter is a stub (Sibam: WFS signature detection pending)); using generic carver. Recordings were recovered by generic bitstream carving, which reads the video structure itself and not the recorder&#39;s own index.</li>
+        
+        <li>No wall-clock time is recoverable from the video bitstream alone. Any date or time in this material must come from the recorder&#39;s own index or from the operator, and the recorder&#39;s clock should be compared with a reference clock before times are relied on.</li>
+        
+        <li>Order is the order fragments appear in the image, which is the recording order only if the recorder had not wrapped around and started overwriting.</li>
+        
+        <li>No wall-clock time is available from a bare elementary stream; all times are relative to the start of their own channel.</li>
+        
+        <li>2 of 8 fragment(s) have no declared frame rate; their durations use the assumed rate and would scale linearly with the real one.</li>
+        
+        <li>2 fragment(s) do not end at an end-of-stream marker, so footage may be missing at their tail.</li>
+        
+        <li>2 recording(s) declare no frame rate; their durations assume 25 frames per second and scale directly with the true rate.</li>
+        
+        <li>2 recording(s) do not end at an end-of-stream marker, so material may be missing from their end.</li>
+        
+        <li>Confidence scores are structural: they describe how completely a recording was reconstructed, not whether its content is authentic.</li>
+        
+      </ul>
+    </div>
+
+    <!-- ═══ LEGAL BASIS ════════════════════════════════════════════════════ -->
+    <div class="section">
+      <div class="section-title">Legal Basis</div>
+      <div class="legal-basis">This certificate draft is prepared to support the procedural requirements of Section 63 of the Bharatiya Sakshya Adhiniyam 2023, which provides for a certificate that identifies the device, its operator, the method by which the electronic record was produced, and its integrity as shown by hash values.
+
+Processing of the source material for the purposes of this forensic examination falls within the exemptions available to authorised law-enforcement and intelligence-gathering functions under Section 17(1)(c) of the Digital Personal Data Protection Act 2023. That exemption is limited in scope: it applies only to processing by or for state agencies acting within their lawful mandate and does not constitute a general licence to process personal data.
+
+This draft does not by itself render the evidence admissible. Admissibility is determined by the court on the basis of the completed, signed certificate and all other relevant circumstances. The tool that generated this draft supports procedural documentation — it does not decide admissibility.</div>
+    </div>
+
+    <!-- ═══ SIGNATURE BLOCK ════════════════════════════════════════════════ -->
+    <div class="section">
+      <div class="section-title">Signature Block — For Completion by Responsible Person</div>
+      <div class="sig-grid">
+        <div>
+          <div class="sig-field"></div>
+          <div class="sig-label">Full Name of Certifying Person</div>
+        </div>
+        <div>
+          <div class="sig-field"></div>
+          <div class="sig-label">Official Designation / Rank</div>
+        </div>
+        <div>
+          <div class="sig-field"></div>
+          <div class="sig-label">Responsible For (describe relation to device)</div>
+        </div>
+        <div>
+          <div class="sig-field"></div>
+          <div class="sig-label">Place</div>
+        </div>
+        <div>
+          <div class="sig-field"></div>
+          <div class="sig-label">Date (DD/MM/YYYY)</div>
+        </div>
+        <div>
+          <div class="sig-field"></div>
+          <div class="sig-label">Signature (with seal if applicable)</div>
+        </div>
+      </div>
+      <div class="sig-note">Left blank deliberately. A certificate under BSA 2023 section 63 is valid only when completed and signed by a person occupying a responsible official position in relation to the device or its management.</div>
+    </div>
+
+    <!-- Footer -->
+    <hr class="divider-thin" />
+    <div class="doc-footer">
+      Generated by Phoenix 0.1.0 on 2026-09-06 04:47:54 UTC
+      &nbsp;·&nbsp; This document is a machine-generated draft and is not a valid certificate.
+      &nbsp;·&nbsp; Draft ref: DEMO-2026-001
+    </div>
+
+  </div><!-- /page -->
+</body>
+</html>
