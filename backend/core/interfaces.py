@@ -65,3 +65,9 @@ class CryptoProvider(ABC):
     @abstractmethod
     def decrypt(self, data: bytes, case_id: str) -> bytes:
         """Decrypts AES-256-GCM encrypted data."""
+
+    @abstractmethod
+    def encrypt_file(self, input_path: str, output_path: str, case_id: str) -> None:
+        """Encrypts a file using AES-256-GCM streaming.
+        Reads from input_path, writes encrypted result to output_path.
+        """
