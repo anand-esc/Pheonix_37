@@ -24,3 +24,5 @@ node_modules/
 dist/
 build/
 
+# Certificate-draft generator output (changes on every run — keep out of version control)
+certificate_output/

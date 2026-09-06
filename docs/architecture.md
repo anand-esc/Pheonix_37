@@ -40,6 +40,6 @@ flowchart TD
 
 ## Completed Items
 
-- **Item 2 (custody-facts verification):** `docs/custody_facts_verification.md` — cross-check of `custody_facts.json` fields against BSA §63 Part A requirements; gaps and inconsistencies flagged; all required fields confirmed present. Branch: `feature/varsha-certificate-draft-generator`.
-- **Item 1 (certificate-draft generator):** `backend/reporting/certificate_draft.py` — BSA §63 certificate-draft generator producing PDF (3-page A4, ReportLab) and HTML (Jinja2) from a single `CertificateDraft` data model, fed by `CustodyFacts`; prominent DRAFT banner in both formats; fails loudly on unverified images or missing required fields. Branch: `feature/varsha-certificate-draft-generator`.
+- **Item 2 (custody-facts verification):** `docs/custody_facts_verification.md` — cross-check of `custody_facts.json` fields against BSA §63 Part A requirements; gaps and inconsistencies flagged; all required fields confirmed present. Branch: `feat/certificate-draft-generator`.
+- **Item 1 (certificate-draft generator):** `backend/reporting/certificate_draft.py` — BSA §63 certificate-draft generator producing PDF (3-page A4, ReportLab) and HTML (Jinja2) from a single `CertificateDraft` data model, fed by `CustodyFacts`; prominent DRAFT banner in both formats; fails loudly on unverified images or missing required fields. Branch: `feat/certificate-draft-generator`.
 - **Item 6 (frontend styling):** BLOCKED — `frontend/dashboard`, `frontend/timeline`, and `frontend/video-viewer` contain only `.gitkeep` on `main`; Shayanna's components do not yet exist. No work performed; no components fabricated. See final summary report.

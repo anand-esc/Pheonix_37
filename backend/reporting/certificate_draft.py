@@ -222,7 +222,7 @@ class CertificateDraft(BaseModel):
 def build_certificate_draft(
     facts: Any,
     *,
-    evidence_item: Any | None = None,  # noqa: ARG001  (reserved for future wiring)
+    evidence_item: Any | None = None,  # reserved for future wiring — currently unused
     draft_reference: str | None = None,
 ) -> CertificateDraft:
     """Populate a ``CertificateDraft`` from a ``CustodyFacts`` object.
@@ -445,14 +445,12 @@ def render_pdf(draft: CertificateDraft, output_path: str | Path) -> Path:
     Returns the path that was written.
     """
     from reportlab.lib import colors
-    from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_LEFT
+    from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
     from reportlab.lib.units import cm, mm
     from reportlab.platypus import (
         HRFlowable,
-        KeepTogether,
-        PageBreak,
         Paragraph,
         SimpleDocTemplate,
         Spacer,
@@ -461,7 +459,7 @@ def render_pdf(draft: CertificateDraft, output_path: str | Path) -> Path:
     )
 
     output_path = Path(output_path)
-    W, H = A4  # noqa: N806 — standard variable names for ReportLab
+    W, H = A4
 
     # ── Styles ──────────────────────────────────────────────────────────────
     base = getSampleStyleSheet()
@@ -469,9 +467,9 @@ def render_pdf(draft: CertificateDraft, output_path: str | Path) -> Path:
     def _style(name: str, **kw: Any) -> ParagraphStyle:
         return ParagraphStyle(name, parent=base["Normal"], **kw)
 
-    DRAFT_RED = colors.HexColor("#b91c1c")  # noqa: N806
-    LABEL_BG = colors.HexColor("#f0f0e8")  # noqa: N806
-    WARN_BG = colors.HexColor("#fff8e1")  # noqa: N806
+    DRAFT_RED = colors.HexColor("#b91c1c")
+    LABEL_BG = colors.HexColor("#f0f0e8")
+    WARN_BG = colors.HexColor("#fff8e1")
     MONO = "Courier"
 
     s_title = _style(
@@ -526,7 +524,6 @@ def render_pdf(draft: CertificateDraft, output_path: str | Path) -> Path:
         textColor=colors.HexColor("#78350f"),
         backColor=WARN_BG,
     )
-    s_normal = _style("NormalText", fontSize=8, leading=11)
     s_sig_label = _style(
         "SigLabel",
         fontSize=7,
