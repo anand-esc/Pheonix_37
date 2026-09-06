@@ -13,9 +13,15 @@ from __future__ import annotations
 import struct
 import hashlib
 import os
+
+os.environ["PHOENIX_LEDGER_SECRET"] = "test-ledger-secret-12345"
+
 import pytest
 from fastapi import HTTPException
+from fastapi.testclient import TestClient
 
+from backend.api.main import app
+from backend.api.shared import get_ledger
 from backend.adapters.dahua import DahuaAdapter
 from backend.ledger.event_bus import InMemoryEventSink
 from backend.ledger.audit_ledger import AuditLedger, LedgerEntry
@@ -29,6 +35,13 @@ from backend.ledger.rbac import RBACController, Role, ROLE_PERMISSIONS
 def setup_ledger_secret(monkeypatch):
     """Sets the required ledger secret env var for all ledger tests."""
     monkeypatch.setenv("PHOENIX_LEDGER_SECRET", "test-ledger-secret-12345")
+
+
+@pytest.fixture(autouse=True)
+def reset_shared_ledger():
+    get_ledger().reset()
+    yield
+    get_ledger().reset()
 
 
 def _make_dhav_frame(payload: bytes, seq: int = 1, ts: int = 1000) -> bytes:
@@ -248,3 +261,27 @@ class TestRBAC:
     def test_court_export_permissions(self):
         self.rbac.enforce_access("court-01", "EXPORT_BUNDLE")
         self.rbac.enforce_access("court-01", "VIEW_CERTIFICATE")
+
+
+def test_ledger_reset_endpoint():
+    ledger = get_ledger()
+    ledger.append_entry("INTAKE", "op-reset-1", {"case_id": "CASE-RESET"})
+    ledger.append_entry("CARVING", "op-reset-2", {"fragments": 2})
+    ledger.append_entry("EXPORT", "op-reset-3", {"dest": "vault"})
+    assert ledger.length > 1
+
+    client = TestClient(app)
+    response = client.post("/api/ledger/reset")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["status"] == "success"
+    assert payload["message"] == "Ledger state has been reset to Genesis block."
+    assert payload["total_entries"] == 1
+    assert payload["genesis_block"]["index"] == 0
+    assert payload["genesis_block"]["event_type"] == "GENESIS"
+    assert payload["genesis_block"]["prev_hash"] == "0" * 64
+    assert ledger.length == 1
+    assert len(ledger.chain) == 1
+    assert ledger.chain[0].event_type == "GENESIS"
+    assert ledger.verify_chain()["is_valid"] is True

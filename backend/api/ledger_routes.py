@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import base64
 from typing import Optional
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Header, HTTPException, Query
 from pydantic import BaseModel
 
 from backend.api.shared import get_event_sink, get_ledger, get_rbac_controller
@@ -41,6 +41,13 @@ class AccessRequest(BaseModel):
     action: str
 
 
+class ResetResponse(BaseModel):
+    status: str
+    message: str
+    genesis_block: dict
+    total_entries: int
+
+
 @router.get("/chain")
 def get_chain():
     return [entry.model_dump() for entry in ledger.chain]
@@ -64,6 +71,26 @@ def tamper(req: TamperRequest):
 def restore():
     ledger.restore_chain()
     return {"status": "restored", "chain_length": ledger.length}
+
+
+@router.post("/reset", response_model=ResetResponse)
+def reset_ledger(
+    operator_id: Optional[str] = Header(None, alias="X-Operator-ID"),
+    demo: bool = Query(False, description="Bypass RBAC for demo runs"),
+) -> ResetResponse:
+    if not demo and operator_id is not None:
+        role = rbac.get_role(operator_id)
+        if role is None or role.value != Role.AUDITOR.value:
+            raise HTTPException(status_code=403, detail="Access denied: reset requires AUDITOR role")
+
+    ledger.reset()
+    genesis_block = ledger.chain[0].model_dump()
+    return ResetResponse(
+        status="success",
+        message="Ledger state has been reset to Genesis block.",
+        genesis_block=genesis_block,
+        total_entries=ledger.length,
+    )
 
 
 @router.post("/simulate-access")
