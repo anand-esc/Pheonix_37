@@ -107,6 +107,8 @@ class PipelineResult(BaseModel):
 
     case_id: str
     operator_id: str
+    investigator_id: str | None = None
+    custodian_id: str | None = None
     evidence_id: str
     source_path: str
     out_dir: str
@@ -158,6 +160,8 @@ def run_pipeline(
     out_dir: str | Path,
     sink: EventSink | None = None,
     device_info: str = "",
+    investigator_id: str | None = None,
+    custodian_id: str | None = None,
     crypto: CryptoProvider | None = None,
     detector: FormatDetector | None = None,
     carve_options: CarveOptions | None = None,
@@ -358,6 +362,8 @@ def run_pipeline(
     result = PipelineResult(
         case_id=case_id,
         operator_id=operator_id,
+        investigator_id=investigator_id,
+        custodian_id=custodian_id,
         evidence_id=evidence_id,
         source_path=str(source),
         out_dir=str(out_dir),

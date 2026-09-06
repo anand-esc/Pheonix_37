@@ -162,3 +162,41 @@ def test_failed_verification_is_stated_plainly(run, monkeypatch):
     facts = build_custody_facts(broken)
     assert facts.integrity.verification_matched is False
     assert "must not be relied on" in facts.integrity.statement
+
+
+# ---------------------------------------------------------------------------
+# Case-level identities (investigator / custodian)
+# ---------------------------------------------------------------------------
+def test_case_identities_are_optional_and_absent_by_default(run):
+    result, _, _ = run
+    facts = build_custody_facts(result)
+    assert facts.custody.operator_id == "op-amritansh"
+    assert facts.custody.investigator_id is None
+    assert facts.custody.custodian_id is None
+
+
+def test_case_identities_are_carried_when_supplied(tmp_path):
+    src = tmp_path / "source.img"
+    build_dvr_image(src, size_bytes=512 * 1024, seed=12, vendor_variant="none")
+    result = run_pipeline(
+        src,
+        case_id="CASE-IDS",
+        operator_id="op-amritansh",
+        investigator_id="inv-si-42",
+        custodian_id="cus-malkhana-7",
+        out_dir=tmp_path / "run",
+        encrypt=False,
+    )
+    facts = build_custody_facts(result)
+    # three distinct identities, kept apart
+    assert facts.custody.operator_id == "op-amritansh"
+    assert facts.custody.investigator_id == "inv-si-42"
+    assert facts.custody.custodian_id == "cus-malkhana-7"
+    # they reach the written file too
+    written = load_custody_facts(tmp_path / "run" / CUSTODY_NAME)
+    assert written.custody.investigator_id == "inv-si-42"
+    assert written.custody.custodian_id == "cus-malkhana-7"
+    # and none of them is treated as the certifying person
+    assert all(v == "" for k, v in facts.signature_block.items() if k != "note"), (
+        "case identities must never pre-fill the signature block"
+    )

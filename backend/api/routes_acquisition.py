@@ -56,6 +56,12 @@ class RunRequest(BaseModel):
     )
     case_id: str
     operator_id: str
+    investigator_id: str | None = Field(
+        default=None, description="who is responsible for the investigation"
+    )
+    custodian_id: str | None = Field(
+        default=None, description="who holds the evidence in custody"
+    )
     out_dir: str = Field(description="directory for image, fragments, vault, result")
     device_info: str = ""
     encrypt: bool = True
@@ -173,6 +179,8 @@ class _Job:
                 out_dir=self.request.out_dir,
                 sink=shared_sink,
                 device_info=self.request.device_info,
+                investigator_id=self.request.investigator_id,
+                custodian_id=self.request.custodian_id,
                 encrypt=self.request.encrypt,
                 progress_cb=progress,
             )

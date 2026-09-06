@@ -129,6 +129,21 @@ def main(argv: list[str] | None = None) -> int:
             device_info=args.device_info,
             encrypt=not args.no_encrypt,
         )
+    except RuntimeError as exc:
+        # The crypto layer refuses to run without its secrets, by design.
+        if "PHOENIX_MASTER_SECRET" in str(exc) or "PHOENIX_LEDGER_SECRET" in str(exc):
+            print(f"pipeline failed: {exc}", file=sys.stderr)
+            print(
+                "\nSet the secrets before running (see README step 5):\n"
+                '  Windows : $env:PHOENIX_MASTER_SECRET = "..."\n'
+                '            $env:PHOENIX_LEDGER_SECRET = "..."\n'
+                "  Linux   : export PHOENIX_MASTER_SECRET=...\n"
+                "            export PHOENIX_LEDGER_SECRET=...\n"
+                "\nOr run the recovery only, without encryption: --no-encrypt",
+                file=sys.stderr,
+            )
+            return 2
+        raise
     except (AcquisitionError, PipelineError) as exc:
         print(f"pipeline failed: {exc}", file=sys.stderr)
         print(f"use --fallback to replay {FALLBACK_TRANSCRIPT}", file=sys.stderr)
