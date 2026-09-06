@@ -248,12 +248,18 @@ def get_case_fragments(case_id: str) -> list[Fragment]:
     summary="Hash-chained audit ledger for a case",
 )
 def get_case_ledger(case_id: str) -> list[dict]:
-    """Returns the real audit ledger chain from the shared AuditLedger."""
+    """Returns the real audit ledger chain from the shared AuditLedger,
+    filtered to this case's events (plus the genesis anchor).
+    """
     ledger = get_ledger()
     chain = ledger.chain
-    # In prototype, ledger is global; return all entries for now.
-    # Production would filter by case_id via operator_id or payload.
-    return [entry.model_dump() for entry in chain]
+    # Ledger's emit() maps PipelineEvent.case_id -> operator_id.
+    # GENESIS always included as chain anchor. Other entries filtered by operator_id == case_id.
+    filtered = [
+        entry.model_dump() for entry in chain
+        if entry.event_type == "GENESIS" or entry.operator_id == case_id
+    ]
+    return filtered
 
 
 # ---------------------------------------------------------------------------

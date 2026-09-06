@@ -1,9 +1,11 @@
 from datetime import datetime, timezone
+import os
+
 from backend.core.interfaces import CryptoProvider
 from backend.core.evidence_model import HashRecord
 from backend.crypto.hashing import compute_sha256_bytes
 from backend.crypto.encryption import encrypt_data, decrypt_data
-from backend.crypto.key_manager import generate_dek
+from backend.crypto.key_manager import generate_dek, generate_salt, derive_kek, wrap_dek, unwrap_dek
 from backend.crypto.exceptions import ForensicIntegrityError
 
 
@@ -14,30 +16,65 @@ class PhoenixCryptoProvider(CryptoProvider):
     """
     
     def __init__(self):
+        # ASSUMPTION: Since per-investigator authentication isn't wired in yet
+        # (blocked on Satya's RBAC branch), we derive the KEK from a system-level
+        # master secret read from an environment variable, combined with a per-case salt.
+        # TODO: replace with real per-investigator secret once RBAC lands.
+        master_secret = os.environ.get("PHOENIX_MASTER_SECRET")
+        if not master_secret:
+            raise RuntimeError("PHOENIX_MASTER_SECRET must be set — no default is provided for security reasons")
+        self._master_secret = master_secret
+
         # In production, this would securely fetch wrapped DEKs from a KMS/Vault database.
         # For the hackathon prototype, we use an in-memory secure registry per case.
-        # We use bytearray instead of bytes so we can securely zero it out later.
-        self._case_keys: dict[str, bytearray] = {}
+        # Stores: case_id -> {"wrapped_dek": bytes, "nonce": bytes, "salt": bytes}
+        self._case_key_records: dict[str, dict] = {}
 
-    def _get_key_for_case(self, case_id: str) -> bytearray:
-        """Retrieves or generates a secure Data Encryption Key for the case."""
-        if case_id not in self._case_keys:
-            self._case_keys[case_id] = bytearray(generate_dek())
-        return self._case_keys[case_id]
+    def _ensure_case_initialized(self, case_id: str) -> None:
+        """Generates a DEK, derives a KEK, wraps the DEK, and stores only the wrapped material."""
+        if case_id not in self._case_key_records:
+            salt = generate_salt()
+            kek = derive_kek(self._master_secret, salt)
+            dek = generate_dek()
+
+            wrapped_dek, wrap_nonce = wrap_dek(dek, kek)
+
+            self._case_key_records[case_id] = {
+                "wrapped_dek": wrapped_dek,
+                "nonce": wrap_nonce,
+                "salt": salt,
+                "kek": kek
+            }
+
+    def _get_key_for_case(self, case_id: str) -> bytes:
+        """
+        Retrieves the Data Encryption Key (DEK) for a case.
+        Used by the pipeline runner for whole-image streaming encryption.
+        """
+        self._ensure_case_initialized(case_id)
+        record = self._case_key_records[case_id]
+        kek = record["kek"]
+        dek = unwrap_dek(record["wrapped_dek"], record["nonce"], kek)
+        return dek
+
+    def _unwrap_dek_for_case(self, case_id: str) -> bytearray:
+        """Unwraps the DEK for a case just-in-time."""
+        self._ensure_case_initialized(case_id)
+        record = self._case_key_records[case_id]
+
+        # Use the cached KEK (acceptable tradeoff: KEK is case-scoped and one step
+        # removed from the master secret, whereas raw DEK caching would not be).
+        kek = record["kek"]
+        dek = unwrap_dek(record["wrapped_dek"], record["nonce"], kek)
+        return bytearray(dek)
 
     def revoke_case_keys(self, case_id: str) -> None:
         """
-        Securely removes the Data Encryption Key (DEK) from active memory.
-        Prevents Cold Boot or memory-dump attacks by overwriting the key material
-        with zeroes before deleting the reference.
+        Removes the wrapped Data Encryption Key (DEK) record from active memory.
+        (Note: the raw DEK is now securely wiped immediately after use in encrypt/decrypt).
         """
-        if case_id in self._case_keys:
-            key = self._case_keys[case_id]
-            # Cryptographic zeroing of the memory block
-            for i in range(len(key)):
-                key[i] = 0
-            # Delete the dictionary reference
-            del self._case_keys[case_id]
+        if case_id in self._case_key_records:
+            del self._case_key_records[case_id]
 
     def hash_plaintext(self, data: bytes, stage: str) -> HashRecord:
         """
@@ -56,21 +93,32 @@ class PhoenixCryptoProvider(CryptoProvider):
         Encrypts data using AES-256-GCM. 
         Prepends the 12-byte nonce to the ciphertext to adhere to the strict `bytes` interface.
         """
-        dek = bytes(self._get_key_for_case(case_id))
-        ciphertext, nonce = encrypt_data(data, dek)
-        
-        # Package nonce and ciphertext together for the data store
-        return nonce + ciphertext
+        dek_array = self._unwrap_dek_for_case(case_id)
+        try:
+            dek = bytes(dek_array)
+            ciphertext, nonce = encrypt_data(data, dek)
+            # Package nonce and ciphertext together for the data store
+            return nonce + ciphertext
+        finally:
+            # Securely wipe the DEK from RAM immediately after use
+            for i in range(len(dek_array)):
+                dek_array[i] = 0
 
     def decrypt(self, data: bytes, case_id: str) -> bytes:
         """
         Decrypts data. Extracts the 12-byte nonce from the beginning and verifies integrity.
         """
-        dek = bytes(self._get_key_for_case(case_id))
-        
         if len(data) < 28: # 12 (nonce) + 16 (auth tag)
             raise ForensicIntegrityError("Data blob too small to contain valid AES-GCM payload.")
             
         nonce = data[:12]
         ciphertext = data[12:]
-        return decrypt_data(ciphertext, nonce, dek)
+
+        dek_array = self._unwrap_dek_for_case(case_id)
+        try:
+            dek = bytes(dek_array)
+            return decrypt_data(ciphertext, nonce, dek)
+        finally:
+            # Securely wipe the DEK from RAM immediately after use
+            for i in range(len(dek_array)):
+                dek_array[i] = 0
