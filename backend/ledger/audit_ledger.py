@@ -52,6 +52,8 @@ class LedgerEntry(BaseModel):
 
 
 class AuditLedger:
+    _GENESIS_TIMESTAMP = "1970-01-01T00:00:00+00:00"
+
     def __init__(
         self,
         event_sink: Optional[InMemoryEventSink] = None,
@@ -61,7 +63,7 @@ class AuditLedger:
         self._lock = threading.Lock()
         self._chain: list[LedgerEntry] = []
         self._backup: list[dict] = []
-        self._create_genesis()
+        self.reset()
         self._event_sink = event_sink
         if event_sink is not None:
             event_sink.subscribe(self._on_event)
@@ -128,6 +130,12 @@ class AuditLedger:
         with self._lock:
             self._chain = [LedgerEntry(**d) for d in self._backup]
 
+    def reset(self) -> None:
+        with self._lock:
+            self._chain.clear()
+            self._backup.clear()
+            self._create_genesis()
+
     @property
     def chain(self) -> list[LedgerEntry]:
         with self._lock:
@@ -156,7 +164,7 @@ class AuditLedger:
 
         genesis = LedgerEntry(
             index=0,
-            timestamp=datetime.now(timezone.utc).isoformat(),
+            timestamp=self._GENESIS_TIMESTAMP,
             event_type="GENESIS",
             operator_id="SYSTEM",
             payload_hash=payload_hash,
