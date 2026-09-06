@@ -31,7 +31,22 @@ path changes.
    * Windows: `wmic diskdrive list brief` or Disk Management; use
      `\\.\PhysicalDriveN`.
    * Linux: `lsblk -o NAME,SIZE,MODEL,SERIAL`; use `/dev/sdX`.
-5. Run the pipeline (as administrator/root):
+5. Set the two secrets the crypto and ledger layers require. They have no
+   defaults on purpose - the tool refuses to run rather than encrypt with a
+   guessable key:
+
+   ```
+   Windows : $env:PHOENIX_MASTER_SECRET = "<case passphrase>"
+             $env:PHOENIX_LEDGER_SECRET = "<ledger signing secret>"
+   Linux   : export PHOENIX_MASTER_SECRET=<case passphrase>
+             export PHOENIX_LEDGER_SECRET=<ledger signing secret>
+   ```
+
+   Use the values your team agreed for the case; do not commit them. Running
+   with `--no-encrypt` skips the crypto layer entirely if you only need the
+   recovery output.
+
+6. Run the pipeline (as administrator/root):
 
    ```
    python hardware/acquisition_rig/run_demo_pipeline.py --source \\.\PhysicalDrive2 --case CASE-042 --operator op-amritansh --out E:\phoenix\CASE-042 --device-info "Hikvision DS-7204, WD10PURX SN WCC4..."
@@ -42,9 +57,9 @@ path changes.
    detects the vendor, carves fragments, exports them, hashes each one again
    and encrypts them into `vault/`. Every step emits an event that is written
    to `run_transcript.json`.
-6. Record the printed image SHA-256 on the evidence form. That value is the
+7. Record the printed image SHA-256 on the evidence form. That value is the
    identity of the evidence from now on.
-7. Disconnect the disk, bag it, and store the destination folder on the case
+8. Disconnect the disk, bag it, and store the destination folder on the case
    share. The `evidence.img.acquisition.json` sidecar and
    `pipeline_result.json` are the machine-readable custody record.
 

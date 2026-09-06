@@ -53,10 +53,26 @@ class SourceFacts(BaseModel):
     detection_rationale: list[str] = Field(default_factory=list)
 
 
-class CustodyFacts_Handling(BaseModel):
+class CustodyHandlingFacts(BaseModel):
+    """Who handled the evidence, and when.
+
+    Three distinct identities, deliberately kept apart:
+
+    * ``operator_id`` - who ran the forensic tool for this acquisition.
+    * ``investigator_id`` - who is responsible for the investigation.
+    * ``custodian_id`` - who holds the evidence in custody.
+
+    The last two come from the ``Case`` and are optional, because a pipeline
+    run can happen before a case record exists. None of them is the certifying
+    person for BSA section 63: that is a human decision made at signing time,
+    which is why ``signature_block`` stays blank.
+    """
+
     model_config = ConfigDict(extra="forbid")
 
     operator_id: str
+    investigator_id: str | None = None
+    custodian_id: str | None = None
     acquisition_id: str
     started_utc: datetime
     finished_utc: datetime | None
@@ -146,7 +162,7 @@ class CustodyFacts(BaseModel):
     disclaimer: str = DISCLAIMER
     generated_utc: datetime = Field(default_factory=lambda: datetime.now(UTC))
     source: SourceFacts
-    custody: CustodyFacts_Handling
+    custody: CustodyHandlingFacts
     method: MethodFacts
     tooling: ToolingFacts
     integrity: IntegrityFacts
@@ -208,8 +224,10 @@ def build_custody_facts(result: PipelineResult) -> CustodyFacts:
             detection_confidence=result.detection.confidence,
             detection_rationale=list(result.detection.rationale),
         ),
-        custody=CustodyFacts_Handling(
+        custody=CustodyHandlingFacts(
             operator_id=result.operator_id,
+            investigator_id=result.investigator_id,
+            custodian_id=result.custodian_id,
             acquisition_id=record.acquisition_id,
             started_utc=record.started_utc,
             finished_utc=record.finished_utc,

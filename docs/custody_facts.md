@@ -13,7 +13,7 @@ responsible person then reviews and signs. Nothing in it is signed, and the
 | Section | Answers | Notable fields |
 |---|---|---|
 | `source` | what was examined, and what the tool believes it is | `declared_vendor`, `vendor_validation_status`, `detection_confidence`, `detection_rationale` |
-| `custody` | who did it and when | `operator_id`, `acquisition_id`, `started_utc`, `finished_utc`, `acquisition_status`, `notes` |
+| `custody` | who did it and when | `operator_id`, `investigator_id`, `custodian_id`, `acquisition_id`, `started_utc`, `finished_utc`, `acquisition_status`, `notes` |
 | `method` | how the copy and the recovery were done | `read_only_acquisition`, plain-English `description`, `adapter`, `adapter_is_fallback`, `adapter_reason`, `recovery_method`, `stages` |
 | `tooling` | what produced it | `tool_version`, `python_version`, `platform`, run timestamps |
 | `integrity` | why the content can be trusted | `image_sha256`, `image_md5`, `verification_matched`, full `hash_lineage`, `recovery_hash`, `statement` |
@@ -25,6 +25,24 @@ Each fragment in `contents.fragments` carries its `fragment_id` (stable across
 re-runs), byte range, SHA-256, confidence score **and** the sentence-by-sentence
 `confidence_rationale`, plus its probable channel and duration estimate with
 the `duration_basis` that produced it.
+
+## Three identities, kept apart
+
+`custody` records up to three different people, and never conflates them:
+
+* `operator_id` - who ran the forensic tool for this acquisition. Always present.
+* `investigator_id` - who is responsible for the investigation.
+* `custodian_id` - who holds the evidence in custody.
+
+The last two come from the case record and are optional, because a run can
+happen before a case exists; pass them to `run_pipeline(..., investigator_id=,
+custodian_id=)` or through the API's `RunRequest`. When absent they are `null`,
+never guessed from the operator.
+
+None of the three is the certifying person for BSA section 63. That person
+"occupies a responsible official position in relation to the device or its
+management" and is decided by a human at signing time, which is why
+`signature_block` stays blank no matter how many identities are supplied.
 
 ## Limitations are mandatory
 
