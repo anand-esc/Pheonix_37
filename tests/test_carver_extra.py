@@ -132,3 +132,113 @@ def test_carving_a_32mib_image_is_fast_and_exact(tmp_path):
     elapsed = time.perf_counter() - t0
     assert [c.sha256 for c in result.fragments] == [s.sha256 for s in manifest.segments]
     assert elapsed < 10.0, f"carve took {elapsed:.1f}s"
+
+
+# ---------------------------------------------------------------------------
+# H.265 MP4 wrapping
+# ---------------------------------------------------------------------------
+def test_h265_mp4_round_trip_is_lossless_and_well_formed(tmp_path):
+
+    from backend.adapters.generic_carver.mp4 import (
+        iter_annexb_nals,
+        parse_boxes,
+        wrap_fragment_file,
+    )
+
+    stream = build_h265_stream(frames=30, seed=12)
+    src = tmp_path / "frag.h265"
+    src.write_bytes(stream)
+    before = hashlib.sha256(stream).hexdigest()
+
+    info = wrap_fragment_file(src, tmp_path / "frag.mp4", fps=25.0)
+    assert hashlib.sha256(src.read_bytes()).hexdigest() == before  # evidence untouched
+    assert info.codec == "h265"
+    assert info.samples == 30 and info.sync_samples == 3
+    assert info.stream.width == 1280 and info.stream.height == 720
+    assert info.duration_seconds == 30 / 25.0
+    # parameter sets and the end-of-stream NAL are configuration, not samples
+    assert info.dropped_nal_types == {32: 3, 33: 3, 34: 3, 36: 1}
+
+    mp4 = (tmp_path / "frag.mp4").read_bytes()
+    top = [(k, s, n) for k, s, n in parse_boxes(mp4)]
+    assert [k for k, _, _ in top] == [b"ftyp", b"moov", b"mdat"]
+    assert sum(n for _, _, n in top) == len(mp4)
+    assert b"hvc1" in mp4 and b"hvcC" in mp4
+    assert b"avc1" not in mp4 and b"avcC" not in mp4
+
+    # every VCL NAL appears byte for byte in mdat, length-prefixed
+    _, mdat_start, mdat_size = top[2]
+    mdat = mp4[mdat_start + 8 : mdat_start + mdat_size]
+    vcl = [n for n in iter_annexb_nals(stream) if ((n[0] >> 1) & 0x3F) <= 31]
+    pos = 0
+    for nal in vcl:
+        length = int.from_bytes(mdat[pos : pos + 4], "big")
+        assert mdat[pos + 4 : pos + 4 + length] == nal
+        pos += 4 + length
+    assert pos == len(mdat)
+
+    # stco points at the mdat payload, so a player finds sample 1
+    stco_at = mp4.index(b"stco")
+    assert int.from_bytes(mp4[stco_at + 12 : stco_at + 16], "big") == mdat_start + 8
+
+
+def test_hvcc_record_matches_the_bitstream(tmp_path):
+    import struct
+
+    from backend.adapters.generic_carver.mp4 import iter_annexb_nals, wrap_annexb
+    from backend.adapters.generic_carver.nal import h265_general_ptl
+
+    stream = build_h265_stream(frames=20, seed=5)
+    mp4, info = wrap_annexb(stream)
+    nals = list(iter_annexb_nals(stream))
+    vps = next(n for n in nals if ((n[0] >> 1) & 0x3F) == 32)
+    sps = next(n for n in nals if ((n[0] >> 1) & 0x3F) == 33)
+    pps = next(n for n in nals if ((n[0] >> 1) & 0x3F) == 34)
+
+    at = mp4.index(b"hvcC") + 4
+    assert mp4[at] == 1  # configurationVersion
+    # the 12-byte general profile_tier_level is copied out of the SPS verbatim
+    assert mp4[at + 1 : at + 13] == h265_general_ptl(sps)
+    chroma = mp4[at + 16] & 0x3
+    assert chroma == info.stream.chroma_format_idc == 1  # 4:2:0
+    assert (mp4[at + 17] & 0x7) + 8 == info.stream.bit_depth_luma == 8
+    assert (mp4[at + 18] & 0x7) + 8 == info.stream.bit_depth_chroma == 8
+    flags = mp4[at + 21]
+    assert flags & 0x3 == 3  # lengthSizeMinusOne: 4-byte NAL lengths, as written
+    assert (flags >> 3) & 0x7 == info.stream.max_sub_layers == 1
+
+    # three arrays, one each for VPS, SPS and PPS, holding the exact NAL bytes
+    assert mp4[at + 22] == 3
+    pos = at + 23
+    for expected_type, expected_nal in ((32, vps), (33, sps), (34, pps)):
+        assert mp4[pos] & 0x3F == expected_type
+        count = struct.unpack(">H", mp4[pos + 1 : pos + 3])[0]
+        assert count == 1
+        length = struct.unpack(">H", mp4[pos + 3 : pos + 5])[0]
+        assert mp4[pos + 5 : pos + 5 + length] == expected_nal
+        pos += 5 + length
+
+
+def test_pipeline_wraps_an_h265_image_into_playable_mp4(tmp_path):
+    from backend.pipeline.runner import run_pipeline
+
+    src = tmp_path / "h265.img"
+    stream = build_h265_stream(frames=20, seed=6)
+    src.write_bytes(stream + b"\x00" * 8192)
+
+    result = run_pipeline(
+        src,
+        case_id="CASE-H265",
+        operator_id="op-1",
+        out_dir=tmp_path / "run",
+        encrypt=False,
+    )
+    assert result.carve.stats.codec == "h265"
+    (fragment,) = result.exported
+    assert fragment.out_path.endswith(".h265")
+    (view,) = result.playable
+    assert view.mp4_path and view.mp4_path.endswith(".mp4")
+    assert view.samples == 20
+    mp4 = Path(view.mp4_path).read_bytes()
+    assert mp4[4:8] == b"ftyp" and b"hvc1" in mp4
+    assert hashlib.sha256(mp4).hexdigest() == view.mp4_sha256

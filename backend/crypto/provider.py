@@ -122,3 +122,12 @@ class PhoenixCryptoProvider(CryptoProvider):
             # Securely wipe the DEK from RAM immediately after use
             for i in range(len(dek_array)):
                 dek_array[i] = 0
+
+    def encrypt_file(self, input_path: str, output_path: str, case_id: str) -> None:
+        """
+        Encrypts a file using AES-256-GCM streaming.
+        Reads from input_path, writes encrypted result to output_path.
+        """
+        from backend.crypto.encryption import encrypt_file
+        dek = self._get_key_for_case(case_id)
+        encrypt_file(input_path, output_path, dek)

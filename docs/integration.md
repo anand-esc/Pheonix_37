@@ -82,7 +82,7 @@ registered. Once `main.py` includes it:
 
 | Method and path | Purpose |
 |---|---|
-| `POST /acquisition/runs` (`?wait=true` to block) | start a run; body `source_path, case_id, operator_id, out_dir, device_info, encrypt` |
+| `POST /acquisition/runs` (`?wait=true` to block) | start a run; body `source_path, case_id, operator_id, out_dir, device_info, encrypt`, optional `investigator_id`, `custodian_id` |
 | `GET /acquisition/runs` | list jobs |
 | `GET /acquisition/runs/{job_id}` | status, `bytes_read` for a progress bar, last event, summary |
 | `GET /acquisition/runs/{job_id}/result` | full `PipelineResult` (409 until finished) |

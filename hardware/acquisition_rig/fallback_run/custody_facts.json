@@ -1,26 +1,28 @@
 {
   "disclaimer": "These are observed facts produced by an automated pipeline. They are input for a certificate draft under BSA 2023 section 63; they are not a certificate, are unsigned, and require review and signature by the person responsible for the device or its operation.",
-  "generated_utc": "2026-09-05T06:23:04.435321Z",
+  "generated_utc": "2026-09-06T05:43:46.073043Z",
   "source": {
     "case_id": "CASE-DEMO-001",
-    "evidence_id": "ev-acq-711f8ebe-32c2-4072-bbfc-b0b10da8df93",
+    "evidence_id": "ev-acq-54161b8f-d67b-4feb-8f41-b2366005c546",
     "source_path": "D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\dvr_image.img",
-    "source_device_info": "simulated Hikvision-shaped DVR disk, 32 MiB, seed 2026",
+    "source_device_info": "source D:\\sih\\Pheonix_37\\hardware\\acquisition_rig\\out\\dvr_image.img",
     "declared_vendor": "Hikvision",
     "vendor_validation_status": "VALIDATED",
     "detected_signature": "hikvision_master_sector@0x210",
     "detection_confidence": 0.95,
     "detection_rationale": [
       "Hikvision: hikvision_master_sector@0x210, hikvision_hikbtree@0x400 (unexpected offset); summed weight 0.95",
-      "NAL scan: 7/32 windows contain valid Annex-B start codes (density 0.22), codec guess h264 (h264 votes 48, h265 votes 0)",
+      "NAL scan: 7/32 windows contain valid Annex-B start codes (density 0.22), codec guess h264 (h264 votes 43, h265 votes 0)",
       "decision: Hikvision (VALIDATED), confidence 0.95"
     ]
   },
   "custody": {
     "operator_id": "op-amritansh",
-    "acquisition_id": "acq-711f8ebe-32c2-4072-bbfc-b0b10da8df93",
-    "started_utc": "2026-09-05T06:23:03.663671Z",
-    "finished_utc": "2026-09-05T06:23:03.836215Z",
+    "investigator_id": null,
+    "custodian_id": null,
+    "acquisition_id": "acq-54161b8f-d67b-4feb-8f41-b2366005c546",
+    "started_utc": "2026-09-06T05:43:45.435400Z",
+    "finished_utc": "2026-09-06T05:43:45.527993Z",
     "acquisition_status": "COMPLETED",
     "notes": []
   },
@@ -43,81 +45,81 @@
     "tool_version": "0.1.0",
     "python_version": "3.12.5",
     "platform": "Windows-11-10.0.26200-SP0",
-    "run_started_utc": "2026-09-05T06:23:03.663671Z",
-    "run_finished_utc": "2026-09-05T06:23:04.329936Z"
+    "run_started_utc": "2026-09-06T05:43:45.435400Z",
+    "run_finished_utc": "2026-09-06T05:43:45.942101Z"
   },
   "integrity": {
-    "image_sha256": "768e8d4b7d8def560803a6350f07f9c8240cb02351df88af2e1f8c6fa5fa556b",
-    "image_md5": "38d700ab355afcd069ee6694ed73ff44",
-    "image_bytes": 33554432,
-    "verification_sha256": "768e8d4b7d8def560803a6350f07f9c8240cb02351df88af2e1f8c6fa5fa556b",
+    "image_sha256": "09aeda3863bcc977fef8b6faecbeece6c4e64f1afd9125c9031eb1b25c3f2100",
+    "image_md5": "dfc758ac05a041b7320ad452d4f95bd8",
+    "image_bytes": 16777216,
+    "verification_sha256": "09aeda3863bcc977fef8b6faecbeece6c4e64f1afd9125c9031eb1b25c3f2100",
     "verification_matched": true,
     "hash_lineage": [
       {
         "stage": "intake",
         "algorithm": "SHA-256",
-        "hex_digest": "768e8d4b7d8def560803a6350f07f9c8240cb02351df88af2e1f8c6fa5fa556b",
-        "timestamp_utc": "2026-09-05T06:23:03.792840Z"
+        "hex_digest": "09aeda3863bcc977fef8b6faecbeece6c4e64f1afd9125c9031eb1b25c3f2100",
+        "timestamp_utc": "2026-09-06T05:43:45.502329Z"
       },
       {
         "stage": "intake",
         "algorithm": "MD5",
-        "hex_digest": "38d700ab355afcd069ee6694ed73ff44",
-        "timestamp_utc": "2026-09-05T06:23:03.792840Z"
+        "hex_digest": "dfc758ac05a041b7320ad452d4f95bd8",
+        "timestamp_utc": "2026-09-06T05:43:45.502329Z"
       },
       {
         "stage": "intake_verify",
         "algorithm": "SHA-256",
-        "hex_digest": "768e8d4b7d8def560803a6350f07f9c8240cb02351df88af2e1f8c6fa5fa556b",
-        "timestamp_utc": "2026-09-05T06:23:03.836215Z"
+        "hex_digest": "09aeda3863bcc977fef8b6faecbeece6c4e64f1afd9125c9031eb1b25c3f2100",
+        "timestamp_utc": "2026-09-06T05:43:45.527993Z"
       },
       {
         "stage": "pre_encryption/fragment_0000",
         "algorithm": "SHA-256",
         "hex_digest": "c59cc0052616c6756b744c676c8ab8f602d075521229b396a64379078d893f91",
-        "timestamp_utc": "2026-09-05T06:23:04.318259Z"
+        "timestamp_utc": "2026-09-06T05:43:45.932634Z"
       },
       {
         "stage": "pre_encryption/fragment_0001",
         "algorithm": "SHA-256",
         "hex_digest": "65b9b467decbec9496cd643e503cad601e51c86292c7466321a9d74f285d5194",
-        "timestamp_utc": "2026-09-05T06:23:04.318259Z"
+        "timestamp_utc": "2026-09-06T05:43:45.934635Z"
       },
       {
         "stage": "pre_encryption/fragment_0002",
         "algorithm": "SHA-256",
         "hex_digest": "ce274967a87bc92e22eded5074795a0b60c9dce5d291222e98bf75d2f4fd54bc",
-        "timestamp_utc": "2026-09-05T06:23:04.320726Z"
+        "timestamp_utc": "2026-09-06T05:43:45.936141Z"
       },
       {
         "stage": "pre_encryption/fragment_0003",
         "algorithm": "SHA-256",
         "hex_digest": "0fc569d439301f93c6a76c9180373241859470caadca01983878c64dbd1600c0",
-        "timestamp_utc": "2026-09-05T06:23:04.321750Z"
+        "timestamp_utc": "2026-09-06T05:43:45.937147Z"
       },
       {
         "stage": "pre_encryption/fragment_0004",
         "algorithm": "SHA-256",
         "hex_digest": "dc03aa6681e4a2bf843de39fa6d8beee086b2dbec2230736445928862b783645",
-        "timestamp_utc": "2026-09-05T06:23:04.323731Z"
+        "timestamp_utc": "2026-09-06T05:43:45.937147Z"
       },
       {
         "stage": "pre_encryption/fragment_0005",
         "algorithm": "SHA-256",
         "hex_digest": "473a9686267681976ec7db333c90c6f3b1196f441a2024a5648c9b920e28a78f",
-        "timestamp_utc": "2026-09-05T06:23:04.325052Z"
+        "timestamp_utc": "2026-09-06T05:43:45.938874Z"
       },
       {
         "stage": "pre_encryption/fragment_0006",
         "algorithm": "SHA-256",
         "hex_digest": "bafef4a9c7214e1678676296328aaefb47a0a5dbea631bc8c247998770d0f2d6",
-        "timestamp_utc": "2026-09-05T06:23:04.326265Z"
+        "timestamp_utc": "2026-09-06T05:43:45.941097Z"
       },
       {
         "stage": "pre_encryption/fragment_0007",
         "algorithm": "SHA-256",
         "hex_digest": "bb0a10a9cd0a6b3e3e5583f78ad6fe0cbeb6427c74197a7ea296cd3194975813",
-        "timestamp_utc": "2026-09-05T06:23:04.328429Z"
+        "timestamp_utc": "2026-09-06T05:43:45.942101Z"
       }
     ],
     "recovery_hash": "01b574422b990b058094355a771d0d7d120d4e5a641d265b19109149cc618725",

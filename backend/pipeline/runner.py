@@ -107,6 +107,8 @@ class PipelineResult(BaseModel):
 
     case_id: str
     operator_id: str
+    investigator_id: str | None = None
+    custodian_id: str | None = None
     evidence_id: str
     source_path: str
     out_dir: str
@@ -158,6 +160,8 @@ def run_pipeline(
     out_dir: str | Path,
     sink: EventSink | None = None,
     device_info: str = "",
+    investigator_id: str | None = None,
+    custodian_id: str | None = None,
     crypto: CryptoProvider | None = None,
     detector: FormatDetector | None = None,
     carve_options: CarveOptions | None = None,
@@ -358,6 +362,8 @@ def run_pipeline(
     result = PipelineResult(
         case_id=case_id,
         operator_id=operator_id,
+        investigator_id=investigator_id,
+        custodian_id=custodian_id,
         evidence_id=evidence_id,
         source_path=str(source),
         out_dir=str(out_dir),
@@ -441,24 +447,18 @@ def _encrypt_image(
     case_id: str,
     record: AcquisitionRecord,
 ) -> EncryptedArtifact | None:
-    """Stream-encrypt the image with the case DEK, or skip if no key is reachable.
+    """Stream-encrypt the image with the case DEK using the provider's public encrypt_file method.
 
-    The shared ``CryptoProvider`` interface is bytes-only; for a multi-GB image
-    the streaming ``encrypt_file`` from the crypto module is the right tool,
-    and it needs the raw 32-byte key. ``PhoenixCryptoProvider`` keeps that key
-    in a per-case registry reachable through ``_get_key_for_case``; a provider
-    without that hook simply gets no image-level encryption (fragments are
-    still encrypted through the public interface). A public "encrypt_file"
-    method on the provider would make this seam unnecessary.
+    The shared ``CryptoProvider`` interface now includes ``encrypt_file`` for
+    streaming encryption of large files. If the provider doesn't implement it,
+    the image is skipped (fragments are still encrypted via the public interface).
     """
-    getter = getattr(crypto, "_get_key_for_case", None)
-    if getter is None:
-        logger.warning("crypto provider exposes no case key; image not encrypted")
+    encrypt_file_method = getattr(crypto, "encrypt_file", None)
+    if encrypt_file_method is None:
+        logger.warning("crypto provider exposes no encrypt_file; image not encrypted")
         return None
-    from backend.crypto.encryption import encrypt_file
 
-    key = bytes(getter(case_id))
-    encrypt_file(image_path, enc_path, key)
+    encrypt_file_method(image_path, enc_path, case_id)
     digest = hashlib.sha256()
     with open(enc_path, "rb") as fh:
         for chunk in iter(lambda: fh.read(4 * 1024 * 1024), b""):
