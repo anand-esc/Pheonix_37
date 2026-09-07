@@ -83,7 +83,9 @@ _LEGAL_BASIS = (
     "This draft does not by itself render the evidence admissible. Admissibility "
     "is determined by the court on the basis of the completed, signed certificate "
     "and all other relevant circumstances. The tool that generated this draft "
-    "supports procedural documentation — it does not decide admissibility."
+    "supports procedural documentation — it does not decide admissibility.\n\n"
+    "This draft requires human review and signature by a responsible person "
+    "before it can serve as a valid certificate under BSA 2023 Section 63."
 )
 
 
