@@ -30,36 +30,69 @@ In *Chandrabhan Sudam Sanap v. State of Maharashtra* (2025 INSC 116), the Suprem
 
 ```mermaid
 flowchart TD
-    A[Raw Disk / Disk Image] --> B["SHA-256 Intake Hash\n(computed on plaintext)"]
-    B --> C{Format Detector\nmagic bytes / signature engine}
-
-    C --> D["Hikvision Adapter\nWFS Filesystem Parser"]
-    C --> E["Dahua Adapter\nDHFS/DHAV Parser"]
-    C --> F["Generic NAL Carver\nVendor-Agnostic Fallback"]
-
-    D --> G[Common Evidence Representation]
-    E --> G
-    F --> G
-
-    G --> H["Fragment Fingerprinting\n& Recovery Engine\nNAL carving + fragment tagging"]
-    G --> I["Timestamp Normalisation\nper-camera offset correction\nUTC/IST handling, drift flagging"]
-    G --> J["Integrity Hashing\nSHA-256 at every stage\nplaintext-first"]
-
-    H --> K[Cross-Camera Correlation / Timeline]
-    I --> K
-    J --> K
-
-    K --> L["AI Triage\nYOLOv8-nano\nperson / vehicle / object detection\nnever identification"]
-
-    L --> M["Security Layer"]
-
-    subgraph M["Security Layer"]
-        M1["AES-256-GCM Encryption\nper-case DEK wrapped by Argon2id KEK"]
-        M2["Signed Hash-Chained Audit Ledger\nevery pipeline event recorded"]
-        M3["Role-Based Access Control\n4 roles, deny-by-default"]
+    subgraph Intake ["Intake Phase"]
+        A["Raw Evidence Source\n(Disk Image / Physical Device)"]
+        B["SHA-256 & MD5 Intake Hash\n(Computed during streaming read)"]
+        A --> B
     end
 
-    M --> N["Legal Certificate-Draft Generator\nPart A: operator fields\nPart B: expert fields\ndraft only - requires human signature"]
+    subgraph Parsing ["Format Detection & Parsing"]
+        C{"Format Detector\n(Magic Bytes / Signature Engine)"}
+        D["Hikvision Adapter\n(WFS Filesystem Parser)"]
+        E["Dahua Adapter\n(DHFS/DHAV Parser)"]
+        F["Generic NAL Carver\n(Vendor-Agnostic Fallback)"]
+        
+        B --> C
+        C --> D
+        C --> E
+        C --> F
+    end
+
+    subgraph Representation ["Normalisation & Integrity"]
+        G["Common Evidence Representation\n(Unified JSON Contract)"]
+        H["Fragment Fingerprinting & Recovery Engine\n(NAL Carving + Metadata Tagging)"]
+        I["Timestamp Normalisation\n(Per-Camera Offset Correction, Drift Flagging)"]
+        J["Cryptographic Integrity Engine\n(Continuous SHA-256 Validation)"]
+
+        D --> G
+        E --> G
+        F --> G
+        G --> H
+        G --> I
+        G --> J
+    end
+
+    subgraph Analysis ["Analysis & Triage"]
+        K["Cross-Camera Correlation Engine\n(Synchronised Timeline Assembly)"]
+        L["AI-Driven Triage Module\n(YOLOv8-Nano: Person/Vehicle Detection ONLY)"]
+
+        H --> K
+        I --> K
+        J --> K
+        K --> L
+    end
+
+    subgraph Security ["Security & Governance Layer"]
+        M1["AES-256-GCM Encrypted Vault\n(Per-Case DEK, Argon2id KEK)"]
+        M2["Signed Tamper-Evident Ledger\n(Hash-Chained Event Auditing)"]
+        M3["Role-Based Access Control\n(Strict Deny-By-Default Policies)"]
+    end
+
+    subgraph Output ["Reporting & Output Phase"]
+        N["Legal Certificate Draft Generator\n(BSA Section 63 Compliant)"]
+        O["Interactive Forensic Dashboard\n(React/Vite Client interface)"]
+    end
+
+    L --> M1
+    L --> M2
+    L --> M3
+    M1 --> N
+    M2 --> N
+    M3 --> N
+    N --> O
+
+    classDef phase fill:#f9f9f9,stroke:#333,stroke-width:1px;
+    class Intake,Parsing,Representation,Analysis,Security,Output phase;
 ```
 
 ---

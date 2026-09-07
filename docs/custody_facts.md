@@ -1,86 +1,68 @@
-# Custody facts: input for the certificate draft
+# Custody Facts: Certificate Draft Input
 
-Owner: `feat/acquisition-recovery` branch. Code: `backend/pipeline/custody.py`.
-Output: `<out_dir>/custody_facts.json`, written by every pipeline run.
+**Component Owner:** Acquisition & Recovery Module  
+**Source Location:** `backend/pipeline/custody.py`  
+**Output Specification:** `<out_dir>/custody_facts.json` (Automated generation per pipeline run)
 
-This file is **facts, not a certificate**. It is the structured input the
-reporting owner turns into a BSA 2023 section 63 certificate draft, which a
-responsible person then reviews and signs. Nothing in it is signed, and the
-`signature_block` is deliberately blank.
+The generated `custody_facts.json` file represents an immutable record of cryptographic and operational facts. It serves as the structured input for the reporting subsystem to generate a draft Bharatiya Sakshya Adhiniyam (BSA) 2023 Section 63 certificate. **This artifact constitutes a factual ledger, not a legal certificate.** It requires explicit human review and signature by an authorized official. The `signature_block` is intentionally generated blank to enforce this protocol.
 
-## Sections
+## Data Schema Sections
 
-| Section | Answers | Notable fields |
+| Section | Operational Scope | Critical Fields |
 |---|---|---|
-| `source` | what was examined, and what the tool believes it is | `declared_vendor`, `vendor_validation_status`, `detection_confidence`, `detection_rationale` |
-| `custody` | who did it and when | `operator_id`, `investigator_id`, `custodian_id`, `acquisition_id`, `started_utc`, `finished_utc`, `acquisition_status`, `notes` |
-| `method` | how the copy and the recovery were done | `read_only_acquisition`, plain-English `description`, `adapter`, `adapter_is_fallback`, `adapter_reason`, `recovery_method`, `stages` |
-| `tooling` | what produced it | `tool_version`, `python_version`, `platform`, run timestamps |
-| `integrity` | why the content can be trusted | `image_sha256`, `image_md5`, `verification_matched`, full `hash_lineage`, `recovery_hash`, `statement` |
-| `contents` | what is actually in the output | `fragment_count`, `channel_count`, `estimated_footage_seconds`, per-channel and per-fragment detail |
-| `limitations` | what the run could **not** establish | never empty; see below |
-| `signature_block` | the blanks a human fills in | all values empty except an explanatory `note` |
+| `source` | Identifies the physical/virtual media and its deduced vendor taxonomy | `declared_vendor`, `vendor_validation_status`, `detection_confidence`, `detection_rationale` |
+| `custody` | Temporal and personnel operational log | `operator_id`, `investigator_id`, `custodian_id`, `acquisition_id`, `started_utc`, `finished_utc`, `acquisition_status`, `notes` |
+| `method` | Technical extraction methodology | `read_only_acquisition`, `description`, `adapter`, `adapter_is_fallback`, `adapter_reason`, `recovery_method`, `stages` |
+| `tooling` | Environmental specifications | `tool_version`, `python_version`, `platform`, `run_timestamps` |
+| `integrity` | Cryptographic verification metrics | `image_sha256`, `image_md5`, `verification_matched`, `hash_lineage`, `recovery_hash`, `statement` |
+| `contents` | Quantitative and qualitative recovery summary | `fragment_count`, `channel_count`, `estimated_footage_seconds`, fragment-level detail |
+| `limitations` | Explicit disclaimers regarding forensic constraints | Mandatory enumeration (see below) |
+| `signature_block` | Formal signatory attestation templates | All values left explicitly null (except instructional `note`) |
 
-Each fragment in `contents.fragments` carries its `fragment_id` (stable across
-re-runs), byte range, SHA-256, confidence score **and** the sentence-by-sentence
-`confidence_rationale`, plus its probable channel and duration estimate with
-the `duration_basis` that produced it.
+Each recovered fragment documented in `contents.fragments` carries a permanent `fragment_id`, byte boundary parameters, a SHA-256 hash, an aggregated confidence score, and a granular `confidence_rationale`. Furthermore, each fragment retains its assigned synthetic channel and derived temporal duration alongside the specified `duration_basis`.
 
-## Three identities, kept apart
+## Personnel Identity Isolation
 
-`custody` records up to three different people, and never conflates them:
+The `custody` block tracks up to three distinct operational roles. These roles are strictly isolated and never conflated by the system:
 
-* `operator_id` - who ran the forensic tool for this acquisition. Always present.
-* `investigator_id` - who is responsible for the investigation.
-* `custodian_id` - who holds the evidence in custody.
+* **`operator_id`**: The technical personnel executing the forensic acquisition. (Mandatory)
+* **`investigator_id`**: The lead official directing the case investigation. (Optional)
+* **`custodian_id`**: The malkhana (evidence room) official responsible for physical chain of custody. (Optional)
 
-The last two come from the case record and are optional, because a run can
-happen before a case exists; pass them to `run_pipeline(..., investigator_id=,
-custodian_id=)` or through the API's `RunRequest`. When absent they are `null`,
-never guessed from the operator.
+The latter two identities are supplied via external case records (e.g., via `run_pipeline(..., investigator_id=, custodian_id=)`). The system never infers these identities from the operator. 
 
-None of the three is the certifying person for BSA section 63. That person
-"occupies a responsible official position in relation to the device or its
-management" and is decided by a human at signing time, which is why
-`signature_block` stays blank no matter how many identities are supplied.
+Critically, none of these predefined identities automatically satisfy the "responsible official" requirement mandated by BSA Section 63. The certifying official is determined at the time of legal attestation, thereby requiring the `signature_block` to remain strictly null within the automated output.
 
-## Limitations are mandatory
+## Mandatory Limitations Disclosure
 
-`limitations` is never empty. It always states that no wall-clock time is
-recoverable from a bare bitstream, and that confidence scores are structural
-(how completely a recording was reconstructed) and not a claim about
-authenticity of content. It additionally records, when they apply:
+To ensure court defensibility, the `limitations` block is intentionally never empty. It persistently documents that absolute wall-clock synchronization cannot be derived from a raw bitstream and explicitly states that structural confidence scores do not constitute validation of scene authenticity.
 
-* that no validated native parser was used and recovery was generic carving,
-  with the reason the vendor adapter was not used;
-* that the vendor name is a byte-signature inference, not a manufacturer
-  confirmation, whenever the grade is not `VALIDATED`;
-* how many recordings had no declared frame rate, so their durations rest on
-  an assumption that scales directly with the true rate;
-* how many recordings do not end at an end-of-stream marker;
-* every note the timeline produced.
+Furthermore, it systematically records contextual constraints, such as:
 
-A draft that hides these is worse than useless in court, which is why they are
-generated rather than left to the person writing the report.
+* The necessity of falling back to generic NAL carving, including the specific rationale for bypassing a vendor adapter.
+* Vendor identification deriving from byte-signature heuristics rather than physical manufacturer verification.
+* The enumeration of recordings processed using an assumed frame rate due to missing VUI metadata.
+* The enumeration of streams lacking standardized end-of-stream termination markers.
+* All warnings generated by the temporal correlation engine.
 
-## Failed runs
+A legal draft that omits these limitations compromises forensic integrity. Consequently, the pipeline hardcodes these disclosures directly into the facts output.
 
-If post-write verification did not match, `integrity.verification_matched` is
-`false` and `integrity.statement` reads "Verification did not match: this image
-must not be relied on." A certificate draft must not be produced from such a
-run.
+## Failure State Handling
 
-## For the reporting owner
+In the event of a post-acquisition hash verification failure, `integrity.verification_matched` is explicitly recorded as `false`. The accompanying `integrity.statement` asserts: *"Verification did not match: this image must not be relied on."* The reporting subsystem is strictly prohibited from generating a certificate draft utilizing data from a compromised run.
+
+## Subsystem Integration Protocol
 
 ```python
 from backend.pipeline.custody import load_custody_facts
 
 facts = load_custody_facts(run_dir / "custody_facts.json")
-facts.integrity.image_sha256      # the evidence identity
-facts.limitations                 # print verbatim, do not summarise away
-facts.signature_block             # the blanks the signatory completes
+# Access the core cryptographic identity
+image_hash = facts.integrity.image_sha256
+# Limitations MUST be rendered verbatim; summarization is prohibited
+render_limitations_verbatim(facts.limitations)
+# Signatory template block
+render_signature_template(facts.signature_block)
 ```
 
-Field names or extra facts you need: ask and they get added here rather than
-being re-derived in the report layer, so there is exactly one place where a
-custody statement comes from.
+To maintain architectural integrity, all new facts or metadata must be implemented upstream within the `custody.py` generation logic. Downstream report layers must never re-derive forensic facts independently.

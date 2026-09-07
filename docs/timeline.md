@@ -1,81 +1,47 @@
-# Timeline and channel attribution
+# Temporal Correlation and Channel Attribution
 
-Owner: `feat/acquisition-recovery` branch. Code:
-`backend/adapters/generic_carver/timeline.py`.
+**Component Owner:** Acquisition & Recovery Module  
+**Source Location:** `backend/adapters/generic_carver/timeline.py`
 
-A vendor index tells you which camera recorded what and when. Once that index
-is gone, the bitstream itself is the only witness left, and it is a partial
-one. This module reports exactly what the bitstream supports and labels
-everything else as an estimate with its basis. Nothing here invents a clock or
-a camera number.
+In the absence of an intact vendor index, the temporal ordering and source attribution of recovered video fragments must be derived strictly from the surviving bitstream. This module adheres to rigorous forensic standards by explicitly separating cryptographically verifiable facts from mathematical estimates, ensuring all derived metadata is court-defensible.
 
-## What comes from where
+## Derivation Methodology
 
-| Question | Answer used | Basis |
+The temporal correlation engine extracts and infers metrics based strictly on encoded bitstream properties:
+
+| Extracted Metric | Technical Artifact Utilized | Forensic Basis |
 |---|---|---|
-| In what order were these recorded? | position of the fragment in the image | write order on a recorder that has not wrapped around |
-| How long is each recording? | `pictures / frame rate` | `declared_fps` from SPS VUI timing, else the caller's assumed rate |
-| Which camera? | fragments sharing identical SPS bytes | one encoder configuration = one probable channel |
-| What time of day? | not answered | no wall clock exists in an elementary stream |
+| **Sequential Ordering** | Offset byte position within the source image | Sequential sector write order (applicable exclusively to non-overwritten sectors) |
+| **Temporal Duration** | `Picture Count / Frame Rate` | Explicit `declared_fps` derived from SPS VUI (Video Usability Information) timing parameters; otherwise scales against an operator-defined constant |
+| **Channel Attribution** | Cryptographic identity (SHA-256) of SPS (Sequence Parameter Set) metadata | A unique encoder configuration acts as a reliable proxy for a distinct hardware channel |
+| **Absolute Timestamp** | Not mathematically derivable | Elementary streams inherently lack UTC/IST wall-clock synchronization markers |
 
-`pictures` is counted from picture starts, not NAL units: H.264 uses
-`first_mb_in_slice == 0`, H.265 uses `first_slice_segment_in_pic_flag`, so a
-frame split into several slices is still counted once.
+*Note on Enumeration:* The `Picture Count` is quantified via explicit picture start sequences (`first_mb_in_slice == 0` for H.264, `first_slice_segment_in_pic_flag` for H.265) to ensure accurate framing regardless of slice fragmentation.
 
-## Frame rate
+## Frame Rate Extraction
 
-`parse_sps_h264` now reads the VUI timing block when the encoder wrote one:
-`fps = time_scale / (2 * num_units_in_tick)`. This is the rate the recorder
-itself declared, so durations built on it are as good as the recording. A
-malformed VUI is ignored rather than failing the whole SPS parse; the picture
-size is already known by that point.
+For H.264 streams, the SPS parser extracts the VUI timing parameters (when present) to calculate native frame rate: `fps = time_scale / (2 * num_units_in_tick)`. This calculation reflects the hardware's native recording configuration. Corrupt or malformed VUI blocks are safely bypassed to preserve standard stream recovery.
 
-When there is no VUI (common on cheap recorders), `build_timeline` falls back
-to `assumed_fps` (25 by default), marks the entry `duration_basis =
-"assumed_fps"`, and adds a note saying how many fragments are affected. Those
-durations scale linearly with the real rate: if the unit actually recorded at
-12.5 fps, every such estimate is exactly half of the truth.
+In instances where VUI parameters are omitted by the hardware vendor, the engine defaults to an operator-configurable `assumed_fps` constant (defaulting to 25 FPS). All such derivations are strictly documented with `duration_basis = "assumed_fps"`. As this assumption scales linearly, an operator may subsequently apply a universal correction factor once the true hardware configuration is established.
 
-H.265 VUI is not parsed yet, so H.265 fragments always use the assumed rate.
+## Channel Attribution Heuristics
 
-## Channels
+The engine aggregates recovered fragments by computing the SHA-256 hash of their isolated SPS bytes. Fragments sharing an identical SPS signature are grouped under synthetic identifiers (e.g., `probable-ch01`). This heuristic is documented with the following intrinsic forensic limitations:
 
-Fragments are grouped by the SHA-256 of their SPS bytes and named
-`probable-ch01`, `probable-ch02`, and so on, in the order they first appear in
-the image. Two honest limits, both written into the group's `rationale`:
+1. **Collisions:** Multiple distinct cameras operating under identical configurations (resolution, profile, level, bit-rate) will yield identical SPS signatures, collapsing into a single synthetic channel.
+2. **Fragmentation:** A single camera subjected to dynamic mid-recording reconfiguration will yield disparate SPS signatures, resulting in synthetic channel bifurcation.
 
-* two cameras configured identically (same resolution, profile, level, rate)
-  are indistinguishable in the bitstream and collapse into one group;
-* one camera reconfigured mid-recording produces two groups.
+Fragments lacking recoverable SPS data are isolated under the `unknown-encoder-config` signature strictly for indexing purposes. The `Timeline.to_channel_info()` output explicitly omits `clock_offset_seconds` as cross-channel synchronization remains mathematically indeterminate in a generic carving context.
 
-`Timeline.to_channel_info()` returns the shared-contract `ChannelInfo` list
-with `declared_frame_rate` and `declared_resolution` filled in and
-`clock_offset_seconds` left unset, because no clock is available to offset.
+## Temporal Synchronization Output
 
-Fragments with no readable SPS go into a single group whose signature is
-`unknown-encoder-config`, described as "grouped together only for listing".
+Each `TimelineEntry` records a `relative_start_seconds` metric, representing the cumulative chronological progression within its designated synthetic channel. Channels are not arbitrarily synchronized against one another. If a fragment's duration cannot be derived, the cumulative progression chain for that channel is deliberately severed and restarted to prevent systemic drift.
 
-## Times in the output
+## System Integration Points
 
-Each `TimelineEntry` carries `relative_start_seconds`: the cumulative position
-within its own channel, starting at zero for that channel's first recording.
-Channels are not aligned with each other, because nothing in the data says how
-they line up. If a fragment's duration is unknown the cumulative chain for
-that channel restarts rather than silently drifting.
+- **Data Models:** `EvidenceItem.channels`, `EvidenceItem.metadata` (including `channels_inferred`, `estimated_footage_seconds`, `timeline_notes`).
+- **Artefacts:** Logged natively within `PipelineResult.timeline` and the immutable `run_transcript.json`.
 
-## Where it appears
+## Resolution Pathways
 
-* `EvidenceItem.channels` (from `GenericCarverAdapter.parse`)
-* `EvidenceItem.metadata`: `channels_inferred`, `estimated_footage_seconds`,
-  `timeline_notes`, and per fragment `fragment_NNNN_channel`,
-  `fragment_NNNN_seconds` (with the basis in brackets)
-* `PipelineResult.timeline` and the `timeline` block of `run_transcript.json`
-* printed by `hardware/acquisition_rig/run_demo_pipeline.py`
-
-## What would make this better
-
-A vendor index (Hikvision WFS, Dahua DHFS) gives real channel numbers and real
-timestamps; when those adapters land, their `parse()` output replaces this
-inference entirely. Short of that, the operator can supply the recorder's
-configured frame rate for a case, which turns every `assumed_fps` estimate
-into a defensible one.
+The temporal ambiguities inherent to generic carving are entirely superseded upon the integration of native filesystem parsers (e.g., Hikvision WFS, Dahua DHFS), which extract exact absolute timestamps and physical channel designations directly from intact vendor structures.

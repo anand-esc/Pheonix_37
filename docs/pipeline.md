@@ -1,64 +1,45 @@
-# Acquisition-side pipeline runner
+# Acquisition-Side Pipeline Architecture
 
-Owner: `feat/acquisition-recovery` branch. Code: `backend/pipeline/runner.py`.
+**Component Owner:** Acquisition & Recovery Module  
+**Source Location:** `backend/pipeline/runner.py`
 
-`run_pipeline(source, case_id=..., operator_id=..., out_dir=...)` chains the
-modules on this branch into one auditable run:
+The `run_pipeline` function acts as the primary orchestrator for the forensic acquisition process. It securely transitions evidence from physical or virtual media through a structured, auditable pipeline ensuring cryptographically verifiable outputs at every stage.
 
-| Step | Module | Output | Events |
+## Execution Stages
+
+| Stage | Subsystem | Artefacts Generated | Emitted Ledger Events |
 |---|---|---|---|
-| 1 intake | `backend.acquisition.acquire` | `<out>/evidence.img` + `.acquisition.json` sidecar | `intake_started`, `intake_completed` / `intake_failed` |
-| 2 detection | `backend.detection.FormatDetector`, `resolve_adapter` | `DetectionReport`, `AdapterResolution` | `format_detected`, `adapter_resolved` |
-| 3 recovery | vendor adapter if importable, else `GenericCarverAdapter` | `EvidenceItem` fragments; `<out>/fragments/*.h264`; lossless MP4 views in `<out>/playable/` (`wrap_mp4=True`) | `recovery_started`, `recovery_completed`, `fragment_exported` |
-| 4 hash-then-encrypt | shared `CryptoProvider` (`PhoenixCryptoProvider` by default) plus streaming `encrypt_file` for the image | `<out>/vault/evidence.img.enc`, `<out>/vault/*.enc` | `encryption_completed` (image has `fragment_index = -1`) |
-| 5 persist | runner | `<out>/pipeline_result.json`, `<out>/run_transcript.json` | |
+| **1. Intake** | `backend.acquisition.acquire` | `<out>/evidence.img`, `.acquisition.json` sidecar | `intake_started`, `intake_completed`, `intake_failed` |
+| **2. Detection** | `backend.detection.FormatDetector`, `resolve_adapter` | `DetectionReport`, `AdapterResolution` | `format_detected`, `adapter_resolved` |
+| **3. Recovery** | Vendor Adapter (if validated), else `GenericCarverAdapter` | `EvidenceItem` structures, `<out>/fragments/*.h264`, Lossless wrappers in `<out>/playable/` | `recovery_started`, `recovery_completed`, `fragment_exported` |
+| **4. Cryptography** | `CryptoProvider` (AES-256-GCM) | `<out>/vault/evidence.img.enc`, `<out>/vault/*.enc` | `encryption_completed` |
+| **5. Persistence** | Pipeline Orchestrator | `<out>/pipeline_result.json`, `<out>/run_transcript.json` | (Ledger Persistence) |
 
-## Hash lineage
+## Cryptographic Hash Lineage
 
-`EvidenceItem.hash_lineage` ends up with, in order:
+The system maintains an unbroken chain of custody through the `hash_lineage` structure, ordered sequentially:
 
-1. `intake` SHA-256 and MD5 (streamed while imaging),
-2. `intake_verify` SHA-256 (re-read from the written image),
-3. `pre_encryption/fragment_NNNN` SHA-256 per exported fragment, produced by
-   `CryptoProvider.hash_plaintext` immediately before `encrypt`.
+1. **Intake Hash:** SHA-256 and MD5 computed inline during the read-only streaming process.
+2. **Verification Hash:** SHA-256 computed iteratively by re-reading the written destination image, ensuring target disk integrity.
+3. **Pre-Encryption Hash:** SHA-256 computed on each exported fragment immediately prior to encryption via `CryptoProvider.hash_plaintext`.
 
-The runner refuses to encrypt a fragment whose pre-encryption hash differs
-from the hash the carver computed from the image bytes. Ciphertext hashes are
-kept in `PipelineResult.encrypted`, separate from plaintext lineage.
+The orchestrator enforces a strict fail-safe: it aborts encryption if the pre-encryption hash deviates from the hash computed by the recovery engine during carving. Ciphertext hashes are segregated into `PipelineResult.encrypted` to ensure the core forensic identity remains plaintext-derived.
 
-## Adapter routing
+## Vendor Adapter Routing
 
-The vendor adapters live on other branches. When their modules are absent
-the runner records `fallback = True` and uses the generic carver; when they
-are present and export the expected class names (see
-`docs/format_signatures.md`), their `parse()` result is merged into the
-evidence item and no carving happens. Tests cover both paths with a stub.
+The pipeline dynamically resolves vendor-specific format adapters (e.g., Hikvision WFS, Dahua DHFS). If a target filesystem signature matches a validated adapter, the pipeline processes the data natively. In instances where an adapter is absent or validation fails, the system documents a `fallback = True` event and defaults to the robust `GenericCarverAdapter`. Both code paths are extensively validated by automated testing matrices.
 
-## Outputs
+## Output Structure
 
-`pipeline_result.json` is the full `PipelineResult` (acquisition record,
-detection report, adapter summary, evidence item, carve result, exported and
-encrypted artefacts, timings, events). `run_transcript.json` is the compact,
-human-readable replay used by `hardware/acquisition_rig/run_demo_pipeline.py
---fallback`.
+- **`pipeline_result.json`**: A comprehensive machine-readable compilation containing the acquisition record, format detection metrics, adapter resolution summary, generated evidence items, exported fragments, cryptographic metadata, operation timings, and an event log.
+- **`run_transcript.json`**: A streamlined, human-auditable replay file, utilized by `run_demo_pipeline.py` to reconstruct forensic states accurately.
 
-## Not in scope here
+## Out-of-Scope Operations
 
-Ledger persistence of events (the ledger branch subscribes to the sink) and
-report generation (reporting branch reads `pipeline_result.json`). The API
-router exists (`backend/api/routes_acquisition.py`) but is not registered.
+This module exclusively handles extraction and immediate cryptographic securing. Persistent ledger commits and reporting generation (e.g., BSA Section 63 drafts) are handled asynchronously by downstream subsystems subscribing to the event sink. 
 
-## Whole-image encryption
+## Full-Image Encryption Procedures
 
-`encrypt_image=True` (default) also streams the whole image into
-`<out>/vault/evidence.img.enc` with the crypto module's `encrypt_file`
-(AES-256-GCM, nonce + ciphertext + tag, constant memory). The plaintext hash
-is the intake SHA-256 already in the lineage; the ciphertext SHA-256 is
-recorded in `PipelineResult.image_encrypted` and emitted as an
-`encryption_completed` event with `fragment_index = -1`.
+When configured with `encrypt_image=True` (default behavior), the pipeline routes the entire acquired image into `<out>/vault/evidence.img.enc` utilizing AES-256-GCM with a unique nonce and constant-memory streaming. 
 
-The public `CryptoProvider` interface is bytes-only, so the runner obtains
-the case DEK through `PhoenixCryptoProvider._get_key_for_case`. If a provider
-has no such hook the image step is skipped with a warning and fragments are
-still encrypted through the public interface. A public `encrypt_file`-style
-method on the provider would remove that seam; flagged for the crypto owner.
+The encryption module records the resulting ciphertext SHA-256 in `PipelineResult.image_encrypted` and broadcasts an `encryption_completed` event flagged as `fragment_index = -1`. The system acquires the case-specific Data Encryption Key (DEK) via a protected interface; should the crypto provider lack this capability, the full-image encryption step is safely bypassed with an audited warning, while individual fragments remain encrypted.

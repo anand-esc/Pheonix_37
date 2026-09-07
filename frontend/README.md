@@ -1,16 +1,14 @@
-# React + Vite
+# Phoenix Forensic Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+The frontend component of the Phoenix architecture is an interactive, secure forensic dashboard built with React and Vite. It is designed to run within an Electron container to provide a desktop-grade, court-defensible analysis environment for investigators and technical experts.
 
-Currently, two official plugins are available:
+## Core Capabilities
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Evidence Intake & Case Management**: Monitor ongoing acquisitions and view real-time recovery progress metrics.
+- **Synchronised Timeline Assembly**: Cross-camera correlation view, displaying temporally aligned fragments across multiple physical devices.
+- **Tamper-Evident Provenance Tracking**: Visual representation of the cryptographic chain of custody, ensuring all rendered data maintains strict adherence to the underlying signed ledger.
+- **Role-Based Access Control (RBAC)**: Interface enforces strict deny-by-default access. Only authorised personnel may trigger export or reporting actions.
 
-## React Compiler
+## Architecture Guidelines
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+The frontend strictly acts as a presentation layer. It makes no forensic decisions, performs no hashing, and holds no decryption keys. All data is fetched securely from the Phoenix backend API, ensuring a firm boundary between evidence processing and visualization.

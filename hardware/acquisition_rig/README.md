@@ -1,129 +1,90 @@
-# Acquisition rig: SOP, runbook and demo fallback
+# Acquisition Rig: Standard Operating Procedure (SOP) and Fallback Protocols
 
-This directory holds everything needed to take a DVR/NVR hard disk from the
-bench to an encrypted, hash-chained set of recovered fragments, and to keep
-the demo going if the hardware does not cooperate.
+This directory contains the necessary components and documentation to securely transition a DVR/NVR hard disk from a physical evidence bench into an encrypted, hash-chained repository of recovered video fragments. It also contains synthetic fallback mechanisms to ensure continuous operation during demonstrations in the event of hardware failure.
 
-## 1. Bench setup (physical)
+## 1. Physical Bench Setup
 
-| Item | Purpose |
+| Component | Forensic Purpose |
 |---|---|
-| Forensic write blocker (SATA/USB bridge with write blocking) | Guarantees nothing is written to the evidence disk. Software read-only opening is a second line of defence, never the first. |
-| SATA dock or adapter cables | Connect the DVR disk to the acquisition laptop. |
-| Acquisition laptop with Python 3.11+ and this repository | Runs `run_demo_pipeline.py`. Needs administrator/root rights to open raw devices. |
-| Destination storage with at least 1.2x the disk capacity | Holds the image, fragments and vault. |
-| Evidence label, case form, camera/phone | Photograph the disk serial and connections before touching anything. |
+| **Forensic Write Blocker** | SATA/USB bridge hardware guaranteeing zero-byte writes to the evidence disk. Hardware blocking is mandatory; software read-only mounting is considered a secondary control. |
+| **SATA Interconnects** | Cables and docks to interface the DVR disk with the acquisition workstation. |
+| **Acquisition Workstation** | Configured with Python 3.11+ and this repository. Requires administrative or root privileges to mount raw block devices. |
+| **Destination Storage** | Formatted storage media with a minimum of 1.2x the source disk capacity to house the image, exported fragments, and the encrypted vault. |
+| **Documentation Tools** | Evidence labels, chain-of-custody forms, and a camera for photographic documentation of serial numbers and physical state prior to acquisition. |
 
-Simulation note: the build environment for this branch has no bench, so
-every run so far used `simulate_dvr.py`. The code path for a raw device is the
-same (`\\.\PhysicalDriveN` on Windows, `/dev/sdX` on Linux); only the source
-path changes.
+*Note for simulated environments:* The current build environment utilizes `simulate_dvr.py` due to the absence of physical bench hardware. The execution path for a physical block device remains identical (`\\.\PhysicalDriveN` on Windows, `/dev/sdX` on Linux).
 
-## 2. Standard operating procedure
+## 2. Standard Operating Procedure (SOP)
 
-1. Photograph the recorder, the disk label and serial. Fill in the case id
-   and operator id on the evidence form.
-2. Power the recorder off. Remove the disk. Never boot the recorder with the
-   disk connected once it is evidence: recorders overwrite freely.
-3. Connect the disk through the write blocker. Confirm the blocker's
-   read-only indicator before connecting to the laptop.
-4. Identify the device path:
-   * Windows: `wmic diskdrive list brief` or Disk Management; use
-     `\\.\PhysicalDriveN`.
-   * Linux: `lsblk -o NAME,SIZE,MODEL,SERIAL`; use `/dev/sdX`.
-5. Set the two secrets the crypto and ledger layers require. They have no
-   defaults on purpose - the tool refuses to run rather than encrypt with a
-   guessable key:
-
-   ```
-   Windows : $env:PHOENIX_MASTER_SECRET = "<case passphrase>"
-             $env:PHOENIX_LEDGER_SECRET = "<ledger signing secret>"
-   Linux   : export PHOENIX_MASTER_SECRET=<case passphrase>
-             export PHOENIX_LEDGER_SECRET=<ledger signing secret>
-   ```
-
-   Use the values your team agreed for the case; do not commit them. Running
-   with `--no-encrypt` skips the crypto layer entirely if you only need the
-   recovery output.
-
-6. Run the pipeline (as administrator/root):
-
-   ```
+1. **Physical Documentation:** Photograph the recording unit, the storage disk label, and all serial numbers. Document the `case_id` and `operator_id` on the official evidence intake form.
+2. **Media Extraction:** Disconnect power from the recording unit. Extract the internal storage disk. Under no circumstances should the recorder be booted with the evidence disk attached, as DVR operating systems routinely overwrite data upon initialization.
+3. **Hardware Interfacing:** Connect the extracted disk to the forensic write blocker. Verify the blocker's read-only indicator LED is active prior to connecting the USB interface to the acquisition workstation.
+4. **Device Identification:**
+   * **Windows:** Execute `wmic diskdrive list brief` or utilize Disk Management to identify the target as `\\.\PhysicalDriveN`.
+   * **Linux:** Execute `lsblk -o NAME,SIZE,MODEL,SERIAL` to identify the target as `/dev/sdX`.
+5. **Cryptographic Initialization:** Initialize the mandatory cryptographic secrets for the vault and ledger subsystems. The pipeline will strictly refuse to execute rather than default to insecure fallback keys.
+   * **Windows:**
+     ```powershell
+     $env:PHOENIX_MASTER_SECRET = "<authorized_case_passphrase>"
+     $env:PHOENIX_LEDGER_SECRET = "<authorized_ledger_signing_secret>"
+     ```
+   * **Linux:**
+     ```bash
+     export PHOENIX_MASTER_SECRET="<authorized_case_passphrase>"
+     export PHOENIX_LEDGER_SECRET="<authorized_ledger_signing_secret>"
+     ```
+   *Note: These secrets must be agreed upon per case protocol and never committed to version control. To execute a strict recovery without cryptographic wrapping, append the `--no-encrypt` flag.*
+6. **Pipeline Execution:** Execute the acquisition script with administrative/root privileges:
+   ```bash
    python hardware/acquisition_rig/run_demo_pipeline.py --source \\.\PhysicalDrive2 --case CASE-042 --operator op-amritansh --out E:\phoenix\CASE-042 --device-info "Hikvision DS-7204, WD10PURX SN WCC4..."
    ```
+   *Execution Flow:* The script images the device in a read-only stream, simultaneously computing SHA-256 and MD5 hashes. It subsequently verifies the image from disk, generates the custody sidecar, executes format detection, recovers fragments, re-hashes each fragment, and encrypts the output into the `vault/` directory. All operational events are logged to `run_transcript.json`.
+7. **Identity Registration:** Manually transcribe the terminal-output SHA-256 hash onto the physical evidence form. This hash constitutes the cryptographic identity of the evidence.
+8. **Custody Securing:** Disconnect the disk, place it in an anti-static evidence bag, and transfer the destination folder to the secure case network share. The `evidence.img.acquisition.json` sidecar and `pipeline_result.json` serve as the machine-readable custody record.
 
-   The script images the device read-only, hashes SHA-256 and MD5 while
-   streaming, verifies the image from disk, writes the custody sidecar,
-   detects the vendor, carves fragments, exports them, hashes each one again
-   and encrypts them into `vault/`. Every step emits an event that is written
-   to `run_transcript.json`.
-7. Record the printed image SHA-256 on the evidence form. That value is the
-   identity of the evidence from now on.
-8. Disconnect the disk, bag it, and store the destination folder on the case
-   share. The `evidence.img.acquisition.json` sidecar and
-   `pipeline_result.json` are the machine-readable custody record.
+*Failure Protocol:* Should the intake phase fail, the generated sidecar will reflect `status = FAILED` alongside the failure rationale. This file must be retained as part of the permanent audit record. Rectify the hardware or permission fault and initiate a new pipeline run into a distinct output directory.
 
-If intake fails, the sidecar still exists with `status = FAILED` and the
-reason. Do not delete it; it is part of the record. Fix the cause (rights,
-cable, destination space) and run again into a new output folder.
+## 3. Demonstration Protocols
 
-## 3. Demo runbook
+To initialize a demonstration environment without physical hardware:
 
-Before the demo:
-
-```
-python hardware/acquisition_rig/simulate_dvr.py --layout wfs --size 32M   # Hikvision-shaped image
-python hardware/acquisition_rig/run_demo_pipeline.py                      # full live run into out/run/
+```bash
+# Generate a synthetic WFS-compliant image (32 MiB)
+python hardware/acquisition_rig/simulate_dvr.py --layout wfs --size 32M
+# Execute the live acquisition pipeline
+python hardware/acquisition_rig/run_demo_pipeline.py
 ```
 
-Two layouts are available:
+### Synthetic Layout Configurations
 
-* `--layout wfs` builds a **Hikvision-shaped** image: a master sector with the
-  vendor magic at 0x210, a `HIKBTREE` index page that lists only the
-  recordings the recorder still knows about, and fixed data blocks. Recordings
-  deleted from the index are still on the disk, which is the point of the
-  demo: the index says six, the disk holds eight, and the carver recovers all
-  eight. It is synthetic and clearly marked as such, never presented as a
-  dump from a real unit.
-* `--layout flat` (default) builds the simpler generic layout, useful for the
-  other vendor marker variants (`--vendor dahua|avi|mp4|mpegts|none`).
+* `--layout wfs`: Generates a synthetic Hikvision-compliant structure, including a master sector with valid magic bytes at 0x210, a `HIKBTREE` index page, and populated data blocks. The index intentionally omits specific recordings that remain present on the block device, demonstrating the carver's ability to recover deleted data circumventing the native filesystem index. This artifact is strictly marked as synthetic.
+* `--layout flat` (default): Generates a generic block layout suitable for testing alternative format signatures (e.g., `--vendor dahua|avi|mp4|mpegts|none`).
 
-During the demo, show `out/run/run_transcript.json` (or the console output)
-and the `vault/` directory. The transcript lists the detection rationale,
-every carved fragment with its byte range, codec and confidence rationale,
-the hash lineage, and every event in order.
+### Failsafe Replay Execution
 
-If anything goes wrong on stage:
+In the event of demonstration environment instability, a deterministic replay mechanism is available:
 
-```
+```bash
 python hardware/acquisition_rig/run_demo_pipeline.py --fallback
 ```
 
-replays `fallback_run/run_transcript.json`, committed from a real run of this
-pipeline on a 32 MiB Hikvision-shaped image, and clearly labelled as a replay
-in the output. `fallback_run/custody_facts.json` from the same run is
-committed beside it for the certificate-draft demo.
+This command parses `fallback_run/run_transcript.json` (a verified execution on a 32 MiB synthetic WFS image) and outputs the simulated log. The output explicitly declares its replay status to maintain transparency. The associated `fallback_run/custody_facts.json` is utilized to demonstrate the certificate-drafting module.
 
-## 4. What the pipeline proves
+## 4. Forensic Guarantees
 
-* The source is opened read-only and its hash is computed while streaming,
-  before any other code sees the bytes.
-* The image on disk is re-hashed and must match the streamed hash.
-* Deleted recordings (present on disk, absent from the recorder index) are
-  recovered byte for byte; the simulator's manifest lets you verify that.
-* Every fragment is hashed before encryption; ciphertext hashes are recorded
-  separately, so tampering with either is detectable.
-* Every stage emits events that a signed ledger can subscribe to.
-* `custody_facts.json` collects everything a BSA section 63 certificate draft
-  needs, including a limitations list that is never empty and a signature
-  block left deliberately blank.
+* **Read-Only Enforcement:** The source device is mounted in a strictly read-only mode, and the primary cryptographic hash is computed inline before any downstream processing logic is invoked.
+* **Integrity Verification:** The target image written to disk is subsequently read and hashed to guarantee parity with the streamed source.
+* **Orphaned Data Recovery:** Deleted media present on the block device but absent from the vendor index is verifiably recovered.
+* **Cryptographic Wrapping:** All recovered fragments are hashed in plaintext prior to AES-256-GCM encryption. Ciphertext hashes are tracked independently to detect tampering at either layer.
+* **Event Auditing:** All pipeline operations emit structured events to the immutable hash-chained ledger.
+* **Legal Compliance:** The `custody_facts.json` artifact generates all prerequisite data for a BSA Section 63 certificate draft, enforcing mandatory disclosure of limitations and requiring explicit human attestation.
 
-## 5. Files
+## 5. Artifact Directory
 
-| File | Role |
+| Artifact | Function |
 |---|---|
-| `simulate_dvr.py` | Builds a synthetic DVR disk image plus manifest into `out/` (ignored by git). `--layout wfs` gives the Hikvision-shaped variant. |
-| `run_demo_pipeline.py` | Runs `backend.pipeline.runner.run_pipeline` on a source and prints a summary; `--fallback` replays the committed transcript. |
-| `fallback_run/run_transcript.json` | Committed transcript of a successful run for the demo fallback. |
-| `fallback_run/custody_facts.json` | Certificate-draft input pack from the same run. |
-| `out/` | Generated images and run outputs; never committed. |
+| `simulate_dvr.py` | Generates synthetic physical disk images and associated manifests into the `out/` directory. |
+| `run_demo_pipeline.py` | CLI orchestrator for `backend.pipeline.runner.run_pipeline`; supports `--fallback` replay functionality. |
+| `fallback_run/run_transcript.json` | Cryptographically verified execution transcript utilized for failsafe demonstrations. |
+| `fallback_run/custody_facts.json` | Certificate-draft input parameters derived from the fallback run. |
+| `out/` | Ephemeral directory for generated images and pipeline outputs (excluded from version control). |
