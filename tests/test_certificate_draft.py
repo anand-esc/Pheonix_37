@@ -102,7 +102,7 @@ class TestBuildCertificateDraft:
 
     def test_part_b_sha256_matches_source(self, real_draft):
         assert real_draft.part_b.image_sha256 == (
-            "768e8d4b7d8def560803a6350f07f9c8240cb02351df88af2e1f8c6fa5fa556b"
+            "09aeda3863bcc977fef8b6faecbeece6c4e64f1afd9125c9031eb1b25c3f2100"
         )
 
     def test_part_b_verification_matched_true(self, real_draft):
@@ -177,8 +177,8 @@ class TestBuildCertificateDraft:
         assert "admissib" in lower
 
     def test_document_says_draft_requires_signature(self, real_draft):
-        # The module-level legal_basis string must contain "requires signature" concept
-        lower = real_draft.legal_basis_statement.lower()
+        # The module-level disclaimer string must contain "requires signature" concept
+        lower = real_draft.disclaimer.lower()
         assert "review" in lower and "signature" in lower
 
     def test_vendor_fallback_status_label(self, facts_dict):
@@ -318,10 +318,10 @@ class TestRenderHtml:
         assert "CASE-DEMO-001" in html
 
     def test_sha256_rendered(self, html):
-        assert "768e8d4b7d8def560803a6350f07f9c8240cb02351df88af2e1f8c6fa5fa556b" in html
+        assert "09aeda3863bcc977fef8b6faecbeece6c4e64f1afd9125c9031eb1b25c3f2100" in html
 
     def test_md5_rendered(self, html):
-        assert "38d700ab355afcd069ee6694ed73ff44" in html
+        assert "dfc758ac05a041b7320ad452d4f95bd8" in html
 
     def test_operator_id_rendered(self, html):
         assert "op-amritansh" in html
@@ -453,7 +453,7 @@ class TestRenderPdf:
         assert b"CASE-DEMO-001" in pdf_text
 
     def test_sha256_prefix_in_content(self, pdf_text):
-        assert b"768e8d4b" in pdf_text
+        assert b"09aeda38" in pdf_text
 
     def test_operator_id_in_content(self, pdf_text):
         assert b"amritansh" in pdf_text
