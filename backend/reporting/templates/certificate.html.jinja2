@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ draft.document_title }} — DRAFT</title>
+  <style>
+    /* ── Reset + base ────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Georgia', 'Times New Roman', serif;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #1a1a1a;
+      background: #f5f5f0;
+      padding: 24px;
+    }
+    .page {
+      max-width: 860px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 48px 56px;
+      border: 1px solid #ccc;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.10);
+      position: relative;
+    }
+
+    /* ── DRAFT watermark ─────────────────────────────────────────────────── */
+    .draft-watermark {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 0;
+    }
+    .draft-watermark span {
+      font-size: 120px;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      color: rgba(220,50,50,0.08);
+      transform: rotate(-35deg);
+      user-select: none;
+    }
+
+    /* ── DRAFT banner (top of page) ──────────────────────────────────────── */
+    .draft-banner {
+      background: #b91c1c;
+      color: #fff;
+      text-align: center;
+      padding: 12px 24px;
+      font-family: 'Arial', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 32px;
+      border-radius: 4px;
+    }
+
+    /* ── Document header ─────────────────────────────────────────────────── */
+    .doc-header { text-align: center; margin-bottom: 32px; }
+    .doc-header .jurisdiction {
+      font-family: 'Arial', sans-serif;
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #555;
+      margin-bottom: 8px;
+    }
+    .doc-header h1 {
+      font-size: 18px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 4px;
+    }
+    .doc-header .subtitle {
+      font-size: 12px;
+      color: #555;
+      font-style: italic;
+    }
+    .doc-header .ref-line {
+      margin-top: 12px;
+      font-size: 11px;
+      color: #333;
+    }
+    hr.divider {
+      border: none;
+      border-top: 2px solid #1a1a1a;
+      margin: 24px 0;
+    }
+    hr.divider-thin {
+      border: none;
+      border-top: 1px solid #ccc;
+      margin: 16px 0;
+    }
+
+    /* ── Sections ────────────────────────────────────────────────────────── */
+    .section { margin-bottom: 28px; }
+    .section-title {
+      font-family: 'Arial', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #1a1a1a;
+      background: #f0f0e8;
+      padding: 5px 10px;
+      border-left: 4px solid #333;
+      margin-bottom: 12px;
+    }
+    .field-grid {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 4px 12px;
+    }
+    .field-label {
+      font-weight: 600;
+      font-size: 12px;
+      color: #333;
+      padding: 3px 0;
+      border-bottom: 1px dotted #ddd;
+    }
+    .field-value {
+      font-size: 12px;
+      padding: 3px 0;
+      border-bottom: 1px dotted #ddd;
+      word-break: break-all;
+    }
+    .field-value.mono {
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      word-break: break-all;
+    }
+    .field-value.status-validated { color: #166534; font-weight: 600; }
+    .field-value.status-fallback  { color: #92400e; font-weight: 600; }
+    .field-value.status-research  { color: #6d28d9; font-weight: 600; }
+    .field-value.status-ok { color: #166534; font-weight: 600; }
+    .field-value.status-fail { color: #991b1b; font-weight: 600; }
+
+    /* ── Hash lineage table ──────────────────────────────────────────────── */
+    table.hash-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+      font-family: 'Arial', sans-serif;
+      margin-top: 8px;
+    }
+    table.hash-table th {
+      background: #e8e8e0;
+      text-align: left;
+      padding: 5px 8px;
+      font-weight: 700;
+      border: 1px solid #ccc;
+    }
+    table.hash-table td {
+      padding: 4px 8px;
+      border: 1px solid #ddd;
+      vertical-align: top;
+    }
+    table.hash-table tr:nth-child(even) td { background: #fafaf8; }
+    .mono-small { font-family: 'Courier New', monospace; font-size: 10px; word-break: break-all; }
+
+    /* ── Limitations ─────────────────────────────────────────────────────── */
+    .limitations-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .limitations-list li {
+      padding: 6px 0 6px 18px;
+      border-bottom: 1px dotted #ddd;
+      position: relative;
+      font-size: 12px;
+    }
+    .limitations-list li::before {
+      content: '⚠';
+      position: absolute;
+      left: 0;
+      color: #b45309;
+      font-size: 11px;
+    }
+
+    /* ── Fragment table ──────────────────────────────────────────────────── */
+    table.fragment-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+      margin-top: 8px;
+      font-family: 'Arial', sans-serif;
+    }
+    table.fragment-table th {
+      background: #e8e8e0;
+      padding: 5px 6px;
+      text-align: left;
+      border: 1px solid #ccc;
+      font-weight: 700;
+    }
+    table.fragment-table td {
+      padding: 4px 6px;
+      border: 1px solid #ddd;
+      vertical-align: top;
+    }
+    table.fragment-table tr:nth-child(even) td { background: #fafaf8; }
+    .confidence-high { color: #166534; font-weight: 700; }
+    .confidence-med  { color: #92400e; }
+    .confidence-low  { color: #991b1b; }
+
+    /* ── Legal basis ─────────────────────────────────────────────────────── */
+    .legal-basis {
+      background: #f8f8f0;
+      border: 1px solid #ddd;
+      border-left: 4px solid #555;
+      padding: 12px 16px;
+      font-size: 11.5px;
+      line-height: 1.7;
+      margin-top: 8px;
+    }
+
+    /* ── Disclaimer box ──────────────────────────────────────────────────── */
+    .disclaimer-box {
+      background: #fff8e1;
+      border: 1px solid #f59e0b;
+      border-radius: 4px;
+      padding: 12px 16px;
+      font-size: 11.5px;
+      font-style: italic;
+      color: #78350f;
+      margin-bottom: 24px;
+    }
+
+    /* ── Signature block ─────────────────────────────────────────────────── */
+    .sig-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px 40px;
+      margin-top: 8px;
+    }
+    .sig-field { border-bottom: 1px solid #333; padding: 4px 0; min-height: 28px; font-size: 12px; }
+    .sig-label { font-size: 10px; color: #555; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.1em; }
+    .sig-note {
+      font-size: 11px;
+      font-style: italic;
+      color: #555;
+      margin-top: 16px;
+      border-top: 1px dotted #ccc;
+      padding-top: 10px;
+    }
+
+    /* ── Footer ──────────────────────────────────────────────────────────── */
+    .doc-footer {
+      margin-top: 32px;
+      font-family: 'Arial', sans-serif;
+      font-size: 10px;
+      color: #888;
+      text-align: center;
+      border-top: 1px solid #ddd;
+      padding-top: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="draft-watermark"><span>DRAFT</span></div>
+  <div class="page">
+
+    <!-- DRAFT Banner -->
+    <div class="draft-banner">
+      ⚠ DRAFT — REQUIRES HUMAN REVIEW AND SIGNATURE — NOT A VALID CERTIFICATE ⚠
+    </div>
+
+    <!-- Document Header -->
+    <div class="doc-header">
+      <div class="jurisdiction">Bharatiya Sakshya Adhiniyam 2023 — Section 63</div>
+      <h1>{{ draft.document_title }}</h1>
+      <div class="subtitle">Certificate Draft — Pending Review and Signature by Responsible Person</div>
+      <div class="ref-line">
+        Draft Reference: {{ draft.draft_reference }} &nbsp;|&nbsp;
+        Generated: {{ draft.generated_utc }} UTC &nbsp;|&nbsp;
+        Tool: {{ draft.tool_name }} {{ draft.tool_version }}
+      </div>
+    </div>
+    <hr class="divider" />
+
+    <!-- Disclaimer box -->
+    <div class="disclaimer-box">
+      {{ draft.disclaimer }}
+    </div>
+
+    <!-- ═══ PART A — CUSTODIAN / OPERATOR FIELDS ═══════════════════════════ -->
+    <div class="section">
+      <div class="section-title">Part A — Device Identity and Custody</div>
+      <div class="field-grid">
+        <div class="field-label">Case ID</div>
+        <div class="field-value">{{ draft.part_a.case_id }}</div>
+
+        <div class="field-label">Evidence ID</div>
+        <div class="field-value mono">{{ draft.part_a.evidence_id }}</div>
+
+        <div class="field-label">Source Device</div>
+        <div class="field-value">{{ draft.part_a.source_device_info }}</div>
+
+        <div class="field-label">Source Path</div>
+        <div class="field-value mono">{{ draft.part_a.source_path }}</div>
+
+        <div class="field-label">Declared Vendor</div>
+        <div class="field-value">{{ draft.part_a.declared_vendor }}</div>
+
+        <div class="field-label">Vendor Support Status</div>
+        <div class="field-value
+          {% if draft.part_a.vendor_validation_status == 'VALIDATED' %}status-validated
+          {% elif draft.part_a.vendor_validation_status == 'GENERIC_FALLBACK' %}status-fallback
+          {% else %}status-research{% endif %}">
+          {{ draft.part_a.vendor_validation_status_label }}
+        </div>
+
+        <div class="field-label">Detection Confidence</div>
+        <div class="field-value">{{ "%.0f"|format(draft.part_a.detection_confidence * 100) }}%</div>
+
+        <div class="field-label">Detection Rationale</div>
+        <div class="field-value">
+          <ul style="list-style:disc; padding-left:16px; margin:0;">
+          {% for r in draft.part_a.detection_rationale %}
+            <li>{{ r }}</li>
+          {% endfor %}
+          </ul>
+        </div>
+
+        <div class="field-label">Acquisition Operator</div>
+        <div class="field-value">{{ draft.part_a.operator_id }}</div>
+
+        <div class="field-label">Acquisition ID</div>
+        <div class="field-value mono">{{ draft.part_a.acquisition_id }}</div>
+
+        <div class="field-label">Acquisition Started (UTC)</div>
+        <div class="field-value">{{ draft.part_a.started_utc }}</div>
+
+        <div class="field-label">Acquisition Finished (UTC)</div>
+        <div class="field-value">{{ draft.part_a.finished_utc if draft.part_a.finished_utc else '[not recorded]' }}</div>
+
+        <div class="field-label">Acquisition Status</div>
+        <div class="field-value">{{ draft.part_a.acquisition_status }}</div>
+
+        {% if draft.part_a.custody_notes %}
+        <div class="field-label">Custody Notes</div>
+        <div class="field-value">{{ draft.part_a.custody_notes | join('; ') }}</div>
+        {% endif %}
+
+        <div class="field-label">Read-Only Acquisition</div>
+        <div class="field-value {% if draft.part_a.read_only_acquisition %}status-ok{% else %}status-fail{% endif %}">
+          {{ 'Yes' if draft.part_a.read_only_acquisition else 'NO — FLAG FOR REVIEW' }}
+        </div>
+
+        <div class="field-label">Method</div>
+        <div class="field-value">{{ draft.part_a.method_description }}</div>
+
+        <div class="field-label">Adapter Used</div>
+        <div class="field-value mono">{{ draft.part_a.adapter }}</div>
+
+        <div class="field-label">Generic Fallback?</div>
+        <div class="field-value {% if draft.part_a.adapter_is_fallback %}status-fallback{% else %}status-ok{% endif %}">
+          {{ 'Yes — ' + draft.part_a.adapter_reason if draft.part_a.adapter_is_fallback else 'No' }}
+        </div>
+
+        <div class="field-label">Pipeline Stages</div>
+        <div class="field-value">{{ draft.part_a.stages | join(' → ') }}</div>
+
+        <div class="field-label">Run Platform</div>
+        <div class="field-value">{{ draft.part_a.platform }} (Python {{ draft.part_a.python_version }})</div>
+      </div>
+    </div>
+
+    <!-- ═══ PART B — EXPERT / TECHNICAL FIELDS ════════════════════════════ -->
+    <div class="section">
+      <div class="section-title">Part B — Technical Integrity and Recovery</div>
+      <div class="field-grid">
+        <div class="field-label">Source Image SHA-256</div>
+        <div class="field-value mono">{{ draft.part_b.image_sha256 }}</div>
+
+        <div class="field-label">Source Image MD5</div>
+        <div class="field-value mono">{{ draft.part_b.image_md5 }}</div>
+
+        <div class="field-label">Image Size</div>
+        <div class="field-value">{{ draft.part_b.image_bytes | filesizeformat }} ({{ draft.part_b.image_bytes }} bytes)</div>
+
+        <div class="field-label">Verification Matched</div>
+        <div class="field-value {% if draft.part_b.verification_matched %}status-ok{% else %}status-fail{% endif %}">
+          {{ 'YES — copy verified against source hash' if draft.part_b.verification_matched else 'NO — IMAGE MUST NOT BE RELIED ON' }}
+        </div>
+
+        <div class="field-label">Integrity Statement</div>
+        <div class="field-value">{{ draft.part_b.integrity_statement }}</div>
+
+        {% if draft.part_b.recovery_hash %}
+        <div class="field-label">Recovery Hash</div>
+        <div class="field-value mono">{{ draft.part_b.recovery_hash }}</div>
+        {% endif %}
+
+        <div class="field-label">Encrypted Artifacts</div>
+        <div class="field-value">{{ draft.part_b.encrypted_artifacts }} fragment(s){% if draft.part_b.image_encrypted %} + full image{% endif %}</div>
+
+        <div class="field-label">Recovered Fragments</div>
+        <div class="field-value">{{ draft.part_b.fragment_count }}</div>
+
+        <div class="field-label">Probable Channels</div>
+        <div class="field-value">{{ draft.part_b.channel_count }}</div>
+
+        <div class="field-label">Estimated Footage</div>
+        <div class="field-value">
+          {% if draft.part_b.estimated_footage_seconds is not none %}
+            {{ "%.2f"|format(draft.part_b.estimated_footage_seconds) }} seconds
+          {% else %}
+            [not determined]
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Hash Lineage -->
+      <div style="margin-top:16px;">
+        <div class="field-label" style="border:none; margin-bottom:6px;">Hash Lineage (all pipeline stages, plaintext before encryption)</div>
+        <table class="hash-table">
+          <thead>
+            <tr><th>Stage</th><th>Algorithm</th><th>Hex Digest</th><th>Timestamp (UTC)</th></tr>
+          </thead>
+          <tbody>
+            {% for h in draft.part_b.hash_lineage %}
+            <tr>
+              <td>{{ h.stage }}</td>
+              <td>{{ h.algorithm }}</td>
+              <td class="mono-small">{{ h.hex_digest }}</td>
+              <td>{{ h.timestamp_utc }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Channel Summary -->
+      {% if draft.part_b.channels %}
+      <div style="margin-top:16px;">
+        <div class="field-label" style="border:none; margin-bottom:6px;">Channel Summary</div>
+        <table class="fragment-table">
+          <thead>
+            <tr><th>Channel ID</th><th>Resolution</th><th>Frame Rate</th><th>Rationale</th></tr>
+          </thead>
+          <tbody>
+            {% for ch in draft.part_b.channels %}
+            <tr>
+              <td>{{ ch.channel_id }}</td>
+              <td>{{ ch.declared_resolution or '[not declared]' }}</td>
+              <td>{{ ch.declared_frame_rate|string + ' fps' if ch.declared_frame_rate else '[not declared]' }}</td>
+              <td style="font-size:10px;">{{ ch.rationale or '' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+
+      <!-- Fragment Inventory -->
+      {% if draft.part_b.fragments %}
+      <div style="margin-top:16px;">
+        <div class="field-label" style="border:none; margin-bottom:6px;">Recovered Fragment Inventory</div>
+        <table class="fragment-table">
+          <thead>
+            <tr>
+              <th>#</th><th>Fragment ID</th><th>Byte Range</th><th>Codec</th>
+              <th>Channel</th><th>Est. Duration</th><th>Confidence</th><th>SHA-256</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for f in draft.part_b.fragments %}
+            {% set conf_class = 'confidence-high' if f.confidence_score >= 0.9 else ('confidence-med' if f.confidence_score >= 0.7 else 'confidence-low') %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td class="mono-small">{{ f.fragment_id }}</td>
+              <td class="mono-small">{{ f.byte_offset_start }}–{{ f.byte_offset_end }}</td>
+              <td style="font-size:10px;">{{ f.codec_info }}</td>
+              <td>{{ f.channel_id or '[unattributed]' }}</td>
+              <td>{{ "%.2f"|format(f.estimated_seconds) + 's' if f.estimated_seconds else '[N/A]' }}</td>
+              <td class="{{ conf_class }}">{{ "%.0f"|format(f.confidence_score * 100) }}%</td>
+              <td class="mono-small">{{ f.sha256 or '[not hashed]' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <div style="font-size:10px; color:#555; margin-top:6px; font-style:italic;">
+          Confidence scores are structural (reconstruction completeness), not content authenticity claims.
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- ═══ LIMITATIONS (mandatory — verbatim) ═══════════════════════════ -->
+    <div class="section">
+      <div class="section-title">Limitations — Verbatim from Pipeline</div>
+      <ul class="limitations-list">
+        {% for lim in draft.limitations %}
+        <li>{{ lim }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <!-- ═══ LEGAL BASIS ════════════════════════════════════════════════════ -->
+    <div class="section">
+      <div class="section-title">Legal Basis</div>
+      <div class="legal-basis">{{ draft.legal_basis_statement }}</div>
+    </div>
+
+    <!-- ═══ SIGNATURE BLOCK ════════════════════════════════════════════════ -->
+    <div class="section">
+      <div class="section-title">Signature Block — For Completion by Responsible Person</div>
+      <div class="sig-grid">
+        <div>
+          <div class="sig-field">{{ draft.signature_block.certifying_person_name }}</div>
+          <div class="sig-label">Full Name of Certifying Person</div>
+        </div>
+        <div>
+          <div class="sig-field">{{ draft.signature_block.designation }}</div>
+          <div class="sig-label">Official Designation / Rank</div>
+        </div>
+        <div>
+          <div class="sig-field">{{ draft.signature_block.responsible_for }}</div>
+          <div class="sig-label">Responsible For (describe relation to device)</div>
+        </div>
+        <div>
+          <div class="sig-field">{{ draft.signature_block.place }}</div>
+          <div class="sig-label">Place</div>
+        </div>
+        <div>
+          <div class="sig-field">{{ draft.signature_block.date }}</div>
+          <div class="sig-label">Date (DD/MM/YYYY)</div>
+        </div>
+        <div>
+          <div class="sig-field">{{ draft.signature_block.signature }}</div>
+          <div class="sig-label">Signature (with seal if applicable)</div>
+        </div>
+      </div>
+      <div class="sig-note">{{ draft.signature_block.note }}</div>
+    </div>
+
+    <!-- Footer -->
+    <hr class="divider-thin" />
+    <div class="doc-footer">
+      Generated by {{ draft.tool_name }} {{ draft.tool_version }} on {{ draft.generated_utc }} UTC
+      &nbsp;·&nbsp; This document is a machine-generated draft and is not a valid certificate.
+      &nbsp;·&nbsp; Draft ref: {{ draft.draft_reference }}
+    </div>
+
+  </div><!-- /page -->
+</body>
+</html>
