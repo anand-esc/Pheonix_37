@@ -13,8 +13,8 @@ export function CaseNavigationTabs() {
   ];
 
   return (
-    <div className="bg-white border-b border-slate-200 px-4 lg:px-8 shadow-2xs">
-      <div className="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto py-2">
+    <div className="bg-[var(--bg-panel)] border-b border-[var(--border)] px-4 lg:px-8">
+      <div className="max-w-7xl mx-auto flex items-center gap-1 overflow-x-auto py-2">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           return (
@@ -22,10 +22,10 @@ export function CaseNavigationTabs() {
               key={tab.path}
               to={tab.path}
               className={({ isActive }) =>
-                `flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                `flex items-center gap-2 px-3.5 py-2 rounded text-xs font-medium transition-all whitespace-nowrap border ${
                   isActive
-                    ? "bg-sky-50 text-sky-800 border border-sky-200 font-semibold shadow-2xs"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-transparent"
+                    ? "bg-[var(--accent-cyan-dim)] text-[var(--accent-cyan)] border-[rgba(62,214,196,0.2)] font-semibold"
+                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-panel-lighter)] border-transparent"
                 }`
               }
             >

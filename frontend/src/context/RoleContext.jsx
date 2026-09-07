@@ -1,14 +1,14 @@
 import React, { createContext, useContext, useReducer } from "react";
 
 export const ROLES = [
-  { id: "Investigator", label: "Investigator", badge: "bg-blue-900/60 text-blue-300 border-blue-700/60" },
-  { id: "Technical Expert", label: "Technical Expert", badge: "bg-purple-900/60 text-purple-300 border-purple-700/60" },
-  { id: "Auditor", label: "Auditor", badge: "bg-amber-900/60 text-amber-300 border-amber-700/60" },
-  { id: "Court", label: "Court / Export", badge: "bg-emerald-900/60 text-emerald-300 border-emerald-700/60" },
+  { id: "investigator-01", label: "Investigator", badge: "bg-[var(--accent-amber-dim)] text-[var(--accent-amber)] border border-[rgba(240,169,58,0.2)]" },
+  { id: "technical-expert-01", label: "Technical Expert", badge: "bg-[var(--accent-cyan-dim)] text-[var(--accent-cyan)] border border-[rgba(62,214,196,0.2)]" },
+  { id: "auditor-01", label: "Auditor", badge: "bg-[rgba(129,140,248,0.1)] text-[#818CF8] border border-[rgba(129,140,248,0.2)]" },
+  { id: "court-export-01", label: "Court / Export", badge: "bg-[var(--accent-green-dim)] text-[var(--accent-green)] border border-[rgba(52,211,153,0.2)]" },
 ];
 
 const initialState = {
-  role: "Investigator",
+  role: "investigator-01",
 };
 
 function roleReducer(state, action) {
@@ -39,7 +39,7 @@ export function RoleProvider({ children }) {
 export function useRole() {
   const context = useContext(RoleContext);
   if (!context) {
-    throw new Error("useRole must be used within a RoleProvider");
+    throw new Error("useRole must be used within RoleProvider");
   }
   return context;
 }

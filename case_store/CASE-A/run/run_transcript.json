@@ -1,0 +1,201 @@
+{
+  "summary": {
+    "case_id": "CASE-A",
+    "evidence_id": "ev-acq-a237ccfd-fbeb-4b23-aa2b-7d67a1cb0314",
+    "image_sha256": "24a85156621eefebb1422bedb19692e58e75c6cc085d0afdd7165e5ce9993246",
+    "image_md5": "5d36c502a34770750f5a3f932c8e6503",
+    "vendor": "Hikvision",
+    "validation_status": "VALIDATED",
+    "detection_confidence": 0.95,
+    "adapter": "backend.adapters.generic_carver.GenericCarverAdapter",
+    "fallback": true,
+    "fragments": 3,
+    "exported": 3,
+    "encrypted": 3,
+    "image_encrypted": true,
+    "playable": 3,
+    "channels": 1,
+    "estimated_seconds": 3.0,
+    "events": 0,
+    "seconds": 0.29649980005342513
+  },
+  "started_utc": "2026-09-07T07:05:58.770641+00:00",
+  "finished_utc": "2026-09-07T07:05:59.067222+00:00",
+  "timings": [
+    {
+      "stage": "intake",
+      "seconds": 0.030809700023382902
+    },
+    {
+      "stage": "detection",
+      "seconds": 0.005257599987089634
+    },
+    {
+      "stage": "recovery",
+      "seconds": 0.10652839997783303
+    },
+    {
+      "stage": "encryption",
+      "seconds": 0.15390410006511956
+    }
+  ],
+  "detection_rationale": [
+    "Hikvision: hikvision_master_sector@0x210; summed weight 0.90",
+    "NAL scan: 4/7 windows contain valid Annex-B start codes (density 0.57), codec guess h264 (h264 votes 16, h265 votes 0)",
+    "NAL density >= 0.50 corroborates recorded video: +0.05",
+    "decision: Hikvision (VALIDATED), confidence 0.95"
+  ],
+  "fragments": [
+    {
+      "index": 0,
+      "byte_offset_start": 32768,
+      "byte_offset_end": 89501,
+      "codec_info": "H.264 Baseline (profile_idc 66) level 3.0 704x576",
+      "confidence_score": 0.95,
+      "confidence_rationale": "base 0.25: contiguous run of valid Annex-B NAL units; +0.25: SPS parsed, resolution and profile known; +0.10: PPS present; +0.15: first picture is an IDR/IRAP (decodable start); +0.10: 30/37 NALs carry picture data; +0.10: ended by eos; = 0.95"
+    },
+    {
+      "index": 1,
+      "byte_offset_start": 98304,
+      "byte_offset_end": 137362,
+      "codec_info": "H.264 Baseline (profile_idc 66) level 3.0 704x576",
+      "confidence_score": 0.95,
+      "confidence_rationale": "base 0.25: contiguous run of valid Annex-B NAL units; +0.25: SPS parsed, resolution and profile known; +0.10: PPS present; +0.15: first picture is an IDR/IRAP (decodable start); +0.10: 20/25 NALs carry picture data; +0.10: ended by eos; = 0.95"
+    },
+    {
+      "index": 2,
+      "byte_offset_start": 147456,
+      "byte_offset_end": 204174,
+      "codec_info": "H.264 Baseline (profile_idc 66) level 3.0 704x576",
+      "confidence_score": 0.95,
+      "confidence_rationale": "base 0.25: contiguous run of valid Annex-B NAL units; +0.25: SPS parsed, resolution and profile known; +0.10: PPS present; +0.15: first picture is an IDR/IRAP (decodable start); +0.10: 25/32 NALs carry picture data; +0.10: ended by eos; = 0.95"
+    }
+  ],
+  "channels": [
+    {
+      "channel_id": "probable-ch01",
+      "declared_frame_rate": null,
+      "declared_resolution": "704x576",
+      "clock_offset_seconds": null
+    }
+  ],
+  "timeline": {
+    "entries": [
+      {
+        "sequence": 1,
+        "fragment_index": 0,
+        "fragment_id": "frag-53da6bd10bcbca51",
+        "channel_id": "probable-ch01",
+        "byte_offset_start": 32768,
+        "byte_offset_end": 89501,
+        "pictures": 30,
+        "idr_count": 3,
+        "fps": 25.0,
+        "duration_basis": "assumed_fps",
+        "estimated_seconds": 1.2,
+        "channel_position": 1,
+        "relative_start_seconds": 0.0,
+        "complete": true,
+        "rationale": "position 0 by byte offset 0x8000; 30 picture(s), 3 key frame(s); duration 1.20s at an assumed 25 fps; the SPS declares no timing information; grouped into probable-ch01 by encoder configuration"
+      },
+      {
+        "sequence": 2,
+        "fragment_index": 1,
+        "fragment_id": "frag-928d3f0c3d2ecd94",
+        "channel_id": "probable-ch01",
+        "byte_offset_start": 98304,
+        "byte_offset_end": 137362,
+        "pictures": 20,
+        "idr_count": 2,
+        "fps": 25.0,
+        "duration_basis": "assumed_fps",
+        "estimated_seconds": 0.8,
+        "channel_position": 2,
+        "relative_start_seconds": 1.2,
+        "complete": true,
+        "rationale": "position 1 by byte offset 0x18000; 20 picture(s), 2 key frame(s); duration 0.80s at an assumed 25 fps; the SPS declares no timing information; grouped into probable-ch01 by encoder configuration"
+      },
+      {
+        "sequence": 3,
+        "fragment_index": 2,
+        "fragment_id": "frag-9ca43f8f9add0acf",
+        "channel_id": "probable-ch01",
+        "byte_offset_start": 147456,
+        "byte_offset_end": 204174,
+        "pictures": 25,
+        "idr_count": 3,
+        "fps": 25.0,
+        "duration_basis": "assumed_fps",
+        "estimated_seconds": 1.0,
+        "channel_position": 3,
+        "relative_start_seconds": 2.0,
+        "complete": true,
+        "rationale": "position 2 by byte offset 0x24000; 25 picture(s), 3 key frame(s); duration 1.00s at an assumed 25 fps; the SPS declares no timing information; grouped into probable-ch01 by encoder configuration"
+      }
+    ],
+    "channels": [
+      {
+        "channel_id": "probable-ch01",
+        "stream_signature": "25d554f36cd7e61eb2a99609743167723ddca0a2fe0e613d47738101301b6135",
+        "codec": "h264",
+        "resolution": "704x576",
+        "declared_fps": null,
+        "fragment_indexes": [
+          0,
+          1,
+          2
+        ],
+        "pictures": 75,
+        "estimated_seconds": 3.0,
+        "rationale": "3 fragment(s) share SPS 25d554f36cd7e61e; resolution 704x576; declared no frame rate; this is a probable channel, not a vendor channel number: two cameras configured identically would appear here as one"
+      }
+    ],
+    "assumed_fps": 25.0,
+    "total_estimated_seconds": 3.0,
+    "notes": [
+      "Order is the order fragments appear in the image, which is the recording order only if the recorder had not wrapped around and started overwriting.",
+      "No wall-clock time is available from a bare elementary stream; all times are relative to the start of their own channel.",
+      "3 of 3 fragment(s) have no declared frame rate; their durations use the assumed rate and would scale linearly with the real one.",
+      "All fragments share one encoder configuration, so this image gives no basis for separating channels."
+    ]
+  },
+  "hash_lineage": [
+    {
+      "pipeline_stage": "intake",
+      "algorithm": "SHA-256",
+      "hex_digest": "24a85156621eefebb1422bedb19692e58e75c6cc085d0afdd7165e5ce9993246",
+      "timestamp_utc": "2026-09-07T07:05:58.781046Z"
+    },
+    {
+      "pipeline_stage": "intake",
+      "algorithm": "MD5",
+      "hex_digest": "5d36c502a34770750f5a3f932c8e6503",
+      "timestamp_utc": "2026-09-07T07:05:58.781046Z"
+    },
+    {
+      "pipeline_stage": "intake_verify",
+      "algorithm": "SHA-256",
+      "hex_digest": "24a85156621eefebb1422bedb19692e58e75c6cc085d0afdd7165e5ce9993246",
+      "timestamp_utc": "2026-09-07T07:05:58.799850Z"
+    },
+    {
+      "pipeline_stage": "pre_encryption/fragment_0000",
+      "algorithm": "SHA-256",
+      "hex_digest": "53da6bd10bcbca515cf29212e2e1348750706e08cd2205a977de4276b70f0bbb",
+      "timestamp_utc": "2026-09-07T07:05:59.058521Z"
+    },
+    {
+      "pipeline_stage": "pre_encryption/fragment_0001",
+      "algorithm": "SHA-256",
+      "hex_digest": "928d3f0c3d2ecd944871c4ddfe2eb89642b70005f10b8815c87e5eac95c19643",
+      "timestamp_utc": "2026-09-07T07:05:59.060520Z"
+    },
+    {
+      "pipeline_stage": "pre_encryption/fragment_0002",
+      "algorithm": "SHA-256",
+      "hex_digest": "9ca43f8f9add0acf84c6a1017f4c96515b8822ef90f43d65156ea12f6008c13c",
+      "timestamp_utc": "2026-09-07T07:05:59.064863Z"
+    }
+  ],
+  "events": []
+}

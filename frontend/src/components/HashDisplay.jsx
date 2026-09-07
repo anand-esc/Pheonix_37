@@ -1,10 +1,6 @@
 import React, { useState } from "react";
 import { Copy, Check, ChevronDown, ChevronUp, Lock } from "lucide-react";
 
-/**
- * Consolidated Cryptographic SHA-256 Hash Display component.
- * Used across Evidence Intake, Provenance Chain, Analysis, and Report.
- */
 export function HashDisplay({
   hash,
   label = "SHA-256 Digest",
@@ -17,8 +13,8 @@ export function HashDisplay({
 
   if (!hash) {
     return (
-      <div className={`inline-flex items-center gap-2 text-xs text-slate-400 font-mono italic bg-slate-50 px-2.5 py-1.5 rounded border border-slate-200 ${className}`}>
-        <Lock className="w-3.5 h-3.5 text-slate-300" />
+      <div className={`inline-flex items-center gap-2 text-xs text-[var(--text-muted)] font-mono italic bg-[var(--bg-panel-lighter)] px-2.5 py-1.5 rounded border border-[var(--border)] ${className}`}>
+        <Lock className="w-3.5 h-3.5 text-[var(--text-muted)]" />
         No SHA-256 hash locked
       </div>
     );
@@ -37,22 +33,22 @@ export function HashDisplay({
   return (
     <div className={`flex flex-col gap-1 ${className}`}>
       {label && (
-        <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-          <span className={`w-1.5 h-1.5 rounded-full ${verified ? "bg-sky-500" : "bg-slate-300"}`} />
+        <span className="text-[11px] font-medium text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-1.5">
+          <span className={`w-1.5 h-1.5 rounded-full ${verified ? "bg-[var(--accent-cyan)]" : "bg-[var(--text-muted)]"}`} />
           {label}
         </span>
       )}
-      <div className="inline-flex items-center justify-between gap-2 bg-slate-50 border border-slate-200/90 rounded-md px-3 py-1.5 text-xs font-mono text-sky-800 shadow-2xs">
-        <span className="break-all selection:bg-sky-100 selection:text-sky-900 font-medium">
+      <div className="inline-flex items-center justify-between gap-2 bg-[var(--bg-deep)] border border-[var(--border)] rounded px-3 py-1.5 text-xs font-mono text-[var(--accent-cyan)] shadow-none-data">
+        <span className="break-all selection:bg-[var(--accent-cyan-dim)] selection:text-[var(--accent-cyan)] font-medium">
           {displayHash}
         </span>
         
-        <div className="flex items-center gap-1 shrink-0 ml-2 border-l border-slate-200 pl-2">
+        <div className="flex items-center gap-1 shrink-0 ml-2 border-l border-[var(--border)] pl-2">
           {allowExpand && hash.length > 24 && (
             <button
               type="button"
               onClick={() => setExpanded(!expanded)}
-              className="p-1 text-slate-400 hover:text-slate-700 transition-colors rounded hover:bg-slate-200/60"
+              className="p-1 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors rounded hover:bg-[var(--bg-panel-lighter)]"
               title={expanded ? "Collapse Hash" : "Expand Full Hash"}
             >
               {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -61,13 +57,13 @@ export function HashDisplay({
           <button
             type="button"
             onClick={handleCopy}
-            className="p-1 text-slate-400 hover:text-sky-700 transition-colors rounded hover:bg-slate-200/60 flex items-center gap-1 text-[11px]"
+            className="p-1 text-[var(--text-muted)] hover:text-[var(--accent-cyan)] transition-colors rounded hover:bg-[var(--bg-panel-lighter)] flex items-center gap-1 text-[11px]"
             title="Copy Hash to Clipboard"
           >
             {copied ? (
               <>
-                <Check className="w-3.5 h-3.5 text-emerald-600" />
-                <span className="text-emerald-600 font-sans font-medium text-[10px]">Copied</span>
+                <Check className="w-3.5 h-3.5 text-[var(--accent-green)]" />
+                <span className="text-[var(--accent-green)] font-sans font-medium text-[10px]">Copied</span>
               </>
             ) : (
               <Copy className="w-3.5 h-3.5" />

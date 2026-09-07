@@ -1,0 +1,34 @@
+{
+  "acquisition_id": "acq-1bf6d5e6-b377-4bce-96cd-3c9d46886a0c",
+  "case_id": "CASE-B",
+  "operator_id": "op-b",
+  "source_path": "tests\\fixtures\\sample_dvr_image.img",
+  "image_path": "C:\\Users\\SIBAMP~1\\AppData\\Local\\Temp\\tmpvk70hguo\\run_b\\evidence.img",
+  "source_device_info": "source tests\\fixtures\\sample_dvr_image.img",
+  "bytes_read": 458752,
+  "started_utc": "2026-09-07T07:05:59.111995Z",
+  "finished_utc": "2026-09-07T07:05:59.144797Z",
+  "intake_hashes": [
+    {
+      "pipeline_stage": "intake",
+      "algorithm": "SHA-256",
+      "hex_digest": "24a85156621eefebb1422bedb19692e58e75c6cc085d0afdd7165e5ce9993246",
+      "timestamp_utc": "2026-09-07T07:05:59.122726Z"
+    },
+    {
+      "pipeline_stage": "intake",
+      "algorithm": "MD5",
+      "hex_digest": "5d36c502a34770750f5a3f932c8e6503",
+      "timestamp_utc": "2026-09-07T07:05:59.122726Z"
+    }
+  ],
+  "verification_hash": {
+    "pipeline_stage": "intake_verify",
+    "algorithm": "SHA-256",
+    "hex_digest": "24a85156621eefebb1422bedb19692e58e75c6cc085d0afdd7165e5ce9993246",
+    "timestamp_utc": "2026-09-07T07:05:59.144644Z"
+  },
+  "status": "COMPLETED",
+  "tool_version": "0.1.0",
+  "notes": []
+}

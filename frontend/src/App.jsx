@@ -13,7 +13,7 @@ export default function App() {
   return (
     <RoleProvider>
       <BrowserRouter>
-        <div className="min-h-screen bg-slate-100 text-slate-900 flex flex-col font-sans selection:bg-sky-100 selection:text-sky-900">
+        <div className="min-h-screen bg-[var(--bg-deep)] text-[var(--text-primary)] flex flex-col font-sans selection:bg-[var(--accent-cyan)] selection:text-[var(--bg-deep)]">
           <Header />
           <main className="flex-1">
             <Routes>
@@ -27,8 +27,8 @@ export default function App() {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </main>
-          
-          <footer className="border-t border-slate-200 bg-white py-3.5 px-4 text-center text-xs text-slate-500 shadow-2xs">
+
+          <footer className="border-t border-[var(--border)] bg-[var(--bg-panel)] py-3.5 px-4 text-center text-xs text-[var(--text-muted)]">
             Phoenix Forensic Pipeline • NTRO SIH 2026 • Vendor-Agnostic Surveillance Footage Recovery
           </footer>
         </div>

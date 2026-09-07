@@ -1,23 +1,101 @@
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400&display=swap");
 @import "tailwindcss";
 
 @layer base {
+  :root {
+    --bg-deep: #0B0D10;
+    --bg-surface: #12151A;
+    --bg-panel: #161A20;
+    --bg-panel-lighter: #1E2329;
+    --bg-row-alt: #191D24;
+    --border: #2A3038;
+    --border-light: #353C47;
+    --text-primary: #E8EAED;
+    --text-secondary: #8A919C;
+    --text-muted: #5A6170;
+    --accent-amber: #F0A93A;
+    --accent-amber-dim: rgba(240, 169, 58, 0.12);
+    --accent-cyan: #3ED6C4;
+    --accent-cyan-dim: rgba(62, 214, 196, 0.12);
+    --accent-green: #34D399;
+    --accent-green-dim: rgba(52, 211, 153, 0.12);
+    --accent-red: #F87171;
+    --accent-red-dim: rgba(248, 113, 113, 0.12);
+  }
+
   body {
-    @apply bg-slate-950 text-slate-100 font-sans antialiased min-h-screen selection:bg-cyan-500 selection:text-slate-950;
+    @apply bg-[var(--bg-deep)] text-[var(--text-primary)] font-sans antialiased min-h-screen selection:bg-[var(--accent-cyan)] selection:text-[var(--bg-deep)];
+  }
+
+  /* All data panels: flat, no shadows, 1px borders */
+  .data-panel {
+    @apply bg-[var(--bg-panel)] border border-[var(--border)] rounded;
+    box-shadow: none;
+  }
+
+  /* Monospace utility for all forensic values */
+  .mono {
+    font-family: "JetBrains Mono", "IBM Plex Mono", "Fira Code", monospace;
+  }
+
+  /* Serif/slab-serif for legal document bodies */
+  .serif-document {
+    font-family: "Source Serif 4", "IBM Plex Serif", "Georgia", "Times New Roman", serif;
   }
 }
 
-/* Custom scrollbars for forensic data tables */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+@layer components {
+  .forensic-table {
+    @apply w-full text-left text-xs border-collapse;
+  }
+
+  .forensic-table th {
+    @apply py-3 px-4 bg-[var(--bg-panel-lighter)] border-b border-[var(--border)] text-[var(--text-secondary)] font-semibold font-mono;
+  }
+
+  .forensic-table td {
+    @apply py-2.5 px-4 border-b border-[rgba(42,48,56,0.5)] font-mono text-[var(--text-primary)] text-[11px];
+  }
+
+  .forensic-table tr:nth-child(even) {
+    @apply bg-[var(--bg-row-alt)];
+  }
+
+  .forensic-table tr:hover {
+    @apply bg-[var(--bg-panel-lighter)];
+  }
+
+  .forensic-table tr:hover td {
+    @apply text-[var(--text-primary)];
+  }
+
+  /* Scrollbar for forensic data tables */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--bg-deep);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--border-light);
+  }
 }
-::-webkit-scrollbar-track {
-  background: #0f172a;
-}
-::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+
+@layer utilities {
+  .shadow-none-data {
+    box-shadow: none !important;
+  }
+
+  .border-data {
+    border: 1px solid var(--border);
+  }
+
+  .text-monospace {
+    font-family: "JetBrains Mono", "IBM Plex Mono", monospace;
+  }
 }

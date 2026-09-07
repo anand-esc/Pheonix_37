@@ -1,37 +1,33 @@
 import React from "react";
 
-/**
- * Standardized status badge for Phoenix Forensic Toolkit
- * Preserves strict required label strings: Validated, Generic Fallback, Research Target, Intake, Processing, Recovered, Reported
- */
 export function Badge({ label, variant, size = "md", className = "" }) {
   const normalizedLabel = String(label || "").trim();
-  
-  // Resolve visual variant if not explicitly provided
+
   let styleVariant = variant;
   if (!styleVariant) {
     const l = normalizedLabel.toLowerCase();
-    if (l === "validated" || l === "recovered") styleVariant = "emerald";
-    else if (l === "generic fallback" || l === "processing") styleVariant = "amber";
-    else if (l === "research target" || l === "intake") styleVariant = "cyan";
-    else if (l === "reported") styleVariant = "indigo";
-    else if (l === "failed" || l === "corrupted") styleVariant = "rose";
+    if (l === "validated" || l === "recovered" || l === "reported") styleVariant = "green";
+    else if (l === "generic fallback" || l === "processing" || l === "pending" || l === "intake") styleVariant = "amber";
+    else if (l === "research target" || l === "verified") styleVariant = "cyan";
+    else if (l === "failed" || l === "corrupted" || l === "tampered" || l === "denied") styleVariant = "red";
+    else if (l === "draft") styleVariant = "amber";
     else styleVariant = "slate";
   }
 
   const variantStyles = {
-    emerald: "bg-emerald-50 text-emerald-700 border-emerald-200/80 font-medium",
-    amber: "bg-amber-50 text-amber-800 border-amber-200/80 font-medium",
-    cyan: "bg-sky-50 text-sky-700 border-sky-200/80 font-medium",
-    indigo: "bg-indigo-50 text-indigo-700 border-indigo-200/80 font-medium",
-    rose: "bg-rose-50 text-rose-700 border-rose-200/80 font-medium",
-    slate: "bg-slate-100 text-slate-700 border-slate-200 font-medium",
+    emerald: "bg-[var(--accent-green-dim)] text-[var(--accent-green)] border border-[rgba(52,211,153,0.2)] font-mono",
+    amber: "bg-[var(--accent-amber-dim)] text-[var(--accent-amber)] border border-[rgba(240,169,58,0.2)] font-mono",
+    cyan: "bg-[var(--accent-cyan-dim)] text-[var(--accent-cyan)] border border-[rgba(62,214,196,0.2)] font-mono",
+    red: "bg-[var(--accent-red-dim)] text-[var(--accent-red)] border border-[rgba(248,113,113,0.2)] font-mono",
+    indigo: "bg-[rgba(129,140,248,0.1)] text-[#818CF8] border border-[rgba(129,140,248,0.2)] font-mono",
+    slate: "bg-[var(--bg-panel-lighter)] text-[var(--text-secondary)] border border-[var(--border)] font-mono",
   };
 
   const sizeStyles = {
-    sm: "px-2 py-0.5 text-xs rounded",
-    md: "px-2.5 py-1 text-xs rounded-md",
-    lg: "px-3 py-1.5 text-sm rounded-md",
+    xs: "px-1.5 py-0.5 text-[10px] rounded",
+    sm: "px-2 py-0.5 text-[11px] rounded",
+    md: "px-2.5 py-1 text-[11px] rounded",
+    lg: "px-3 py-1.5 text-xs rounded",
   };
 
   return (
