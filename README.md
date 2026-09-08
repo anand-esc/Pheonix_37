@@ -116,7 +116,7 @@ flowchart TD
 
 | Vendor | Status | Description |
 |--------|--------|-------------|
-| Hikvision | Validated (prototype) | Native WFS parser, tested against synthetic and reference samples |
+| Hikvision | Stub / Pending | Native WFS parser is currently a routing stub. Defers to generic fallback carving. |
 | Dahua | Validated (prototype) | Native DHFS/DHAV parser, tested against synthetic and reference samples |
 | CP Plus / Uniview / Godrej | Generic fallback | No sufficiently detailed, independently reproducible public specification found; handled via generic NAL carving |
 | Honeywell | Research target | Recent academic research exists; identified as next validation target |

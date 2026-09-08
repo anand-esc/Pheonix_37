@@ -1,0 +1,78 @@
+graph TD
+    subgraph Frontend ["Frontend (React/Vite)"]
+        UI_Dashboard["Case Dashboard\n(Case Intake & Status)"]
+        UI_Evidence["Evidence Page\n(Video Viewer & Analysis)"]
+        UI_Timeline["Timeline Page\n(Cross-Camera Correlation)"]
+        UI_Report["Report Page\n(BSA Sec 63 Generation)"]
+        API_Client["API Service\n(api.js)"]
+        
+        UI_Dashboard --> API_Client
+        UI_Evidence --> API_Client
+        UI_Timeline --> API_Client
+        UI_Report --> API_Client
+    end
+
+    subgraph Backend ["Backend (FastAPI)"]
+        API_Main["main.py\n(FastAPI Router)"]
+        
+        subgraph Pipeline ["Forensic Pipeline"]
+            Acquisition["Acquisition / Intake\n(Streaming MD5/SHA256)"]
+            Detection["Format Detection\n(Vendor Signature)"]
+            AdapterResolve["Adapter Resolution\n(Native vs Generic Carver)"]
+            Carver["Fragment Recovery / Carver\n(Extract NALs)"]
+            Wrapper["MP4 Wrapper\n(Lossless Playable View)"]
+            Encryption["Crypto Provider\n(AES-256-GCM / Vault)"]
+            Persist["Result Persistence\n(pipeline_result.json)"]
+            
+            Acquisition --> Detection
+            Detection --> AdapterResolve
+            AdapterResolve --> Carver
+            Carver --> Wrapper
+            Wrapper --> Encryption
+            Encryption --> Persist
+        end
+        
+        subgraph Security ["Security & Governance"]
+            Ledger["Audit Ledger\n(Hash-chained events)"]
+            RBAC["RBAC Controller\n(Role Policies)"]
+            EventBus["Event Sink\n(Emits pipeline events)"]
+        end
+
+        API_Main --> Acquisition
+        API_Main --> Ledger
+        API_Main --> RBAC
+        
+        EventBus --> Ledger
+        Acquisition -.-> EventBus
+        Detection -.-> EventBus
+        Carver -.-> EventBus
+        Encryption -.-> EventBus
+    end
+
+    subgraph Storage ["Case Store (Filesystem)"]
+        RawImage["evidence.img\n(Raw source)"]
+        Fragments["fragments/\n(.h264)"]
+        Playable["playable/\n(.mp4)"]
+        Vault["vault/\n(Encrypted Evidences)"]
+        Transcript["run_transcript.json"]
+    end
+
+    API_Client <-->|REST API| API_Main
+    
+    Persist --> Storage
+    Encryption --> Vault
+    Carver --> Fragments
+    Wrapper --> Playable
+    Acquisition --> RawImage
+    
+    classDef ui fill:#e1f5fe,stroke:#01579b,stroke-width:1px;
+    classDef backend fill:#f3e5f5,stroke:#4a148c,stroke-width:1px;
+    classDef pipeline fill:#fff3e0,stroke:#e65100,stroke-width:1px;
+    classDef security fill:#e8f5e9,stroke:#1b5e20,stroke-width:1px;
+    classDef storage fill:#eceff1,stroke:#263238,stroke-width:1px;
+    
+    class UI_Dashboard,UI_Evidence,UI_Timeline,UI_Report,API_Client ui;
+    class API_Main backend;
+    class Acquisition,Detection,AdapterResolve,Carver,Wrapper,Encryption,Persist pipeline;
+    class Ledger,RBAC,EventBus security;
+    class RawImage,Fragments,Playable,Vault,Transcript storage;
