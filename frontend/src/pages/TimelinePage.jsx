@@ -1,11 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Clock, ArrowLeft, Film, Loader2, AlertCircle } from "lucide-react";
-import { CaseNavigationTabs } from "../components/CaseNavigationTabs";
-import { Badge } from "../components/Badge";
-import { SectionHeading } from "../components/SectionHeading";
+import { ArrowLeft, Clock, Loader2, AlertCircle } from "lucide-react";
 import { getCase, getCaseFragments, formatBytes } from "../api";
 import { useRole } from "../context/RoleContext";
+import CaseHeader from "../components/phoenix-ui-kit/CaseHeader";
 
 export function TimelinePage() {
   const { id } = useParams();
@@ -68,160 +66,224 @@ export function TimelinePage() {
     };
   });
 
-  return (
-    <div className="space-y-6">
-      <CaseNavigationTabs />
+  const statusMap = {
+    "Intake": "pending",
+    "Processing": "pending",
+    "Recovered": "validated",
+    "Reported": "validated",
+  };
 
-      <div className="max-w-7xl mx-auto px-4 lg:px-8 space-y-6 pb-16">
-        <div className="flex items-center justify-between">
+  return (
+    <div className="phx-page" style={{ background: "var(--phx-cream)", minHeight: "100vh" }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "2rem 1.5rem" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem" }}>
           <button
-            onClick={() => navigate("/cases")}
-            className="inline-flex items-center gap-2 text-[11px] font-medium text-[var(--text-muted)] hover:text-[var(--accent-cyan)] transition-colors bg-transparent border-none cursor-pointer font-mono"
+            onClick={() => navigate(`/cases/${id}`)}
+            style={{
+              background: "transparent", border: "none", cursor: "pointer",
+              display: "flex", alignItems: "center", gap: 6,
+              fontFamily: "var(--phx-font-mono)", fontSize: "0.78rem",
+              color: "var(--phx-text-secondary)", padding: 4
+            }}
           >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Back to Dashboard</span>
+            <ArrowLeft size={16} stroke={2} />
+            <span>Back to Case Detail</span>
           </button>
-          <div className="flex items-center gap-2 text-[11px]">
-            <span className="text-[var(--text-muted)]">Active Role:</span>
-            <span className="px-2.5 py-0.5 rounded bg-[var(--accent-amber-dim)] text-[var(--accent-amber)] border border-[rgba(240,169,58,0.2)] font-mono">
-              {role}
-            </span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--phx-font-mono)", fontSize: "0.72rem", color: "var(--phx-text-muted)" }}>
+            <span>Active Role:</span>
+            <strong style={{ color: "var(--phx-ink)" }}>{role}</strong>
           </div>
         </div>
 
-        <div className="data-panel p-6">
-          <SectionHeading
-            title={`Multi-Track Timeline — ${id}`}
-            subtitle={caseData?.name || "DVR Investigation"}
-            icon={Clock}
-            badge={<Badge label={caseData?.status || "Processing"} />}
-          />
-          <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed">
-            Multi-channel fragment timeline view. Timestamps derived from SPS VUI timing or assumed frame rates.
-            Manual anchor alignment not available in this version (requires backend endpoint).
-          </p>
+        <CaseHeader
+          caseId={caseData?.case_id || id}
+          title={caseData?.title || `Case ${id}`}
+          status={statusMap[caseData?.status] || "pending"}
+          statusLabel={caseData?.status}
+        />
+
+        <div style={{
+          marginBottom: "1.5rem", padding: "1rem",
+          background: "var(--phx-red-tint)", border: "1px solid var(--phx-red)",
+          borderRadius: "var(--phx-radius)", display: "flex", gap: 12
+        }}>
+          <AlertCircle size={20} style={{ color: "var(--phx-red)", flexShrink: 0, marginTop: 2 }} />
+          <div style={{ fontFamily: "var(--phx-font-sans)", fontSize: "0.82rem", color: "var(--phx-ink)" }}>
+            <strong style={{ color: "var(--phx-red)" }}>SCOPE NOTE — ANCHOR ALIGNMENT NOT AVAILABLE</strong>
+            <p style={{ marginTop: 4, color: "var(--phx-text-secondary)" }}>
+              Manual cross-camera frame alignment requires backend endpoints for anchor storage
+              (/api/case/{id}/anchors POST/GET). Timeline shows recovered fragments with estimated
+              timing from SPS VUI. This is a documented scope limitation, not a defect.
+            </p>
+          </div>
         </div>
 
         {isLoading ? (
-          <div className="data-panel p-12 flex flex-col items-center justify-center gap-3">
-            <div className="flex items-center gap-2 text-[11px] font-mono text-[var(--accent-cyan)]">
-              <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent-cyan)] animate-pulse" />
-              <span>LOADING TIMELINE DATA...</span>
+          <div style={{
+            padding: "3rem", textAlign: "center",
+            background: "var(--phx-paper)", border: "1px solid var(--phx-border)",
+            borderRadius: "var(--phx-radius)"
+          }}>
+            <Loader2 className="phx-spinner" size={32} style={{ color: "var(--phx-navy)", margin: "0 auto 12px" }} />
+            <div style={{ fontFamily: "var(--phx-font-mono)", fontSize: "0.78rem", color: "var(--phx-text-muted)" }}>
+              LOADING TIMELINE DATA...
             </div>
           </div>
         ) : (
-          <div className="space-y-6">
-            {/* Scope Note — Deliberate Bordered Info Panel */}
-            <div className="bg-[var(--bg-deep)] border border-[rgba(240,169,58,0.25)] rounded p-5 space-y-3">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-[var(--accent-amber)] flex-shrink-0 mt-0.5" />
-                <div>
-                  <h3 className="text-[11px] font-bold text-[var(--accent-amber)] font-mono">SCOPE NOTE — ANCHOR ALIGNMENT NOT AVAILABLE</h3>
-                  <p className="text-[11px] text-[var(--text-secondary)] mt-1 leading-relaxed">
-                    Manual cross-camera frame alignment requires backend endpoints for anchor storage (/api/case/{id}/anchors POST/GET).
-                    Timeline shows recovered fragments with estimated timing from SPS VUI. This is a documented scope limitation, not a defect.
-                  </p>
-                </div>
+          <div style={{
+            background: "var(--phx-paper)", border: "1px solid var(--phx-border)",
+            borderRadius: "var(--phx-radius)", overflow: "hidden"
+          }}>
+            <div style={{
+              padding: "1rem 1.5rem", borderBottom: "1px solid var(--phx-border)",
+              display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 12
+            }}>
+              <div style={{ fontFamily: "var(--phx-font-sans)", fontSize: "0.875rem", fontWeight: 500, color: "var(--phx-ink)" }}>
+                Channel Tracks & Time Axis
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 12, fontFamily: "var(--phx-font-mono)", fontSize: "0.7rem" }}>
+                <LegendItem color="var(--phx-gold)" label="Recovered" />
+                <LegendItem color="var(--phx-navy)" label="Validated" />
+                <LegendItem color="var(--phx-text-muted)" label="Generic Fallback" />
+                <LegendItem color="var(--phx-navy-2)" label="Research Target" />
               </div>
             </div>
 
-            {/* TIMELINE CONTAINER */}
-            <div className="data-panel p-6 space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--border)] pb-4">
-                <SectionHeading
-                  title="Channel Tracks & Time Axis"
-                  subtitle="Synchronized multi-channel surveillance stream tracks"
-                  icon={Clock}
-                />
-                <div className="flex flex-wrap items-center gap-3 text-[10px] shrink-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-3 h-3 rounded bg-[var(--accent-cyan)] border border-[rgba(62,214,196,0.3)]" />
-                    <span className="text-[var(--text-secondary)] font-mono">Recovered</span>
+            <div style={{ padding: "1.5rem" }}>
+              <div className="phx-time-ruler" style={{
+                height: 40, background: "var(--phx-navy-tint)", border: "1px solid var(--phx-border)",
+                borderRadius: "var(--phx-radius)", position: "relative", marginBottom: 16,
+                fontFamily: "var(--phx-font-mono)", fontSize: "0.7rem", color: "var(--phx-text-secondary)"
+              }}>
+                {ticks.map((t, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      position: "absolute", left: `${t.pct}%`, top: 0, bottom: 0,
+                      transform: "translateX(-50%)", display: "flex", flexDirection: "column",
+                      alignItems: "center"
+                    }}
+                  >
+                    <span style={{ marginTop: 4 }}>{t.label}</span>
+                    <div style={{ width: 1, height: 12, background: "var(--phx-border)", marginTop: 4 }} />
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-3 h-3 rounded bg-[var(--bg-panel-lighter)] border border-[var(--border)]" />
-                    <span className="text-[var(--text-secondary)] font-mono">Validated</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-3 h-3 rounded bg-[var(--accent-amber-dim)] border border-[rgba(240,169,58,0.3)]" />
-                    <span className="text-[var(--text-secondary)] font-mono">Generic Fallback</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-3 h-3 rounded bg-[var(--accent-cyan-dim)] border border-[rgba(62,214,196,0.3)]" />
-                    <span className="text-[var(--text-secondary)] font-mono">Research Target</span>
-                  </div>
-                </div>
+                ))}
               </div>
 
-              {/* TIME AXIS RULER */}
-              <div className="space-y-4">
-                <div className="relative h-7 bg-[var(--bg-deep)] rounded border border-[var(--border)] text-[10px] font-mono text-[var(--text-muted)] px-4 flex items-center select-none">
-                  {ticks.map((t, idx) => (
-                    <div
-                      key={idx}
-                      className="absolute transform -translate-x-1/2 flex flex-col items-center"
-                      style={{ left: `${t.pct}%` }}
-                    >
-                      <span>{t.label}</span>
-                      <div className="w-px h-2 bg-[var(--border)] mt-0.5" />
+              <div className="phx-tracks" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {Object.entries(channelGroups).map(([channelName, fragList]) => (
+                  <div key={channelName} style={{
+                    background: "var(--phx-navy-tint)", border: "1px solid var(--phx-border)",
+                    borderRadius: "var(--phx-radius)", padding: "1rem"
+                  }}>
+                    <div style={{
+                      display: "flex", alignItems: "center", justifyContent: "space-between",
+                      marginBottom: 8, fontFamily: "var(--phx-font-mono)", fontSize: "0.75rem"
+                    }}>
+                      <span style={{ fontWeight: 600, color: "var(--phx-navy)" }}>{channelName}</span>
+                      <span style={{ color: "var(--phx-text-secondary)" }}>{fragList.length} Fragments</span>
                     </div>
-                  ))}
-                </div>
 
-                {/* TRACK ROWS */}
-                <div className="space-y-3">
-                  {Object.entries(channelGroups).map(([channelName, fragList]) => (
-                    <div key={channelName} className="bg-[var(--bg-deep)] p-4 rounded border border-[var(--border)] space-y-2">
-                      <div className="flex items-center justify-between text-xs font-mono">
-                        <span className="font-bold text-[var(--text-primary)]">{channelName}</span>
-                        <span className="text-[10px] text-[var(--text-muted)]">{fragList.length} Fragments</span>
-                      </div>
+                    <div style={{
+                      position: "relative", height: 60, background: "var(--phx-paper)",
+                      border: "1px solid var(--phx-border)", borderRadius: "var(--phx-radius)",
+                      overflow: "hidden"
+                    }}>
+                      {fragList.map((frag) => {
+                        const pSeg = parsedTimeSegments.find((p) => p.fragment_id === frag.fragment_id);
+                        const leftPct = pSeg && pSeg.startMs > 0 ? ((pSeg.startMs - minTimeMs) / totalRangeMs) * 100 : 0;
+                        const widthPct = pSeg && pSeg.endMs > pSeg.startMs ? Math.max(4, ((pSeg.endMs - pSeg.startMs) / totalRangeMs) * 100) : 4;
 
-                      <div className="relative h-12 bg-[var(--bg-panel)] rounded border border-[var(--border)] overflow-hidden">
-                        {fragList.map((frag) => {
-                          const pSeg = parsedTimeSegments.find((p) => p.fragment_id === frag.fragment_id);
-                          const leftPct = pSeg && pSeg.startMs > 0 ? ((pSeg.startMs - minTimeMs) / totalRangeMs) * 100 : 0;
-                          const widthPct = pSeg && pSeg.endMs > pSeg.startMs ? Math.max(6, ((pSeg.endMs - pSeg.startMs) / totalRangeMs) * 100) : 6;
+                        let blockColor = "var(--phx-border)";
+                        let textColor = "var(--phx-text-secondary)";
+                        let statusLabel = frag.recovery_method || "UNKNOWN";
 
-                          let blockStyle = "bg-[var(--bg-panel-lighter)] text-[var(--text-secondary)] border-[var(--border)]";
-                          let statusLabel = frag.recovery_method || "UNKNOWN";
+                        if (frag.recovery_method?.includes("VALIDATED") || frag.recovery_method === "DHAV_PARSER") {
+                          blockColor = "var(--phx-gold)";
+                          textColor = "var(--phx-navy)";
+                          statusLabel = "Validated";
+                        } else if (frag.recovery_method?.includes("GENERIC") || frag.recovery_method === "annexb_nal_carve") {
+                          blockColor = "var(--phx-navy)";
+                          textColor = "var(--phx-on-navy)";
+                          statusLabel = "Generic Fallback";
+                        } else if (frag.recovery_method?.includes("RESEARCH")) {
+                          blockColor = "var(--phx-navy-2)";
+                          textColor = "var(--phx-on-navy)";
+                          statusLabel = "Research Target";
+                        }
 
-                          if (frag.recovery_method?.includes("VALIDATED") || frag.recovery_method === "DHAV_PARSER") {
-                            blockStyle = "bg-[var(--accent-green-dim)] text-[var(--accent-green)] border-[rgba(52,211,153,0.3)]";
-                            statusLabel = "Validated";
-                          } else if (frag.recovery_method?.includes("GENERIC") || frag.recovery_method === "annexb_nal_carve") {
-                            blockStyle = "bg-[var(--accent-cyan-dim)] text-[var(--accent-cyan)] border-[rgba(62,214,196,0.3)]";
-                            statusLabel = "Generic Fallback";
-                          } else if (frag.recovery_method?.includes("RESEARCH")) {
-                            blockStyle = "bg-[var(--accent-cyan-dim)] text-[var(--accent-cyan)] border-[rgba(62,214,196,0.3)]";
-                            statusLabel = "Research Target";
-                          }
-
-                          return (
-                            <div
-                              key={frag.fragment_id}
-                              style={{
-                                left: `${Math.max(0, Math.min(92, leftPct))}%`,
-                                width: `${Math.min(100 - leftPct, widthPct)}%`,
-                              }}
-                              className={`absolute top-1 bottom-1 rounded border px-2 py-1 flex items-center justify-between text-[10px] font-mono cursor-pointer ${blockStyle}`}
-                              title={`${frag.fragment_id}: ${frag.confidence_rationale || "No rationale"} (${((frag.confidence_score || 0) * 100).toFixed(0)}%)`}
-                            >
-                              <span className="font-bold truncate">{frag.fragment_id?.slice(0, 12)}</span>
-                              <span className="text-[9px] opacity-90 hidden sm:inline">{statusLabel}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
+                        return (
+                          <div
+                            key={frag.fragment_id}
+                            style={{
+                              position: "absolute", top: 4, bottom: 4,
+                              left: `${Math.max(0, Math.min(96, leftPct))}%`,
+                              width: `${Math.min(100 - leftPct, widthPct)}%`,
+                              background: blockColor, color: textColor,
+                              borderRadius: "2px", padding: "2px 8px",
+                              display: "flex", alignItems: "center", justifyContent: "space-between",
+                              fontFamily: "var(--phx-font-mono)", fontSize: "0.7rem",
+                              cursor: "pointer", whiteSpace: "nowrap"
+                            }}
+                            title={`${frag.fragment_id}: ${frag.confidence_rationale || "No rationale"} (${((frag.confidence_score || 0) * 100).toFixed(0)}%)`}
+                          >
+                            <span style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis" }}>
+                              {frag.fragment_id?.slice(0, 12)}
+                            </span>
+                            <span style={{ fontSize: "0.65rem", opacity: 0.8, marginLeft: 8 }}>
+                              {statusLabel}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         )}
+
+        {Object.keys(channelGroups).length === 0 && !isLoading && (
+          <div style={{
+            padding: "3rem", textAlign: "center",
+            background: "var(--phx-paper)", border: "1px solid var(--phx-border)",
+            borderRadius: "var(--phx-radius)", marginTop: "1.5rem"
+          }}>
+            <Clock size={48} style={{ color: "var(--phx-text-muted)", marginBottom: 12 }} />
+            <h3 style={{ fontFamily: "var(--phx-font-serif)", fontSize: "1.1rem", color: "var(--phx-ink)", marginBottom: 4 }}>
+              No Timeline Data
+            </h3>
+            <p style={{ fontFamily: "var(--phx-font-sans)", fontSize: "0.82rem", color: "var(--phx-text-secondary)" }}>
+              No fragments with timing metadata found for this case.
+            </p>
+          </div>
+        )}
       </div>
+
+      <style jsx>{`
+        .phx-spinner {
+          animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
+  );
+}
+
+function LegendItem({ color, label }) {
+  return (
+    <span style={{
+      display: "flex", alignItems: "center", gap: 6,
+      padding: "4px 8px", background: "var(--phx-navy-tint)",
+      borderRadius: "var(--phx-radius)"
+    }}>
+      <span style={{ width: 12, height: 12, borderRadius: 2, background: color }} />
+      <span>{label}</span>
+    </span>
   );
 }
 

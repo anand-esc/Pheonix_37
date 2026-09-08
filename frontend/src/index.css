@@ -21,6 +21,32 @@
     --accent-green-dim: rgba(52, 211, 153, 0.12);
     --accent-red: #F87171;
     --accent-red-dim: rgba(248, 113, 113, 0.12);
+
+    /* Legacy --phx-* variable aliases for backward compatibility with existing pages */
+    --phx-cream: var(--bg-deep);
+    --phx-navy: var(--accent-amber);
+    --phx-navy-tint: var(--accent-amber-dim);
+    --phx-navy-2: var(--accent-cyan);
+    --phx-gold: var(--accent-amber);
+    --phx-border: var(--border);
+    --phx-border-light: var(--border-light);
+    --phx-paper: var(--bg-panel);
+    --phx-red: var(--accent-red);
+    --phx-red-tint: var(--accent-red-dim);
+    --phx-green: var(--accent-green);
+    --phx-green-tint: var(--accent-green-dim);
+    --phx-cyan: var(--accent-cyan);
+    --phx-cyan-dim: var(--accent-cyan-dim);
+    --phx-ink: var(--text-primary);
+    --phx-on-navy: var(--bg-deep);
+    --phx-text-primary: var(--text-primary);
+    --phx-text-secondary: var(--text-secondary);
+    --phx-text-muted: var(--text-muted);
+    --phx-font-mono: "JetBrains Mono", "IBM Plex Mono", "Fira Code", monospace;
+    --phx-font-sans: "IBM Plex Sans", "Inter", system-ui, sans-serif;
+    --phx-font-serif: "Source Serif 4", "IBM Plex Serif", "Georgia", "Times New Roman", serif;
+    --phx-radius: 6px;
+    --phx-radius-sm: 4px;
   }
 
   body {

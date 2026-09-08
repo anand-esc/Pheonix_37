@@ -2,10 +2,11 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Play, ArrowLeft, Cpu, Film, Loader2, GitCommit,
-  HardDrive, Layers, CheckCircle2, XCircle, AlertCircle,
+  HardDrive, Layers, CheckCircle2, XCircle, AlertCircle, Shield,
 } from "lucide-react";
 import { CaseNavigationTabs } from "../components/CaseNavigationTabs";
 import { ProvenanceChain } from "../components/ProvenanceChain";
+import { LedgerDemo } from "../components/LedgerDemo";
 import { Badge } from "../components/Badge";
 import { SectionHeading } from "../components/SectionHeading";
 import { HashDisplay } from "../components/HashDisplay";
@@ -146,6 +147,20 @@ export function AnalysisPage() {
           >
             <Layers className="w-4 h-4" />
             <span>Audit Ledger ({ledgerEntries.length})</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("ledger-demo")}
+            className={`px-4 py-2.5 rounded text-[11px] font-medium flex items-center gap-2 transition-all cursor-pointer border ${
+              activeTab === "ledger-demo"
+                ? "bg-[var(--accent-amber-dim)] text-[var(--accent-amber)] border-[rgba(240,169,58,0.2)] font-semibold"
+                : "text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-panel-lighter)] border-transparent"
+            }`}
+          >
+            <Shield className="w-4 h-4" />
+            <span>Ledger Demo</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--accent-amber-dim)] text-[var(--accent-amber)] font-mono font-semibold">
+              DEMO
+            </span>
           </button>
         </div>
 
@@ -386,6 +401,13 @@ export function AnalysisPage() {
                     </table>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* LEDGER DEMO */}
+            {activeTab === "ledger-demo" && (
+              <div className="space-y-6">
+                <LedgerDemo />
               </div>
             )}
           </>
