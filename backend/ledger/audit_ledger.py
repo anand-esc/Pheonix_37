@@ -52,17 +52,24 @@ class LedgerEntry(BaseModel):
 
 
 class AuditLedger:
+    _SENTINEL = object()
+
     def __init__(
         self,
         event_sink: Optional[InMemoryEventSink] = None,
         secret: str | None = None,
+        db_path: object = _SENTINEL,
     ) -> None:
         self._secret = secret or _load_secret()
         self._lock = threading.Lock()
-        self._db_path = "case_store/ledger.json"
+        # db_path=_SENTINEL → use default; db_path=None → no persistence
+        if db_path is AuditLedger._SENTINEL:
+            self._db_path: str | None = "case_store/ledger.json"
+        else:
+            self._db_path = db_path  # type: ignore[assignment]
         self._chain: list[LedgerEntry] = []
         self._backup: list[dict] = []
-        if os.path.exists(self._db_path):
+        if self._db_path and os.path.exists(self._db_path):
             try:
                 with open(self._db_path, "r") as f:
                     data = json.load(f)

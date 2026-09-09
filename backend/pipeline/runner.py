@@ -369,7 +369,7 @@ def run_pipeline(
 
     # 5. persist ----------------------------------------------------------
     events_raw = getattr(sink, "events", [])
-    events = [e.model_dump() if hasattr(e, "model_dump") else e for e in events_raw]
+    events = [e.model_dump(mode="json") if hasattr(e, "model_dump") else e for e in events_raw]
     result = PipelineResult(
         case_id=case_id,
         operator_id=operator_id,

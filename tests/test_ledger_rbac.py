@@ -137,7 +137,7 @@ class TestInMemoryEventSink:
 
 class TestAuditLedger:
     def test_genesis_block_exists(self):
-        ledger = AuditLedger()
+        ledger = AuditLedger(db_path=None)
         assert ledger.length == 1
         genesis = ledger.chain[0]
         assert genesis.index == 0
@@ -145,7 +145,7 @@ class TestAuditLedger:
         assert genesis.prev_hash == "0" * 64
 
     def test_append_entry(self):
-        ledger = AuditLedger()
+        ledger = AuditLedger(db_path=None)
         entry = ledger.append_entry("CARVING", "op-1", {"file": "clip.dav"})
         assert entry.index == 1
         assert entry.event_type == "CARVING"
@@ -153,7 +153,7 @@ class TestAuditLedger:
         assert ledger.length == 2
 
     def test_chain_integrity_valid(self):
-        ledger = AuditLedger()
+        ledger = AuditLedger(db_path=None)
         ledger.append_entry("INTAKE", "op-1", {"src": "cam-01"})
         ledger.append_entry("CARVING", "op-2", {"fragments": 5})
         result = ledger.verify_chain()
@@ -161,7 +161,7 @@ class TestAuditLedger:
         assert result["broken_index"] is None
 
     def test_tamper_breaks_chain(self):
-        ledger = AuditLedger()
+        ledger = AuditLedger(db_path=None)
         ledger.append_entry("INTAKE", "op-1", {"src": "cam-01"})
         ledger.append_entry("EXPORT", "op-2", {"dest": "usb"})
         ledger.tamper_block(1, {"src": "TAMPERED"})
@@ -170,7 +170,7 @@ class TestAuditLedger:
         assert result["broken_index"] is not None
 
     def test_restore_fixes_chain(self):
-        ledger = AuditLedger()
+        ledger = AuditLedger(db_path=None)
         ledger.append_entry("INTAKE", "op-1", {})
         ledger.tamper_block(1, {"bad": True})
         assert ledger.verify_chain()["is_valid"] is False
@@ -179,7 +179,7 @@ class TestAuditLedger:
 
     def test_eventsink_auto_ingestion(self):
         sink = InMemoryEventSink()
-        ledger = AuditLedger(event_sink=sink)
+        ledger = AuditLedger(event_sink=sink, db_path=None)
         assert ledger.length == 1
         sink.publish({"event_type": "ENCRYPTION", "operator_id": "op-3",
                        "details": {"algo": "AES-256"}})
@@ -187,7 +187,7 @@ class TestAuditLedger:
         assert ledger.chain[1].event_type == "ENCRYPTION"
 
     def test_tamper_out_of_range(self):
-        ledger = AuditLedger()
+        ledger = AuditLedger(db_path=None)
         with pytest.raises(IndexError):
             ledger.tamper_block(99, {})
 
@@ -199,7 +199,7 @@ class TestAuditLedger:
 class TestRBAC:
     def setup_method(self):
         self.sink = InMemoryEventSink()
-        self.ledger = AuditLedger(event_sink=self.sink)
+        self.ledger = AuditLedger(event_sink=self.sink, db_path=None)
         self.rbac = RBACController(event_sink=self.sink)
         self.rbac.assign_role("inv-01", Role.INVESTIGATOR)
         self.rbac.assign_role("tech-01", Role.TECHNICAL_EXPERT)

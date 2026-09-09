@@ -265,7 +265,10 @@ async def get_result(job_id: str) -> PipelineResult:
 async def get_events(job_id: str) -> list[dict]:
     job = store.get(job_id)
     with job.lock:
-        return list(job._events)
+        return [
+            e.model_dump(mode="json") if hasattr(e, "model_dump") else e
+            for e in job._events
+        ]
 
 
 class DetectRequest(BaseModel):
