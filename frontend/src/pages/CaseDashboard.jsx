@@ -236,11 +236,15 @@ export function CaseDashboard() {
         }
         .phx-badge--validated {
           background: var(--phx-gold);
-          color: var(--phx-navy);
+          color: var(--bg-deep);
         }
         .phx-badge--pending {
-          background: rgba(18, 48, 73, 0.12);
-          color: var(--phx-navy);
+          background: var(--phx-navy-tint);
+          color: var(--phx-gold);
+        }
+        option {
+          background-color: var(--bg-panel);
+          color: var(--text-primary);
         }
       `}</style>
     </div>
