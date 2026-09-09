@@ -221,19 +221,6 @@ Modify a ledger entry — verification fails visibly. Attempt unauthorized decry
 | Permissioned hash-chained ledger | Multi-node distributed blockchain |
 | Evidence hash on plaintext | Personal data or video on any public chain |
 
----
-
-## Definition of Done
-
-Every feature is considered complete only when:
-
-- [ ] Works end-to-end, not just in isolation
-- [ ] Known input produces a known, verified output
-- [ ] At least one failure or error case has been tested
-- [ ] Output hash is recorded in the chain
-- [ ] UI displays the result
-- [ ] Ledger event is written for the action
-- [ ] One line of documentation exists
 
 ---
 
