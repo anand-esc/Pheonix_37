@@ -104,31 +104,81 @@ def _find_case_dir(case_id: str) -> Optional[Path]:
 
 def _load_case_from_run(case_id: str) -> Optional[Case]:
     """Load a Case from the pipeline_result.json in the run directory."""
-    run_dir = _find_case_dir(case_id)
-    if run_dir is None:
-        return None
     import json
     from backend.core.evidence_model import Case as CaseModel, EvidenceItem
     from datetime import UTC, datetime
-    result_path = run_dir / "pipeline_result.json"
-    data = json.loads(result_path.read_text(encoding="utf-8"))
-    evidence_data = data.get("evidence", {})
-    if not evidence_data:
-        return None
-    # Wrap EvidenceItem in a Case
-    evidence_item = EvidenceItem.model_validate(evidence_data)
-    return CaseModel(
-        case_id=case_id,
-        intake_timestamp_utc=data.get("started_utc", datetime.now(UTC)),
-        investigator_id=data.get("operator_id", "unknown"),
-        custodian_id=data.get("operator_id", "unknown"),
-        evidence_items=[evidence_item],
-    )
+
+    run_dir = _find_case_dir(case_id)
+    if run_dir is not None:
+        result_path = run_dir / "pipeline_result.json"
+        data = json.loads(result_path.read_text(encoding="utf-8"))
+        evidence_data = data.get("evidence", {})
+        if evidence_data:
+            evidence_item = EvidenceItem.model_validate(evidence_data)
+            return CaseModel(
+                case_id=case_id,
+                intake_timestamp_utc=data.get("started_utc", datetime.now(UTC)),
+                investigator_id=data.get("operator_id", "unknown"),
+                custodian_id=data.get("operator_id", "unknown"),
+                evidence_items=[evidence_item],
+            )
+            
+    # Check for stub case_meta.json
+    case_dir = CASE_STORE_ROOT / case_id
+    meta_path = case_dir / "case_meta.json"
+    if meta_path.exists():
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        # We must return a valid Case object or dict. 
+        # The frontend getCase now handles both. Wait, getCase expects rawCase.
+        # So we can just return the meta wrapped in CaseModel or similar.
+        # But get_case endpoint returns response_model=Case, so we must return a Case object.
+        return CaseModel(
+            case_id=case_id,
+            intake_timestamp_utc=meta.get("created_at", datetime.now(UTC)),
+            investigator_id=meta.get("examiner", "unknown"),
+            custodian_id=meta.get("examiner", "unknown"),
+            evidence_items=[]
+        )
+    return None
 
 
 # ---------------------------------------------------------------------------
 # GET /api/cases — dashboard list view (real ledger query)
 # ---------------------------------------------------------------------------
+from pydantic import BaseModel
+class CreateCaseRequest(BaseModel):
+    name: str
+    examiner: str
+
+@app.post("/api/cases", summary="Create a new case stub")
+def create_case(req: CreateCaseRequest) -> dict:
+    import uuid
+    import json
+    from datetime import datetime, UTC
+    # generate new id
+    case_id = f"CASE-{datetime.now(UTC).year}-{str(uuid.uuid4())[:8].upper()}"
+    case_dir = CASE_STORE_ROOT / case_id
+    case_dir.mkdir(parents=True, exist_ok=True)
+    
+    meta = {
+        "case_id": case_id,
+        "name": req.name,
+        "examiner": req.examiner,
+        "created_at": datetime.now(UTC).isoformat(),
+        "status": "Intake"
+    }
+    
+    (case_dir / "case_meta.json").write_text(json.dumps(meta), encoding="utf-8")
+    return {
+        "id": case_id,
+        "name": req.name,
+        "examiner": req.examiner,
+        "createdAt": meta["created_at"],
+        "status": "Intake",
+        "hasEvidence": False
+    }
+
+
 @app.get("/api/cases", summary="List all cases (dashboard list view)")
 def list_cases() -> list[dict]:
     """Returns a lightweight list of cases from the ledger / case store."""
@@ -140,7 +190,6 @@ def list_cases() -> list[dict]:
                 if run_dir.exists() and (run_dir / "pipeline_result.json").exists():
                     import json
                     data = json.loads((run_dir / "pipeline_result.json").read_text(encoding="utf-8"))
-                    # Compute summary from result data
                     fragments_count = len(data.get("evidence", {}).get("fragments", []))
                     encrypted_count = len(data.get("encrypted", []))
                     cases.append({
@@ -150,6 +199,17 @@ def list_cases() -> list[dict]:
                         "evidence_count": fragments_count,
                         "status": "COMPLETED" if encrypted_count > 0 else "RECOVERY_COMPLETE",
                     })
+                elif (case_dir / "case_meta.json").exists():
+                    import json
+                    meta = json.loads((case_dir / "case_meta.json").read_text(encoding="utf-8"))
+                    cases.append({
+                        "case_id": case_dir.name,
+                        "intake_timestamp_utc": meta.get("created_at", ""),
+                        "investigator_id": meta.get("examiner", "unknown"),
+                        "evidence_count": 0,
+                        "status": "Intake",
+                    })
+
     # Fallback to mock if no real cases yet (demo mode)
     if not cases:
         from backend.api.mock_data import MOCK_CASE, MOCK_CASE_ID
