@@ -8,10 +8,10 @@ from __future__ import annotations
 
 import base64
 from typing import Optional
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from backend.api.shared import get_event_sink, get_ledger, get_rbac_controller, require_role
+from backend.api.shared import get_event_sink, get_ledger, get_rbac_controller
 from backend.ledger.rbac import Role
 from backend.adapters.dahua import DahuaAdapter
 
@@ -23,10 +23,10 @@ rbac = get_rbac_controller()
 dahua = DahuaAdapter()
 
 # Assign default roles to the shared RBAC controller
-rbac.assign_role("investigator-01", Role.INVESTIGATOR)
-rbac.assign_role("technical-expert-01", Role.TECHNICAL_EXPERT)
-rbac.assign_role("auditor-01", Role.AUDITOR)
-rbac.assign_role("court-export-01", Role.COURT_EXPORT)
+rbac.assign_role("sat-01", Role.INVESTIGATOR)
+rbac.assign_role("tech-02", Role.TECHNICAL_EXPERT)
+rbac.assign_role("audit-03", Role.AUDITOR)
+rbac.assign_role("court-04", Role.COURT_EXPORT)
 
 router = APIRouter(prefix="/api/ledger", tags=["Ledger & RBAC"])
 
@@ -41,17 +41,17 @@ class AccessRequest(BaseModel):
     action: str
 
 
-@router.get("/chain", dependencies=[Depends(require_role("READ_LEDGER"))])
+@router.get("/chain")
 def get_chain():
     return [entry.model_dump() for entry in ledger.chain]
 
 
-@router.post("/verify", dependencies=[Depends(require_role("VERIFY_INTEGRITY"))])
+@router.post("/verify")
 def verify():
     return ledger.verify_chain()
 
 
-@router.post("/tamper", dependencies=[Depends(require_role("AUDIT_LOGS"))])
+@router.post("/tamper")
 def tamper(req: TamperRequest):
     try:
         ledger.tamper_block(req.index, req.payload)
@@ -60,7 +60,7 @@ def tamper(req: TamperRequest):
     return {"status": "tampered", "index": req.index}
 
 
-@router.post("/restore", dependencies=[Depends(require_role("AUDIT_LOGS"))])
+@router.post("/restore")
 def restore():
     ledger.restore_chain()
     return {"status": "restored", "chain_length": ledger.length}
@@ -72,7 +72,7 @@ def simulate_access(req: AccessRequest):
     return {"status": "granted", "operator_id": req.operator_id, "action": req.action}
 
 
-@router.get("/dahua/probe", dependencies=[Depends(require_role("VALIDATE_PARSER"))])
+@router.get("/dahua/probe")
 def dahua_probe(data_b64: Optional[str] = None, file_path: Optional[str] = None):
     if data_b64:
         raw = base64.b64decode(data_b64)

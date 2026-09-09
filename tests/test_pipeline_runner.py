@@ -120,7 +120,7 @@ def test_full_run_end_to_end(tmp_path):
     assert types[6:9] == ["fragment_exported"] * 3
     assert types[9:] == ["encryption_completed"] * 4  # image + 3 fragments
     assert sink.events[9].payload["fragment_index"] == -1
-    assert result.events == [e.model_dump(mode="json") for e in sink.events]
+    assert result.events == sink.events
 
     # persisted artefacts
     run = tmp_path / "run"

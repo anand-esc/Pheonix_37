@@ -52,34 +52,16 @@ class LedgerEntry(BaseModel):
 
 
 class AuditLedger:
-    _SENTINEL = object()
-
     def __init__(
         self,
         event_sink: Optional[InMemoryEventSink] = None,
         secret: str | None = None,
-        db_path: object = _SENTINEL,
     ) -> None:
         self._secret = secret or _load_secret()
         self._lock = threading.Lock()
-        # db_path=_SENTINEL → use default; db_path=None → no persistence
-        if db_path is AuditLedger._SENTINEL:
-            self._db_path: str | None = "case_store/ledger.json"
-        else:
-            self._db_path = db_path  # type: ignore[assignment]
         self._chain: list[LedgerEntry] = []
         self._backup: list[dict] = []
-        if self._db_path and os.path.exists(self._db_path):
-            try:
-                with open(self._db_path, "r") as f:
-                    data = json.load(f)
-                self._chain = [LedgerEntry.model_validate(entry) for entry in data.get("chain", [])]
-                self._backup = [entry.model_dump() for entry in self._chain]
-            except Exception as exc:
-                logger.error("Failed to load ledger %s: %s", self._db_path, exc)
-                self._create_genesis()
-        if not self._chain:
-            self._create_genesis()
+        self._create_genesis()
         self._event_sink = event_sink
         if event_sink is not None:
             event_sink.subscribe(self._on_event)
@@ -106,14 +88,7 @@ class AuditLedger:
             )
             self._chain.append(entry)
             self._backup.append(entry.model_dump())
-            self._save_to_disk()
             return entry
-
-    def _save_to_disk(self) -> None:
-        if self._db_path:
-            os.makedirs(os.path.dirname(self._db_path), exist_ok=True)
-            with open(self._db_path, "w") as f:
-                json.dump({"chain": [c.model_dump() for c in self._chain]}, f)
 
     def verify_chain(self) -> dict:
         with self._lock:
@@ -148,12 +123,10 @@ class AuditLedger:
                 block.event_type, block.operator_id, mutated_payload
             )
             block.payload_hash = tampered_hash
-            self._save_to_disk()
 
     def restore_chain(self) -> None:
         with self._lock:
-            self._chain = [LedgerEntry.model_validate(d) for d in self._backup]
-            self._save_to_disk()
+            self._chain = [LedgerEntry(**d) for d in self._backup]
 
     @property
     def chain(self) -> list[LedgerEntry]:
@@ -192,7 +165,6 @@ class AuditLedger:
         )
         self._chain.append(genesis)
         self._backup.append(genesis.model_dump())
-        self._save_to_disk()
 
     @staticmethod
     def _hash_payload(event_type: str, operator_id: str, details: dict) -> str:

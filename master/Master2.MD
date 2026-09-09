@@ -22,10 +22,6 @@ The pipeline strictly guarantees that forensic integrity is not compromised duri
   - If Dahua is detected, the native `DahuaAdapter` is loaded.
   - If a format is unknown, or if the adapter is merely a stub (like the current `HikvisionAdapter`), it dynamically falls back to the `GenericCarverAdapter`.
 
-### 2. AI Triage (Stub / Not Connected)
-*   **What it does:** Runs YOLOv8-nano against keyframes to detect broad categories (people, vehicles) without attempting facial recognition.
-*   **State:** **Mock/Not Connected**. The YOLOv8 model is implemented (`backend/ai/triage.py`) but is not currently wired into the real pipeline (frame extraction -> YOLO -> DetectionResult -> API). Any UI implication or pitched capability of live detection boxes is currently a mock concept. This is a deliberate limitation before freeze.
-
 ### 3. Parsing & Recovery (Adapters)
 - **Native Parser**: Extracts frames according to proprietary vendor specification, preserving exact sequence boundaries.
 - **Generic Carver**: Blindly searches for H.264 (`0x00000001`) and H.265 NAL unit headers across the entire binary blob, extracting fragments probabilistically.

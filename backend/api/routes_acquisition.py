@@ -26,11 +26,11 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query, Depends
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
 
 from backend.acquisition.exceptions import AcquisitionError
-from backend.api.shared import get_event_sink, require_role
+from backend.api.shared import get_event_sink
 from backend.detection.detector import FormatDetector
 from backend.detection.models import DetectionReport
 from backend.pipeline.events import PipelineEvent
@@ -65,7 +65,6 @@ class RunRequest(BaseModel):
     out_dir: str = Field(description="directory for image, fragments, vault, result")
     device_info: str = ""
     encrypt: bool = True
-    clock_drift_seconds: float = Field(default=0.0, description="Global clock drift in seconds vs true NTP")
 
 
 class JobView(BaseModel):
@@ -183,7 +182,6 @@ class _Job:
                 investigator_id=self.request.investigator_id,
                 custodian_id=self.request.custodian_id,
                 encrypt=self.request.encrypt,
-                clock_drift_seconds=self.request.clock_drift_seconds,
                 progress_cb=progress,
             )
             self.status = JobStatus.COMPLETED
@@ -225,7 +223,7 @@ store = JobStore()
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
-@router.post("/runs", status_code=202, response_model=JobView, dependencies=[Depends(require_role("RUN_CARVING"))])
+@router.post("/runs", status_code=202, response_model=JobView)
 async def start_run(
     request: RunRequest,
     wait: bool = Query(False, description="block until the run finishes"),
@@ -241,17 +239,17 @@ async def start_run(
     return job.view()
 
 
-@router.get("/runs", response_model=list[JobView], dependencies=[Depends(require_role("VIEW_EVIDENCE"))])
+@router.get("/runs", response_model=list[JobView])
 async def list_runs() -> list[JobView]:
     return [j.view() for j in store.all()]
 
 
-@router.get("/runs/{job_id}", response_model=JobView, dependencies=[Depends(require_role("VIEW_EVIDENCE"))])
+@router.get("/runs/{job_id}", response_model=JobView)
 async def get_run(job_id: str) -> JobView:
     return store.get(job_id).view()
 
 
-@router.get("/runs/{job_id}/result", response_model=PipelineResult, dependencies=[Depends(require_role("VIEW_EVIDENCE"))])
+@router.get("/runs/{job_id}/result", response_model=PipelineResult)
 async def get_result(job_id: str) -> PipelineResult:
     job = store.get(job_id)
     if job.status is JobStatus.FAILED:
@@ -261,14 +259,11 @@ async def get_result(job_id: str) -> PipelineResult:
     return job.result
 
 
-@router.get("/runs/{job_id}/events", response_model=list[dict], dependencies=[Depends(require_role("AUDIT_LOGS"))])
-async def get_events(job_id: str) -> list[dict]:
+@router.get("/runs/{job_id}/events", response_model=list[PipelineEvent])
+async def get_events(job_id: str) -> list[PipelineEvent]:
     job = store.get(job_id)
     with job.lock:
-        return [
-            e.model_dump(mode="json") if hasattr(e, "model_dump") else e
-            for e in job._events
-        ]
+        return list(job._events)
 
 
 class DetectRequest(BaseModel):
@@ -277,7 +272,7 @@ class DetectRequest(BaseModel):
     source_path: str
 
 
-@router.post("/detect", response_model=DetectionReport, dependencies=[Depends(require_role("VALIDATE_PARSER"))])
+@router.post("/detect", response_model=DetectionReport)
 async def detect(request: DetectRequest) -> DetectionReport:
     """Bounded signature scan of a file; cheap enough to run inline."""
     path = Path(request.source_path)

@@ -114,14 +114,13 @@ flowchart TD
 
 ## Vendor Support Matrix
 
-| Vendor Format | Support Level | Notes |
-| :--- | :--- | :--- |
-| H.264 / H.265 (Generic) | **Fully Validated** | Robust stream carving, annex-B reassembly, and NAL unit extraction. |
-| Dahua | **Partial** | Signature detection works. DHFS filesystem parsing is incomplete; the adapter currently falls back to signature-based carving (DHAV magic bytes) with hardcoded confidence. |
-| Hikvision | **Stubbed** | Currently implemented as a stub interface. Detection relies on signature matching; extraction delegates to the Generic Carver. |
-| CP Plus / Godrej / Uniview | **Generic fallback** | No sufficiently detailed public spec; handled via generic NAL carving. |
-| Honeywell | **Research target** | Recent academic research exists; identified as next validation target. |
-| Matrix / TP-Link | **Research target** | No sufficiently detailed public specification identified. |
+| Vendor | Status | Description |
+|--------|--------|-------------|
+| Hikvision | Stub / Pending | Native WFS parser is currently a routing stub. Defers to generic fallback carving. |
+| Dahua | Validated (prototype) | Native DHFS/DHAV parser, tested against synthetic and reference samples |
+| CP Plus / Uniview / Godrej | Generic fallback | No sufficiently detailed, independently reproducible public specification found; handled via generic NAL carving |
+| Honeywell | Research target | Recent academic research exists; identified as next validation target |
+| Matrix / TP-Link | Research target | No sufficiently detailed public specification identified |
 
 > Every limitation is paired with its mitigation. A tool that reports exactly what it is confident about is more forensically credible than one that claims uniform support for everything.
 
@@ -130,15 +129,11 @@ flowchart TD
 ## Security Layer
 
 ### Encryption
-- **Important Demo Limitation:** Encryption keys live only in memory. A vault cannot be reopened after the process exits. This is acceptable for the demonstration but means data cannot be persistently decrypted across reboots.
+
 - Per-case **envelope encryption**: one random 256-bit Data Encryption Key (DEK) per case
 - DEK wrapped by a Key Encryption Key (KEK) derived via **Argon2id**
 - Every artifact encrypted with **AES-256-GCM**, unique nonce per operation
 - Evidence is **always hashed on plaintext before encryption** — the hash is the forensic identity of the evidence, independent of any key
-
-### AI Triage (Stub / Not Connected)
-- **What it does:** Runs YOLOv8-nano against keyframes to detect broad categories (people, vehicles) without attempting facial recognition.
-- **State:** **Mock/Not Connected**. The YOLOv8 model is implemented (`backend/ai/triage.py`) but is not currently wired into the real pipeline (frame extraction -> YOLO -> DetectionResult -> API). Any UI implication or pitched capability of live detection boxes is currently a mock concept. This is a deliberate limitation before freeze.
 
 ### Audit Ledger
 
@@ -158,10 +153,7 @@ Modify a ledger entry — verification fails visibly. Attempt unauthorized decry
 
 ## Legal Compliance
 
-- **BSA Section 63 (formerly IT Act 65-B) Certificate**
-- **Note for Demo:** The certificate generator is currently a CLI-only tool (run via `agy` or `python -m backend.ledger.cert_generator` or similar). There is no UI button for this in the prototype.
-- Auto-populates standard form fields mapping technical hashes to legal paragraphs.
-- Produces a final PDF/Markdown draft for the examiner to sign.
+- **BSA Section 63** (formerly IT Act Section 65-B) — certificate-draft generator auto-populates Part A (custodian) and Part B (expert) fields. Generates a draft only — human review and signature are required.
 - **DPDP Act 2023, Section 17(1)(c)** — covers processing of bystander data necessary for prevention, detection, investigation or prosecution of offences.
 - **AI Policy** — YOLOv8-nano for object/person/vehicle detection triage only. Never used for identity claims or face-recognition matching.
 
@@ -221,6 +213,19 @@ Modify a ledger entry — verification fails visibly. Attempt unauthorized decry
 | Permissioned hash-chained ledger | Multi-node distributed blockchain |
 | Evidence hash on plaintext | Personal data or video on any public chain |
 
+---
+
+## Definition of Done
+
+Every feature is considered complete only when:
+
+- [ ] Works end-to-end, not just in isolation
+- [ ] Known input produces a known, verified output
+- [ ] At least one failure or error case has been tested
+- [ ] Output hash is recorded in the chain
+- [ ] UI displays the result
+- [ ] Ledger event is written for the action
+- [ ] One line of documentation exists
 
 ---
 

@@ -93,10 +93,11 @@ export function EvidencePage() {
         }
       }, 1000);
 
+      const summary = result.summary;
       setAcquisitionResult({
-        hash: result.acquisition?.intake_sha256?.hex_digest || "",
-        fileName: result.evidence_id || "",
-        fileSize: result.acquisition?.bytes_read || 0,
+        hash: summary.image_sha256,
+        fileName: summary.evidence_id,
+        fileSize: result.acquisition.bytes_read,
         acquiredAt: result.started_utc,
       });
       setAcquisitionStage("done");
