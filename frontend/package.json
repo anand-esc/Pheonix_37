@@ -1,5 +1,7 @@
 {
   "name": "phoenix-forensic-toolkit",
+  "description": "NTRO DVR/NVR Forensic Analysis Tool",
+  "author": "NTRO Forensic Team",
   "private": true,
   "version": "0.2.0",
   "type": "module",
