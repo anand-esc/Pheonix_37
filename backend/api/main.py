@@ -24,22 +24,7 @@ from backend.ledger.rbac import Role, enforce_access
 # ---------------------------------------------------------------------------
 # RBAC dependency for protected endpoints
 # ---------------------------------------------------------------------------
-async def require_role(
-    operator_id: str = Header(..., alias="X-Operator-ID"),
-    action: str = Query(..., description="Action being attempted"),
-) -> str:
-    """
-    FastAPI dependency that enforces RBAC for the given action.
-    Reads operator_id from X-Operator-ID header, action from query param.
-    Raises 403 on denial (and logs to ledger via event sink).
-    """
-    try:
-        enforce_access(operator_id, action)
-    except HTTPException:
-        raise
-    except Exception as exc:
-        raise HTTPException(status_code=403, detail=f"RBAC error: {exc}")
-    return operator_id
+from backend.api.shared import require_role
 
 
 app = FastAPI(
@@ -129,7 +114,7 @@ def _load_case_from_run(case_id: str) -> Optional[Case]:
 # ---------------------------------------------------------------------------
 # GET /api/cases — dashboard list view (real ledger query)
 # ---------------------------------------------------------------------------
-@app.get("/api/cases", summary="List all cases (dashboard list view)")
+@app.get("/api/cases", summary="List all cases (dashboard list view)", dependencies=[Depends(require_role("VIEW_EVIDENCE"))])
 def list_cases() -> list[dict]:
     """Returns a lightweight list of cases from the ledger / case store."""
     cases = []
@@ -170,6 +155,7 @@ def list_cases() -> list[dict]:
     "/api/case/{case_id}",
     response_model=Case,
     summary="Full case detail (EvidenceItems, Fragments, HashRecord lineage)",
+    dependencies=[Depends(require_role("VIEW_EVIDENCE"))]
 )
 def get_case(case_id: str) -> Case:
     """Returns the complete Case object from the latest pipeline run."""
@@ -189,6 +175,7 @@ def get_case(case_id: str) -> Case:
 @app.get(
     "/api/case/{case_id}/status",
     summary="Pipeline progress (poll for progress bar)",
+    dependencies=[Depends(require_role("VIEW_EVIDENCE"))]
 )
 def get_case_status(case_id: str) -> dict:
     """Returns the current pipeline stage and progress percentage."""
@@ -198,11 +185,11 @@ def get_case_status(case_id: str) -> dict:
         result_path = run_dir / "pipeline_result.json"
         if result_path.exists():
             data = json.loads(result_path.read_text(encoding="utf-8"))
-            summary = data.get("summary", {})
+            encrypted_count = len(data.get("encrypted", []))
             return {
                 "case_id": case_id,
-                "stage": "ENCRYPTION_COMPLETE" if summary.get("encrypted", 0) > 0 else "RECOVERY_COMPLETE",
-                "stage_label": "Evidence vault sealed" if summary.get("encrypted", 0) > 0 else "Fragment recovery complete",
+                "stage": "ENCRYPTION_COMPLETE" if encrypted_count > 0 else "RECOVERY_COMPLETE",
+                "stage_label": "Evidence vault sealed" if encrypted_count > 0 else "Fragment recovery complete",
                 "progress_pct": 100,
             }
     # Fallback for in-progress or demo
@@ -221,6 +208,7 @@ def get_case_status(case_id: str) -> dict:
     "/api/case/{case_id}/fragments",
     response_model=list[Fragment],
     summary="All recovered fragments for a case (video viewer / timeline)",
+    dependencies=[Depends(require_role("VIEW_EVIDENCE"))]
 )
 def get_case_fragments(case_id: str) -> list[Fragment]:
     """Returns the flat list of Fragment objects for a case."""
@@ -246,6 +234,7 @@ def get_case_fragments(case_id: str) -> list[Fragment]:
 @app.get(
     "/api/case/{case_id}/ledger",
     summary="Hash-chained audit ledger for a case",
+    dependencies=[Depends(require_role("READ_LEDGER"))]
 )
 def get_case_ledger(case_id: str) -> list[dict]:
     """Returns the real audit ledger chain from the shared AuditLedger,
@@ -268,6 +257,7 @@ def get_case_ledger(case_id: str) -> list[dict]:
 @app.get(
     "/api/case/{case_id}/fragments/{fragment_index}/stream",
     summary="Stream a fragment (H.264 elementary or MP4) with range support",
+    dependencies=[Depends(require_role("VIEW_EVIDENCE"))]
 )
 async def stream_fragment(
     case_id: str,

@@ -87,3 +87,8 @@ class InMemoryEventSink:
     def subscriber_count(self) -> int:
         with self._lock:
             return len(self._subscribers)
+
+    @property
+    def events(self) -> list[dict]:
+        with self._lock:
+            return list(self._event_log)

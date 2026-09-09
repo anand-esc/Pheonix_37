@@ -30,6 +30,18 @@ def get_rbac_controller() -> RBACController:
         _rbac_controller = init_rbac(get_event_sink())
     return _rbac_controller
 
+from fastapi import Header, HTTPException
+
+def require_role(action: str):
+    def _dependency(operator_id: str = Header(..., alias="X-Operator-ID")) -> str:
+        try:
+            get_rbac_controller().enforce_access(operator_id, action)
+        except HTTPException:
+            raise
+        except Exception as exc:
+            raise HTTPException(status_code=403, detail=f"RBAC error: {exc}")
+        return operator_id
+    return _dependency
 
 # Initialize RBAC immediately (works for both server and TestClient)
 get_rbac_controller()

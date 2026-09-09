@@ -125,7 +125,7 @@ class PipelineResult(BaseModel):
     image_encrypted: EncryptedArtifact | None = None
     playable: list[PlayableView] = Field(default_factory=list)
     timings: list[StageTiming] = Field(default_factory=list)
-    events: list[PipelineEvent] = Field(default_factory=list)
+    events: list[dict] = Field(default_factory=list)
 
     def summary(self) -> dict:
         return {
@@ -168,6 +168,7 @@ def run_pipeline(
     encrypt: bool = True,
     encrypt_image: bool = True,
     wrap_mp4: bool = True,
+    clock_drift_seconds: float = 0.0,
     adapter_map: dict[str, tuple[str, str]] | None = None,
     generic: tuple[str, str] | None = None,
     progress_cb: Callable[[int], None] | None = None,
@@ -282,9 +283,18 @@ def run_pipeline(
             )
     assert parsed is not None  # either branch above produced an item
 
+    from backend.utils.timestamps import normalize_dvr_timestamp
+    now_str = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S")
+    norm_res = normalize_dvr_timestamp(now_str, clock_drift_seconds=clock_drift_seconds)
+    drift = norm_res["clock_drift_seconds"]
+
+    new_channels = []
+    for ch in parsed.channels:
+        new_channels.append(ch.model_copy(update={"clock_offset_seconds": drift}))
+
     evidence = evidence.model_copy(
         update={
-            "channels": parsed.channels,
+            "channels": new_channels,
             "fragments": parsed.fragments,
             "metadata": {**evidence.metadata, **parsed.metadata},
         }
@@ -358,7 +368,8 @@ def run_pipeline(
         )
 
     # 5. persist ----------------------------------------------------------
-    events = list(getattr(sink, "events", []))
+    events_raw = getattr(sink, "events", [])
+    events = [e.model_dump() if hasattr(e, "model_dump") else e for e in events_raw]
     result = PipelineResult(
         case_id=case_id,
         operator_id=operator_id,
@@ -501,7 +512,7 @@ def write_transcript(result: PipelineResult, path: str | Path) -> Path:
         "hash_lineage": [
             h.model_dump(mode="json") for h in result.evidence.hash_lineage
         ],
-        "events": [e.model_dump(mode="json") for e in result.events],
+        "events": result.events,
     }
     path.write_text(json.dumps(transcript, indent=2), encoding="utf-8")
     return path

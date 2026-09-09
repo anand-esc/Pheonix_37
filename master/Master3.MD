@@ -9,10 +9,13 @@ The system guarantees that once evidence is recovered, it cannot be altered.
 - Evidence is **always hashed in its plaintext state** before encryption. The cryptographic identity of a video fragment is independent of the encryption key.
 - Pre-encryption SHA-256 hashes are recorded into the `pipeline_result.json` and the Audit Ledger.
 
-### AES-256-GCM Envelope Encryption
-- A unique 256-bit Data Encryption Key (DEK) is generated for every case.
-- The DEK is wrapped using a Key Encryption Key (KEK) derived via Argon2id.
-- The raw image and every recovered fragment are stream-encrypted using AES-256-GCM, establishing an authenticated encrypted `vault/`.
+### 1. Zero-Trust Envelope Encryption
+
+**Important Demo Limitation:** Encryption keys currently live only in memory. A vault cannot be reopened after the process exits. This means data cannot be persistently decrypted across server reboots. This is a deliberate limitation for the demonstration phase.
+
+- **Data Encryption Keys (DEKs)**: A fresh 256-bit AES DEK is generated for each new case using cryptographically secure RNG.
+- **Key Encryption Keys (KEKs)**: Derived via **Argon2id** (memory-hard, resistant to GPU/ASIC cracking).
+- **AES-256-GCM**: Used for all payload encryption. GCM provides both confidentiality and **authenticity**, immediately detecting if an encrypted evidence chunk has been tampered with.
 
 ## 2. Hash-Chained Audit Ledger
 Phoenix incorporates a strict, local, hash-chained ledger (`ledger/audit_ledger.py`).
