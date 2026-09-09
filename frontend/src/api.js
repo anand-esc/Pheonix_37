@@ -58,12 +58,48 @@ async function fetchJson(url, options = {}, action) {
   return res.json();
 }
 
+
+export async function createCase({ name, examiner }) {
+  return fetchJson(buildUrl(API_BASE, "/cases", "TRIGGER_ACQUISITION"), {
+    method: "POST",
+    body: JSON.stringify({ name, examiner }),
+  });
+}
+
 export async function getCases() {
   return fetchJson(buildUrl(API_BASE, "/cases", "VIEW_EVIDENCE"));
 }
 
 export async function getCase(caseId) {
-  return fetchJson(buildUrl(API_BASE, `/case/${encodeURIComponent(caseId)}`, "VIEW_EVIDENCE"));
+  const rawCase = await fetchJson(buildUrl(API_BASE, `/case/${encodeURIComponent(caseId)}`, "VIEW_EVIDENCE"));
+  if (!rawCase) return null;
+  
+  const hasEvidence = rawCase.evidence_items && rawCase.evidence_items.length > 0;
+  let evidence = null;
+  if (hasEvidence) {
+    const item = rawCase.evidence_items[0];
+    const intakeHash = item.hash_lineage && item.hash_lineage.length > 0 ? item.hash_lineage[0].hex_digest : "";
+    evidence = {
+      hash: intakeHash,
+      fileName: item.evidence_id,
+      fileSize: 0,
+      acquiredAt: rawCase.intake_timestamp_utc
+    };
+  }
+
+  return {
+    id: rawCase.case_id || rawCase.id,
+    name: rawCase.name || (rawCase.case_id ? `Case ${rawCase.case_id}` : "DVR Forensic Case"),
+    examiner: rawCase.investigator_id || rawCase.examiner || "Unassigned",
+    createdAt: rawCase.intake_timestamp_utc || rawCase.createdAt,
+    status: mapBackendStatus(rawCase.status),
+    hasEvidence,
+    evidence,
+    parsedHash: rawCase.parsedHash || null,
+    parsedAt: rawCase.parsedAt || null,
+    recoveries: {},
+    anchors: []
+  };
 }
 
 export async function getCaseFragments(caseId) {

@@ -108,6 +108,18 @@ async function waitForBackend() {
 
 /** Spawn the backend binary as a managed child process. */
 function startBackend() {
+  if (!app.isPackaged) {
+    backendProcess = spawn('python3', ['../backend/run_server.py'], {
+      cwd: path.resolve(__dirname, '..'),
+      stdio: ['ignore', 'pipe', 'pipe'],
+      windowsHide: true,
+      env: { ...process.env, PHOENIX_LEDGER_SECRET: 'dummy' }
+    });
+    backendProcess.stdout?.on('data', (data) => console.log(`[backend] ${data}`));
+    backendProcess.stderr?.on('data', (data) => console.error(`[backend] ${data}`));
+    return;
+  }
+
   const executable = backendExecutablePath();
   if (!fs.existsSync(executable)) {
     throw new Error(`Backend binary missing: ${executable}`);
