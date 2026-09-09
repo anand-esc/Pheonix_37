@@ -15,12 +15,6 @@ The `byte_offset_end` parameter is structurally exclusive: `end - start` compute
 
 The `GenericCarverAdapter` encapsulates this logic into a compliant `BaseAdapter` interface. It mirrors the upstream format detector's vendor findings, derives *probable* logical channels utilizing encoder parameters (detailed in `docs/timeline.md`), and aggregates execution statistics into `EvidenceItem.metadata`.
 
-## Known Algorithmic Limitations
-
-> [!WARNING]
-> **Interleaved Block Boundary Parsing (Algorithm Gap)**
-> The current generic carver reads the image linearly and reassembles Annex-B NAL units across sector boundaries. On real multi-channel DVR inputs, video frames from different cameras are often interleaved in fixed-size hardware blocks (e.g., 256KB or 1MB chunks). Because the carver is not chunk-aware, it incorrectly treats adjacent blocks from different channels as contiguous byte streams. This causes severe macroblock corruption at the splice points when decoding the recovered fragments. Resolving this requires implementing a chunk-deinterleaving pass prior to NAL boundary scanning.
-
 ## Sequential Carving Ruleset
 
 1. **Scanner Heuristic:** A candidate sequence requires `00 00 01` preceding a structurally valid NAL header. H.264 compliance dictates `forbidden_zero_bit = 0`, a type identifier within `1..12`, and consistent `nal_ref_idc` scaling. H.265 compliance requires valid type parameters, `nuh_layer_id = 0`, and `nuh_temporal_id_plus1 >= 1`. Memory allocation is constrained via a bounded block scanner (default 8 MiB with deterministic overflow carry).

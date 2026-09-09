@@ -57,7 +57,7 @@ def test_synchronous_run_returns_summary_and_result(tmp_path):
     assert result.case_id == "CASE-API-1"
     assert len(result.encrypted) == 3
     events = asyncio.run(api.get_events(view.job_id))
-    assert events[0]["event_type"] == "intake_started"
+    assert events[0].event_type == "intake_started"
     assert len(events) == view.events
 
     listed = asyncio.run(api.list_runs())
@@ -122,12 +122,11 @@ def test_router_mounts_on_a_standalone_app(tmp_path):
     app.include_router(api.router)
     client = TestClient(app)
 
-    headers = {"X-Operator-ID": "investigator-01"}
     req = _request(tmp_path)
-    resp = client.post("/acquisition/runs?wait=true", json=req.model_dump(), headers=headers)
+    resp = client.post("/acquisition/runs?wait=true", json=req.model_dump())
     assert resp.status_code == 202, resp.text
     job_id = resp.json()["job_id"]
     assert resp.json()["status"] == "completed"
-    assert client.get(f"/acquisition/runs/{job_id}/result", headers=headers).status_code == 200
-    assert client.get(f"/acquisition/runs/{job_id}/events", headers={"X-Operator-ID": "auditor-01"}).status_code == 200
-    assert client.get("/acquisition/runs/nope", headers=headers).status_code == 404
+    assert client.get(f"/acquisition/runs/{job_id}/result").status_code == 200
+    assert client.get(f"/acquisition/runs/{job_id}/events").status_code == 200
+    assert client.get("/acquisition/runs/nope").status_code == 404

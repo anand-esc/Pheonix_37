@@ -3,14 +3,23 @@
   "private": true,
   "version": "0.2.0",
   "type": "module",
-  "main": "electron/main.js",
+  "main": "electron/main.cjs",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:ui": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
     "electron:dev": "concurrently -k \"npm run dev\" \"wait-on http://localhost:5173 && cross-env NODE_ENV=development npx electron .\"",
-    "electron:build": "npm run build && npx electron-builder --win -c.win.signAndEditExecutable=false"
+    "build:backend:win": "pyinstaller --noconfirm --clean --onefile --name forensic-backend --distpath ../backend/dist --workpath ../backend/build/windows --specpath ../backend/build/specs --paths .. --paths ../backend --hidden-import uvicorn.logging --hidden-import uvicorn.loops.auto --hidden-import uvicorn.protocols.http.auto --hidden-import uvicorn.lifespan.on --hidden-import api.main --hidden-import pydantic --hidden-import hashlib --hidden-import hmac --hidden-import fastapi ../backend/run_server.py",
+    "build:backend:linux": "pyinstaller --noconfirm --clean --onefile --name forensic-backend --distpath ../backend/dist --workpath ../backend/build/linux --specpath ../backend/build/specs --paths .. --paths ../backend --hidden-import uvicorn.logging --hidden-import uvicorn.loops.auto --hidden-import uvicorn.protocols.http.auto --hidden-import uvicorn.lifespan.on --hidden-import api.main --hidden-import pydantic --hidden-import hashlib --hidden-import hmac --hidden-import fastapi ../backend/run_server.py",
+    "build:backend": "node electron/build-backend.cjs",
+    "pack:win": "npm run build:ui && npm run build:backend:win && electron-builder --config electron-builder.json --win --dir",
+    "pack:linux": "npm run build:ui && npm run build:backend:linux && electron-builder --config electron-builder.json --linux --dir",
+    "package:win": "npm run build:ui && npm run build:backend:win && electron-builder --config electron-builder.json --win",
+    "package:linux": "npm run build:ui && npm run build:backend:linux && electron-builder --config electron-builder.json --linux",
+    "dist": "npm run build:ui && npm run build:backend && electron-builder --config electron-builder.json",
+    "electron:build": "npm run dist"
   },
   "dependencies": {
     "@tabler/icons-react": "^3.46.0",
@@ -32,24 +41,5 @@
     "tailwindcss": "^4.3.3",
     "vite": "^8.2.2",
     "wait-on": "^8.0.2"
-  },
-  "build": {
-    "appId": "com.ntro.phoenix.forensic",
-    "productName": "Phoenix Forensic Toolkit",
-    "directories": {
-      "output": "release"
-    },
-    "files": [
-      "dist/**/*",
-      "electron/**/*"
-    ],
-    "win": {
-      "target": "portable",
-      "icon": "build/icon.ico",
-      "signAndEditExecutable": false
-    },
-    "portable": {
-      "artifactName": "Phoenix-Forensic-Toolkit-v0.2.0.exe"
-    }
   }
 }
