@@ -1,36 +1,36 @@
-import './FragmentRow.css';
+import { useNavigate } from "react-router-dom";
 
-/**
- * Usage:
- * <FragmentRow
- *   fragmentId="frag-53da6bd1"
- *   codec="H.264"
- *   durationLabel="00:04:12"
- *   confidence={0.87}
- *   rationale="SPS parsed, IDR start, VCL ratio 71% — high confidence"
- * />
- *
- * Deliberately a table row, not a rounded card with a shadow — a forensic fragment log
- * reads like an evidence list, not a product feed. Confidence and rationale always sit
- * together: never show a bare percentage without the reason behind it.
- */
-export default function FragmentRow({ fragmentId, codec, confidence, rationale, durationLabel }) {
+export default function FragmentRow({ fragmentId, codec, confidence, rationale, durationLabel, caseId, fragmentIndex }) {
   const pct = Math.round(confidence * 100);
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    if (caseId && fragmentIndex !== undefined) {
+      navigate(`/cases/${caseId}/video/${fragmentIndex}`);
+    }
+  };
 
   return (
-    <div className="phx-fragment-row">
-      <div className="phx-fragment-row__id">{fragmentId}</div>
-      <div className="phx-fragment-row__meta">
-        <span>{codec}</span>
-        {durationLabel && <span>{durationLabel}</span>}
+    <div 
+      onClick={handleClick}
+      className={`flex flex-col sm:flex-row gap-3 sm:gap-6 px-4 py-3 border-b border-phx-border bg-white hover:bg-phx-surface transition-colors group ${caseId ? 'cursor-pointer' : ''}`}
+    >
+      <div className="font-mono text-sm font-semibold text-phx-red group-hover:text-phx-red/80 min-w-[120px]">
+        {fragmentId}
       </div>
-      <div className="phx-fragment-row__confidence">
-        <div className="phx-fragment-row__bar">
-          <div className="phx-fragment-row__bar-fill" style={{ width: `${pct}%` }} />
+      <div className="flex items-center gap-4 min-w-[120px] font-sans text-xs text-phx-primary">
+        <span className="bg-phx-surface px-2 py-0.5 rounded text-phx-secondary border border-phx-border font-medium">{codec}</span>
+        {durationLabel && <span className="font-mono text-phx-secondary py-0.5 font-semibold">{durationLabel}</span>}
+      </div>
+      <div className="flex items-center gap-3 min-w-[140px]">
+        <div className="h-2 w-24 bg-phx-border rounded-full overflow-hidden">
+          <div className="h-full bg-phx-primary rounded-full" style={{ width: `${pct}%` }} />
         </div>
-        <span className="phx-fragment-row__pct">{pct}%</span>
+        <span className="font-mono text-[10px] text-phx-primary font-bold">{pct}%</span>
       </div>
-      <div className="phx-fragment-row__rationale">{rationale}</div>
+      <div className="text-sm text-phx-secondary truncate flex-1">
+        {rationale}
+      </div>
     </div>
   );
 }

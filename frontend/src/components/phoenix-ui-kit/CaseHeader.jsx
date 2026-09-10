@@ -1,33 +1,23 @@
 import { IconRubberStamp, IconAlertTriangle, IconClock } from '@tabler/icons-react';
-import './CaseHeader.css';
-
-// npm install @tabler/icons-react
 
 const STATUS_CONFIG = {
-  validated: { icon: IconRubberStamp, className: 'phx-badge--gold', label: 'Vendor validated' },
-  tampered: { icon: IconAlertTriangle, className: 'phx-badge--red', label: 'Tamper detected' },
-  pending: { icon: IconClock, className: 'phx-badge--neutral', label: 'Pending review' },
+  validated: { icon: IconRubberStamp, className: 'bg-phx-amber/10 text-phx-amber border-phx-amber/30', label: 'Vendor validated' },
+  tampered: { icon: IconAlertTriangle, className: 'bg-phx-red/10 text-phx-red border-phx-red/30', label: 'Tamper detected' },
+  pending: { icon: IconClock, className: 'bg-phx-panel-lighter text-phx-secondary border-phx-border', label: 'Pending review' },
 };
 
-/**
- * Usage:
- * <CaseHeader caseId="case-2026-0091" title="Hikvision NVR — sector 4 recovery" status="validated" />
- *
- * status: 'validated' | 'tampered' | 'pending'
- * statusLabel: optional override for the badge text (e.g. "Chain verified", "Tamper at block 3")
- */
 export default function CaseHeader({ caseId, title, status = 'pending', statusLabel }) {
   const config = STATUS_CONFIG[status] || STATUS_CONFIG.pending;
   const Icon = config.icon;
 
   return (
-    <div className="phx-case-header">
-      <div>
-        <div className="phx-case-header__id">{caseId}</div>
-        <div className="phx-case-header__title">{title}</div>
+    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b border-phx-border/50 mb-6">
+      <div className="flex flex-col gap-1.5">
+        <div className="font-mono text-xs font-bold text-phx-cyan uppercase tracking-widest">{caseId}</div>
+        <div className="font-serif text-2xl font-semibold text-phx-primary">{title}</div>
       </div>
-      <div className={`phx-badge ${config.className}`}>
-        <Icon size={15} stroke={2} aria-hidden="true" />
+      <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-sans font-medium whitespace-nowrap self-start sm:self-auto ${config.className}`}>
+        <Icon size={16} stroke={2} aria-hidden="true" />
         <span>{statusLabel || config.label}</span>
       </div>
     </div>

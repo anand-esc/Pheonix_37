@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Loader2, FolderCheck } from "lucide-react";
-import { getCases, formatDate, mapBackendStatus } from "../api";
+import { Search, Loader2, FolderCheck, Plus } from "lucide-react";
+import { getCases, formatDate, mapBackendStatus, createCase } from "../api";
 import { useRole } from "../context/RoleContext";
 import CaseHeader from "../components/phoenix-ui-kit/CaseHeader";
 
@@ -10,6 +10,9 @@ export function CaseDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newCaseTitle, setNewCaseTitle] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
   const navigate = useNavigate();
   const { role } = useRole();
 
@@ -33,12 +36,29 @@ export function CaseDashboard() {
     }
   };
 
-  useEffect(() => {
-    fetchCases();
-  }, []);
+  useEffect(() => { fetchCases(); }, []);
 
   const handleRowClick = (caseItem) => {
     navigate(`/cases/${caseItem.id}`);
+  };
+
+  const handleCreateCase = async () => {
+    if (!newCaseTitle.trim()) return;
+    try {
+      setIsCreating(true);
+      const res = await createCase({ name: newCaseTitle, examiner: role });
+      if (res && res.case_id) {
+        navigate(`/cases/${res.case_id}`);
+      } else {
+        await fetchCases();
+        setIsModalOpen(false);
+        setNewCaseTitle("");
+      }
+    } catch (err) {
+      alert("Failed to create case: " + err.message);
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   const filteredCases = cases.filter((c) => {
@@ -51,56 +71,42 @@ export function CaseDashboard() {
     return matchesSearch && matchesStatus;
   });
 
-  const statusMap = {
-    "Intake": "pending",
-    "Processing": "pending",
-    "Recovered": "validated",
-    "Reported": "validated",
-  };
-
   return (
-    <div className="phx-page" style={{ background: "var(--phx-cream)", minHeight: "100vh" }}>
-      <div style={{ maxWidth: 1000, margin: "0 auto", padding: "2rem 1.5rem" }}>
+    <div className="max-w-6xl mx-auto px-4 py-8 relative">
+      <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
         <CaseHeader
-          caseId="PHOENIX"
+          caseId="PHEONIX_37"
           title="Forensic Evidence Review Dashboard"
           status="pending"
           statusLabel={`${cases.length} cases on record`}
         />
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="btn-primary"
+        >
+          <Plus size={16} />
+          <span>New Case</span>
+        </button>
+      </div>
 
-        <div className="phx-dashboard-toolbar" style={{
-          display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center",
-          marginBottom: "1.5rem", padding: "1rem",
-          background: "var(--phx-paper)", border: "1px solid var(--phx-border)",
-          borderRadius: "var(--phx-radius)"
-        }}>
-          <div className="phx-search" style={{ flex: 1, minWidth: 240, position: "relative" }}>
-            <Search size={16} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--phx-text-muted)" }} />
+      <div className="bg-white border border-phx-border rounded-lg p-4 mb-6 flex flex-wrap gap-4 items-center justify-between shadow-sm">
+        <div className="flex flex-1 flex-wrap gap-4">
+          <div className="relative flex-1 min-w-[240px]">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-phx-muted" />
             <input
               type="text"
               placeholder="Search by Case ID, title, investigator..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              style={{
-                width: "100%", padding: "10px 12px 10px 40px",
-                background: "var(--phx-navy-tint)", border: "1px solid var(--phx-border)",
-                borderRadius: "var(--phx-radius)", fontFamily: "var(--phx-font-mono)",
-                fontSize: "0.78rem", color: "var(--phx-ink)",
-                outline: "none"
-              }}
+              className="w-full py-2.5 pl-10 pr-4 bg-phx-surface border border-phx-border rounded text-sm text-phx-primary placeholder-phx-muted focus:outline-none focus:border-phx-red/40 focus:ring-1 focus:ring-phx-red/20 transition-all"
             />
           </div>
-
-          <div className="phx-filter" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontFamily: "var(--phx-font-sans)", fontSize: "0.78rem", color: "var(--phx-text-secondary)" }}>Filter:</span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-phx-secondary">Filter:</span>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              style={{
-                padding: "8px 12px", background: "var(--phx-navy-tint)", border: "1px solid var(--phx-border)",
-                borderRadius: "var(--phx-radius)", fontFamily: "var(--phx-font-mono)",
-                fontSize: "0.78rem", color: "var(--phx-ink)", cursor: "pointer", outline: "none"
-              }}
+              className="py-2.5 px-3 bg-phx-surface border border-phx-border rounded text-sm text-phx-primary focus:outline-none focus:border-phx-red/40 cursor-pointer transition-all"
             >
               <option value="ALL">All Statuses</option>
               <option value="INTAKE">Intake</option>
@@ -109,144 +115,101 @@ export function CaseDashboard() {
               <option value="REPORTED">Reported</option>
             </select>
           </div>
-
-          <div style={{ marginLeft: "auto", fontFamily: "var(--phx-font-mono)", fontSize: "0.72rem", color: "var(--phx-text-muted)" }}>
-            Active Role: <strong style={{ color: "var(--phx-ink)" }}>{role}</strong>
-          </div>
         </div>
-
-        {isLoading && (
-          <div style={{
-            padding: "3rem", textAlign: "center",
-            background: "var(--phx-paper)", border: "1px solid var(--phx-border)",
-            borderRadius: "var(--phx-radius)"
-          }}>
-            <Loader2 className="phx-spinner" size={32} style={{ color: "var(--phx-navy)", margin: "0 auto 12px" }} />
-            <div style={{ fontFamily: "var(--phx-font-mono)", fontSize: "0.78rem", color: "var(--phx-text-muted)" }}>
-              LOADING CASE INDEX...
-            </div>
-          </div>
-        )}
-
-        {!isLoading && cases.length === 0 && (
-          <div style={{
-            padding: "3rem", textAlign: "center",
-            background: "var(--phx-paper)", border: "1px solid var(--phx-border)",
-            borderRadius: "var(--phx-radius)"
-          }}>
-            <FolderCheck size={48} style={{ color: "var(--phx-text-muted)", marginBottom: 12 }} />
-            <h3 style={{ fontFamily: "var(--phx-font-serif)", fontSize: "1.1rem", color: "var(--phx-ink)", marginBottom: 4 }}>
-              No Forensic Cases Recorded
-            </h3>
-            <p style={{ fontFamily: "var(--phx-font-sans)", fontSize: "0.82rem", color: "var(--phx-text-secondary)" }}>
-              Initialize a case workspace to begin evidence acquisition and stream carving.
-            </p>
-          </div>
-        )}
-
-        {!isLoading && cases.length > 0 && (
-          <div className="phx-case-table" style={{
-            background: "var(--phx-paper)", border: "1px solid var(--phx-border)",
-            borderRadius: "var(--phx-radius)", overflow: "hidden"
-          }}>
-            <div className="phx-case-table-header" style={{
-              display: "grid",
-              gridTemplateColumns: "140px 1fr 140px 120px 140px 120px",
-              gap: 12, padding: "12px 16px",
-              background: "var(--phx-navy-tint)", borderBottom: "1px solid var(--phx-border)",
-              fontFamily: "var(--phx-font-mono)", fontSize: "0.72rem",
-              color: "var(--phx-text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em"
-            }}>
-              <div>CASE ID</div>
-              <div>TITLE</div>
-              <div>INTAKE (UTC)</div>
-              <div>STATUS</div>
-              <div>INVESTIGATOR</div>
-              <div>EVIDENCE</div>
-            </div>
-            <div className="phx-case-table-body">
-              {filteredCases.length === 0 ? (
-                <div style={{
-                  padding: "2rem", textAlign: "center",
-                  fontFamily: "var(--phx-font-mono)", fontSize: "0.78rem", color: "var(--phx-text-muted)"
-                }}>
-                  No cases match the selected search or status criteria.
-                </div>
-              ) : (
-                filteredCases.map((c) => (
-                  <div
-                    key={c.id}
-                    onClick={() => handleRowClick(c)}
-                    className="phx-case-row"
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "140px 1fr 140px 120px 140px 120px",
-                      gap: 12, padding: "12px 16px",
-                      alignItems: "center",
-                      borderBottom: "1px solid var(--phx-border)",
-                      cursor: "pointer",
-                      transition: "background 0.15s ease"
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = "var(--phx-navy-tint)"}
-                    onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
-                  >
-                    <div style={{ fontFamily: "var(--phx-font-mono)", fontSize: "0.78rem", fontWeight: 600, color: "var(--phx-navy)" }}>
-                      {c.id}
-                    </div>
-                    <div style={{ fontFamily: "var(--phx-font-sans)", fontSize: "0.82rem", color: "var(--phx-ink)", fontWeight: 500 }}>
-                      {c.title}
-                    </div>
-                    <div style={{ fontFamily: "var(--phx-font-mono)", fontSize: "0.75rem", color: "var(--phx-text-secondary)" }}>
-                      {formatDate(c.createdAt)}
-                    </div>
-                    <div>
-                      <span className={`phx-badge phx-badge--${statusMap[c.status] || "pending"}`} style={{
-                        display: "inline-flex", alignItems: "center", gap: 6,
-                        padding: "4px 10px", borderRadius: "var(--phx-radius)",
-                        fontFamily: "var(--phx-font-sans)", fontSize: "0.72rem", fontWeight: 500,
-                        textTransform: "capitalize"
-                      }}>
-                        {c.status}
-                      </span>
-                    </div>
-                    <div style={{ fontFamily: "var(--phx-font-mono)", fontSize: "0.78rem", color: "var(--phx-text-secondary)" }}>
-                      {c.investigator}
-                    </div>
-                    <div style={{ fontFamily: "var(--phx-font-mono)", fontSize: "0.78rem", color: "var(--phx-navy)", fontWeight: 600 }}>
-                      {c.evidenceCount}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        )}
+        <div className="text-xs text-phx-muted bg-phx-surface py-2 px-3 rounded border border-phx-border">
+          Active Role: <strong className="text-phx-primary ml-1">{role}</strong>
+        </div>
       </div>
 
-      <style jsx>{`
-        .phx-spinner {
-          animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        .phx-case-row:hover {
-          background: var(--phx-navy-tint) !important;
-        }
-        .phx-badge--validated {
-          background: var(--phx-gold);
-          color: var(--bg-deep);
-        }
-        .phx-badge--pending {
-          background: var(--phx-navy-tint);
-          color: var(--phx-gold);
-        }
-        option {
-          background-color: var(--bg-panel);
-          color: var(--text-primary);
-        }
-      `}</style>
+      {isLoading ? (
+        <div className="bg-white border border-phx-border rounded-lg p-16 flex flex-col items-center justify-center text-center shadow-sm">
+          <Loader2 className="w-8 h-8 text-phx-red animate-spin mb-4" />
+          <div className="text-xs tracking-widest text-phx-muted uppercase">Loading cases...</div>
+        </div>
+      ) : cases.length === 0 ? (
+        <div className="bg-white border-2 border-dashed border-phx-border rounded-lg p-16 flex flex-col items-center justify-center text-center">
+          <FolderCheck size={40} className="text-phx-muted mb-4" />
+          <h3 className="text-xl font-semibold text-phx-primary mb-2">No Forensic Cases Recorded</h3>
+          <p className="text-phx-secondary text-sm">Initialize a case workspace to begin evidence acquisition.</p>
+        </div>
+      ) : (
+        <div className="bg-white border border-phx-border rounded-lg overflow-hidden shadow-sm">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-phx-surface border-b border-phx-border">
+                <th className="px-5 py-3 font-semibold text-xs text-phx-secondary uppercase tracking-wider">Case ID</th>
+                <th className="px-5 py-3 font-semibold text-xs text-phx-secondary uppercase tracking-wider">Title</th>
+                <th className="px-5 py-3 font-semibold text-xs text-phx-secondary uppercase tracking-wider">Intake (UTC)</th>
+                <th className="px-5 py-3 font-semibold text-xs text-phx-secondary uppercase tracking-wider">Status</th>
+                <th className="px-5 py-3 font-semibold text-xs text-phx-secondary uppercase tracking-wider">Investigator</th>
+                <th className="px-5 py-3 font-semibold text-xs text-phx-secondary uppercase tracking-wider text-right">Evidence</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-phx-border">
+              {filteredCases.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-5 py-12 text-center text-sm text-phx-muted">
+                    No cases match the selected criteria.
+                  </td>
+                </tr>
+              ) : (
+                filteredCases.map((c) => (
+                  <tr key={c.id} onClick={() => handleRowClick(c)} className="cursor-pointer hover:bg-phx-surface transition-colors">
+                    <td className="px-5 py-4 font-mono text-sm font-semibold text-phx-red">{c.id}</td>
+                    <td className="px-5 py-4 text-sm font-medium text-phx-primary">{c.title}</td>
+                    <td className="px-5 py-4 font-mono text-xs text-phx-secondary">{formatDate(c.createdAt)}</td>
+                    <td className="px-5 py-4">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200">
+                        {c.status}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4 font-mono text-xs text-phx-secondary">{c.investigator}</td>
+                    <td className="px-5 py-4 font-mono text-sm font-bold text-phx-primary text-right">{c.evidenceCount}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-md overflow-hidden">
+            <div className="px-6 py-4 border-b border-phx-border bg-phx-surface">
+              <h3 className="font-semibold text-phx-primary">Initialize New Case</h3>
+            </div>
+            <div className="p-6">
+              <label className="block text-sm font-medium text-phx-secondary mb-2">Case Title</label>
+              <input
+                type="text"
+                autoFocus
+                value={newCaseTitle}
+                onChange={(e) => setNewCaseTitle(e.target.value)}
+                placeholder="e.g. Operation Pheonix_37 DVR"
+                className="w-full py-2 px-3 bg-phx-surface border border-phx-border rounded text-sm text-phx-primary focus:outline-none focus:border-phx-red/40 focus:ring-1 focus:ring-phx-red/20 mb-6"
+              />
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="btn-secondary"
+                  disabled={isCreating}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCreateCase}
+                  disabled={!newCaseTitle.trim() || isCreating}
+                  className="btn-primary"
+                >
+                  {isCreating ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
+                  <span>Create Case</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

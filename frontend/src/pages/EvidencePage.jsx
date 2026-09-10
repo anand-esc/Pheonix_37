@@ -131,10 +131,10 @@ export function EvidencePage() {
     return (
       <div className="space-y-6">
         <CaseNavigationTabs />
-        <div className="max-w-5xl mx-auto px-4 py-16 flex flex-col items-center justify-center gap-3 text-[var(--text-secondary)]">
-          <div className="flex items-center gap-2 text-[11px] font-mono text-[var(--accent-cyan)]">
-            <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent-cyan)] animate-pulse" />
-            <span>POLLING CASE DATA...</span>
+        <div className="max-w-5xl mx-auto px-4 py-16 flex flex-col items-center justify-center gap-3 text-phx-secondary">
+          <div className="flex items-center gap-3 text-xs font-mono text-phx-cyan">
+            <Loader2 className="w-6 h-6 animate-spin" />
+            <span className="tracking-widest">POLLING CASE DATA...</span>
           </div>
         </div>
       </div>
@@ -146,13 +146,10 @@ export function EvidencePage() {
       <div className="space-y-6">
         <CaseNavigationTabs />
         <div className="max-w-3xl mx-auto px-4 py-16 text-center space-y-4">
-          <AlertCircle className="w-12 h-12 text-[var(--accent-red)] mx-auto" />
-          <h2 className="text-lg font-bold text-[var(--text-primary)]">Case Not Found</h2>
-          <p className="text-[11px] text-[var(--text-muted)]">Case ID "{id}" could not be retrieved from the database.</p>
-          <button
-            onClick={() => navigate("/cases")}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-[var(--bg-panel)] border border-[var(--border)] text-[11px] font-medium text-[var(--accent-cyan)] rounded cursor-pointer hover:border-[var(--accent-cyan)]"
-          >
+          <AlertCircle className="w-16 h-16 text-phx-red mx-auto drop-shadow-lg" />
+          <h2 className="text-2xl font-bold text-phx-primary">Case Not Found</h2>
+          <p className="text-sm text-phx-secondary">Case ID "{id}" could not be retrieved from the database.</p>
+          <button onClick={() => navigate("/cases")} className="btn-secondary mt-4">
             <ArrowLeft className="w-4 h-4" />
             <span>Return to Dashboard</span>
           </button>
@@ -165,61 +162,57 @@ export function EvidencePage() {
     <div className="space-y-6">
       <CaseNavigationTabs />
 
-      <div className="max-w-5xl mx-auto px-4 lg:px-8 space-y-6 pb-12">
-        <div className="flex items-center justify-between">
-          <button
-            onClick={() => navigate("/cases")}
-            className="inline-flex items-center gap-2 text-[11px] font-medium text-[var(--text-muted)] hover:text-[var(--accent-cyan)] transition-colors bg-transparent border-none cursor-pointer font-mono"
-          >
-            <ArrowLeft className="w-4 h-4" />
+      <div className="max-w-6xl mx-auto px-4 lg:px-8 space-y-6 pb-12">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <button onClick={() => navigate("/cases")} className="flex items-center gap-2 text-xs font-mono text-phx-secondary hover:text-phx-primary transition-colors">
+            <ArrowLeft size={16} strokeWidth={2} />
             <span>Back to Dashboard</span>
           </button>
-          <div className="flex items-center gap-2 text-[11px]">
-            <span className="text-[var(--text-muted)]">Active Role:</span>
-            <span className="px-2.5 py-0.5 rounded bg-[var(--accent-amber-dim)] text-[var(--accent-amber)] border border-[rgba(240,169,58,0.2)] font-mono">
-              {role}
-            </span>
+          <div className="flex items-center gap-2 text-[11px] font-mono bg-phx-surface px-3 py-1.5 rounded border border-phx-border">
+            <span className="text-phx-muted">Active Role:</span>
+            <span className="text-phx-cyan font-bold">{role}</span>
           </div>
         </div>
 
-        <div className="data-panel p-6">
+        <div className="glass-panel p-6 shadow-md">
           <SectionHeading
             title={`Evidence Intake — ${caseData.id}`}
             subtitle={caseData.name}
             icon={HardDrive}
             badge={<Badge label={caseData.status} />}
           />
-          <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed">
+          <p className="text-sm text-phx-secondary leading-relaxed mt-4 max-w-3xl">
             Perform SHA-256 intake hashing on raw DVR/NVR disk images to establish the first link in the court-admissible provenance chain.
-            Source path must be accessible on the server filesystem (e.g., <code className="text-[var(--accent-amber)] bg-[var(--accent-amber-dim)] px-1 rounded font-mono">D:\\evidence\\dvr.img</code>).
+            Source path must be accessible on the server filesystem (e.g., <code className="text-phx-amber bg-phx-amber/10 px-1.5 py-0.5 rounded font-mono border border-phx-amber/20">D:\evidence\dvr.img</code>).
           </p>
         </div>
 
         {/* ACQUISITION PROGRESS STRIP */}
         {(acquisitionStage === "queued" || acquisitionStage === "running") && (
-          <div className="data-panel p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 text-[11px] font-mono text-[var(--accent-cyan)]">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent-cyan)] animate-pulse" />
-                  <span>
-                    {acquisitionStage === "queued" && "QUEUE — INITIALIZING PIPELINE"}{" "}
-                    {acquisitionStage === "running" && "RUN — READING DISK IMAGE"}
-                  </span>
+          <div className="glass-panel p-6 space-y-6 animate-pulse shadow-lg border-phx-cyan/30">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-phx-cyan/10 border border-phx-cyan/30 flex items-center justify-center">
+                  <div className="w-3 h-3 rounded-full bg-phx-cyan animate-ping" />
                 </div>
                 <div>
-                  <p className="text-[11px] font-mono text-[var(--accent-cyan)]">{statusMessage || "Processing..."}</p>
-                  {progressBytes > 0 && (
-                    <p className="text-[11px] text-[var(--text-muted)] font-mono">Bytes read: {formatBytes(progressBytes)}</p>
-                  )}
+                  <h3 className="font-mono text-sm font-bold text-phx-cyan uppercase tracking-wider mb-1">
+                    {acquisitionStage === "queued" ? "Initializing Pipeline..." : "Reading Disk Image..."}
+                  </h3>
+                  <p className="font-mono text-xs text-phx-primary">{statusMessage}</p>
                 </div>
               </div>
-              <Badge label="Processing" variant="amber" />
+              <div className="text-right">
+                <Badge label="Processing" variant="amber" />
+                {progressBytes > 0 && (
+                  <p className="text-[10px] text-phx-muted font-mono mt-2">Bytes read: {formatBytes(progressBytes)}</p>
+                )}
+              </div>
             </div>
 
-            <div className="w-full bg-[var(--bg-deep)] rounded h-2 overflow-hidden border border-[var(--border)]">
+            <div className="w-full bg-phx-deep rounded-full h-2 overflow-hidden border border-phx-border">
               <div
-                className="bg-[var(--accent-cyan)] h-full transition-all duration-500"
+                className="bg-phx-cyan h-full transition-all duration-500 ease-out"
                 style={{ width: acquisitionStage === "queued" ? "10%" : "60%" }}
               />
             </div>
@@ -228,19 +221,18 @@ export function EvidencePage() {
 
         {/* ERROR STATE */}
         {acquisitionStage === "error" && (
-          <div className="data-panel p-6 space-y-4 border-[rgba(248,113,113,0.3)]">
-            <div className="flex items-center gap-3 text-[var(--accent-red)]">
-              <AlertCircle className="w-6 h-6" />
+          <div className="glass-panel p-6 space-y-4 border-phx-red/40 bg-phx-red/5">
+            <div className="flex items-center gap-4 text-phx-red">
+              <div className="w-10 h-10 rounded-full bg-phx-red/10 flex items-center justify-center">
+                <AlertCircle className="w-6 h-6" />
+              </div>
               <div>
-                <h3 className="text-sm font-bold text-[var(--text-primary)]">Acquisition Failed</h3>
-                <p className="text-[11px] text-[var(--accent-red)] mt-0.5 font-mono">{acquisitionError}</p>
+                <h3 className="text-lg font-bold">Acquisition Failed</h3>
+                <p className="text-sm font-mono mt-1 opacity-90">{acquisitionError}</p>
               </div>
             </div>
-            <button
-              onClick={handleStartAcquisition}
-              className="px-4 py-2 bg-[var(--accent-red-dim)] border border-[rgba(248,113,113,0.3)] text-[var(--accent-red)] text-[11px] font-medium rounded cursor-pointer hover:bg-[rgba(248,113,113,0.2)] transition-colors font-mono"
-            >
-              <RefreshCw className="w-4 h-4 inline mr-1" />
+            <button onClick={handleStartAcquisition} className="btn-primary bg-phx-red/10 text-phx-red border-phx-red/30 hover:bg-phx-red hover:text-phx-deep mt-2">
+              <RefreshCw size={16} />
               <span>Retry Acquisition Pipeline</span>
             </button>
           </div>
@@ -248,69 +240,70 @@ export function EvidencePage() {
 
         {/* SOURCE PATH INPUT */}
         {acquisitionStage !== "done" && acquisitionStage !== "queued" && acquisitionStage !== "running" && (
-          <div className="space-y-6">
-            <div className="data-panel p-6 space-y-6">
+          <div className="glass-panel shadow-lg overflow-hidden">
+            <div className="bg-phx-surface/50 border-b border-phx-border p-6">
               <SectionHeading title="Source Path" subtitle="Enter the path to the DVR/NVR disk image or raw device on the server" icon={HardDrive} />
-
+            </div>
+            <div className="p-6 space-y-6">
               <div className="space-y-4">
                 <div>
-                  <label className="block text-[11px] font-medium text-[var(--text-secondary)] mb-2 font-mono">DISK IMAGE / RAW DEVICE PATH</label>
+                  <label className="block text-xs font-bold text-phx-secondary mb-2 font-mono tracking-wider">DISK IMAGE / RAW DEVICE PATH</label>
                   <input
                     type="text"
                     value={sourcePath}
                     onChange={(e) => setSourcePath(e.target.value)}
-                    placeholder="e.g., D:\\evidence\\dvr_image.img or \\\\.\\PhysicalDrive2"
-                    className="w-full px-4 py-2.5 bg-[var(--bg-deep)] border border-[var(--border)] rounded text-[11px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-cyan)] focus:bg-[var(--bg-panel)] focus:ring-1 focus:ring-[var(--accent-cyan)] transition-all font-mono"
+                    placeholder="e.g., D:\evidence\dvr_image.img or \\.\PhysicalDrive2"
+                    className="w-full px-4 py-3 bg-phx-deep border border-phx-border rounded-md text-sm text-phx-primary placeholder-phx-muted focus:outline-none focus:border-phx-cyan focus:ring-1 focus:ring-phx-cyan/50 transition-all font-mono shadow-inner"
                   />
-                  <p className="text-[10px] text-[var(--text-muted)] mt-1">Must be accessible by the backend process.</p>
+                  <p className="text-xs text-phx-muted mt-2 font-mono">Must be accessible by the backend process.</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-[11px] font-medium text-[var(--text-secondary)] mb-2 font-mono">OUTPUT DIRECTORY</label>
+                    <label className="block text-xs font-bold text-phx-secondary mb-2 font-mono tracking-wider">OUTPUT DIRECTORY</label>
                     <input
                       type="text"
                       value={outDir}
                       onChange={(e) => setOutDir(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-[var(--bg-deep)] border border-[var(--border)] rounded text-[11px] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-cyan)] focus:bg-[var(--bg-panel)] focus:ring-1 focus:ring-[var(--accent-cyan)] transition-all font-mono"
+                      className="w-full px-4 py-3 bg-phx-deep border border-phx-border rounded-md text-sm text-phx-primary focus:outline-none focus:border-phx-cyan focus:ring-1 focus:ring-phx-cyan/50 transition-all font-mono shadow-inner"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-medium text-[var(--text-secondary)] mb-2 font-mono">DEVICE INFO (optional)</label>
+                    <label className="block text-xs font-bold text-phx-secondary mb-2 font-mono tracking-wider">DEVICE INFO (optional)</label>
                     <input
                       type="text"
                       value={deviceInfo}
                       onChange={(e) => setDeviceInfo(e.target.value)}
                       placeholder="e.g., Hikvision DS-9016HUHI-K8 NVR"
-                      className="w-full px-4 py-2.5 bg-[var(--bg-deep)] border border-[var(--border)] rounded text-[11px] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-cyan)] focus:bg-[var(--bg-panel)] focus:ring-1 focus:ring-[var(--accent-cyan)] transition-all font-mono"
+                      className="w-full px-4 py-3 bg-phx-deep border border-phx-border rounded-md text-sm text-phx-primary focus:outline-none focus:border-phx-cyan focus:ring-1 focus:ring-phx-cyan/50 transition-all font-mono shadow-inner"
                     />
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-2 cursor-pointer">
+                <div className="pt-2">
+                  <label className="flex items-center gap-3 cursor-pointer p-3 rounded-md border border-phx-border/50 bg-phx-surface hover:bg-phx-panel-lighter transition-colors">
                     <input
                       type="checkbox"
                       checked={encrypt}
                       onChange={(e) => setEncrypt(e.target.checked)}
-                      className="w-4 h-4 accent-[var(--accent-cyan)]"
+                      className="w-4 h-4 accent-phx-cyan"
                     />
-                    <span className="text-[11px] text-[var(--text-secondary)]">Encrypt evidence vault (AES-256-GCM, per-case DEK)</span>
+                    <span className="text-sm font-medium text-phx-primary">Encrypt evidence vault (AES-256-GCM, per-case DEK)</span>
                   </label>
                 </div>
 
-                <div className="p-4 bg-[var(--bg-deep)] rounded border border-[var(--border)] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex items-center gap-2 text-[11px] text-[var(--text-secondary)]">
-                    <ShieldCheck className="w-4 h-4 text-[var(--accent-cyan)]" />
-                    <span>Read-only acquisition • SHA-256 + MD5 intake hashing • Verification on write</span>
+                <div className="p-5 bg-phx-surface rounded-lg border border-phx-border flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-inner mt-4">
+                  <div className="flex items-start gap-3 text-sm text-phx-secondary max-w-xl">
+                    <ShieldCheck className="w-5 h-5 text-phx-cyan shrink-0 mt-0.5" />
+                    <p className="leading-relaxed">Read-only acquisition • SHA-256 + MD5 intake hashing • Verification on write</p>
                   </div>
                   <button
                     onClick={handleStartAcquisition}
                     disabled={!sourcePath.trim()}
-                    className="px-5 py-2.5 bg-[var(--accent-cyan)]/10 border border-[rgba(62,214,196,0.3)] text-[var(--accent-cyan)] font-medium text-[11px] rounded cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-mono transition-all hover:bg-[var(--accent-cyan-dim)]"
+                    className="btn-primary py-3 px-6 whitespace-nowrap text-sm font-bold shadow-lg shadow-phx-cyan/10 disabled:opacity-50 disabled:shadow-none"
                   >
-                    <Lock className="w-4 h-4" />
-                    <span>START ACQUISITION & LOCK INTAKE HASH</span>
+                    <Lock size={18} />
+                    <span>START ACQUISITION & LOCK HASH</span>
                   </button>
                 </div>
               </div>
@@ -320,62 +313,60 @@ export function EvidencePage() {
 
         {/* COMPLETED ACQUISITION SUMMARY */}
         {acquisitionStage === "done" && acquisitionResult && (
-          <div className="space-y-6">
-            <div className="data-panel p-6 space-y-4 border-[rgba(62,214,196,0.2)]">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded bg-[var(--accent-green-dim)] border border-[rgba(52,211,153,0.3)] flex items-center justify-center text-[var(--accent-green)]">
-                    <CheckCircle2 className="w-6 h-6" />
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="glass-panel p-6 border-phx-green/30 bg-phx-green/5 shadow-[0_0_15px_rgba(52,211,153,0.05)]">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-phx-green/10 border border-phx-green/30 flex items-center justify-center text-phx-green shrink-0 shadow-[0_0_10px_rgba(52,211,153,0.2)]">
+                    <CheckCircle2 size={24} />
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
+                    <h3 className="text-lg font-bold text-phx-primary flex items-center gap-3">
                       Evidence Cryptographically Sealed
-                      <Badge label="Link #1 Provenance" variant="cyan" size="sm" />
+                      <Badge label="Link #1 Provenance" variant="cyan" />
                     </h3>
-                    <p className="text-[11px] text-[var(--text-secondary)]">
+                    <p className="text-sm text-phx-secondary mt-1">
                       SHA-256 intake digest permanently registered in chain-of-custody log.
                     </p>
                   </div>
                 </div>
-                <div className="self-start sm:self-auto">
+                <div className="md:text-right">
                   <HashDisplay hash={acquisitionResult.hash} label="Intake Lock Hash" verified={true} />
                 </div>
               </div>
             </div>
 
-            <div className="data-panel p-6 space-y-6">
-              <SectionHeading title="Acquisition Artifact Summary" subtitle="Verified details of the acquired surveillance media dump" icon={FileCheck} />
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-[var(--bg-deep)] p-3.5 rounded border border-[var(--border)]">
-                  <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block">Source Image</span>
-                  <span className="text-[11px] font-semibold text-[var(--text-primary)] truncate block mt-1 font-mono">{acquisitionResult.fileName}</span>
-                </div>
-                <div className="bg-[var(--bg-deep)] p-3.5 rounded border border-[var(--border)]">
-                  <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block">Total Size</span>
-                  <span className="text-[11px] font-semibold text-[var(--text-primary)] block mt-1">{formatBytes(acquisitionResult.fileSize)}</span>
-                </div>
-                <div className="bg-[var(--bg-deep)] p-3.5 rounded border border-[var(--border)]">
-                  <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block">Intake Timestamp</span>
-                  <span className="text-[11px] font-semibold text-[var(--text-primary)] block mt-1 font-mono">{formatDate(acquisitionResult.acquiredAt)}</span>
-                </div>
+            <div className="glass-panel overflow-hidden shadow-lg">
+              <div className="bg-phx-surface/50 border-b border-phx-border p-6">
+                <SectionHeading title="Acquisition Artifact Summary" subtitle="Verified details of the acquired surveillance media dump" icon={FileCheck} />
               </div>
 
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-[var(--border)]">
-                <button
-                  onClick={handleReacquire}
-                  className="px-4 py-2 text-[11px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded cursor-pointer border border-[var(--border)] hover:border-[var(--border-light)] transition-colors font-mono"
-                >
-                  <RefreshCw className="w-3.5 h-3.5 inline mr-1" />
-                  <span>Re-acquire Evidence</span>
-                </button>
-                <button
-                  onClick={() => navigate(`/cases/${id}/analysis`)}
-                  className="px-6 py-2.5 bg-[var(--accent-cyan)]/10 border border-[rgba(62,214,196,0.3)] text-[var(--accent-cyan)] font-medium text-[11px] rounded cursor-pointer flex items-center justify-center gap-2 transition-all hover:bg-[var(--accent-cyan-dim)] font-mono"
-                >
-                  <span>Continue to Video Analysis</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="bg-phx-deep p-5 rounded-lg border border-phx-border shadow-inner">
+                    <span className="text-[10px] font-mono font-bold text-phx-muted uppercase tracking-widest block mb-2">Source Image</span>
+                    <span className="text-sm font-semibold text-phx-primary truncate block font-mono">{acquisitionResult.fileName}</span>
+                  </div>
+                  <div className="bg-phx-deep p-5 rounded-lg border border-phx-border shadow-inner">
+                    <span className="text-[10px] font-mono font-bold text-phx-muted uppercase tracking-widest block mb-2">Total Size</span>
+                    <span className="text-sm font-semibold text-phx-primary block font-mono">{formatBytes(acquisitionResult.fileSize)}</span>
+                  </div>
+                  <div className="bg-phx-deep p-5 rounded-lg border border-phx-border shadow-inner">
+                    <span className="text-[10px] font-mono font-bold text-phx-muted uppercase tracking-widest block mb-2">Intake Timestamp</span>
+                    <span className="text-sm font-semibold text-phx-primary block font-mono">{formatDate(acquisitionResult.acquiredAt)}</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 pt-6 border-t border-phx-border/50">
+                  <button onClick={handleReacquire} className="btn-secondary">
+                    <RefreshCw size={16} />
+                    <span>Re-acquire Evidence</span>
+                  </button>
+                  <button onClick={() => navigate(`/cases/${id}/analysis`)} className="btn-primary px-8">
+                    <span>Continue to Video Analysis</span>
+                    <ArrowRight size={16} />
+                  </button>
+                </div>
               </div>
             </div>
           </div>

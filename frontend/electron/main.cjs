@@ -22,8 +22,8 @@ const fs = require('fs');
 const HOST = '127.0.0.1';
 const PORT = 8000;
 const READY_URL_PATH = '/docs';
-const STARTUP_TIMEOUT_MS = 15_000;
-const RETRY_INTERVAL_MS = 250;
+const STARTUP_TIMEOUT_MS = 30_000;
+const RETRY_INTERVAL_MS = 500;
 const SIGKILL_GRACE_MS = 3_000;
 
 /** @type {import('child_process').ChildProcess | null} */
@@ -38,6 +38,30 @@ let shuttingDown = false;
 // IPC: expose app version to renderer via preload bridge
 // ---------------------------------------------------------------------------
 ipcMain.handle('get-app-version', () => app.getVersion());
+
+ipcMain.handle('print-page', async () => {
+  if (!mainWindow) return;
+  mainWindow.webContents.print({ silent: false, printBackground: true });
+});
+
+ipcMain.handle('export-pdf', async (_event, filename) => {
+  if (!mainWindow) return;
+  const pdfData = await mainWindow.webContents.printToPDF({
+    printBackground: true,
+    pageSize: 'A4',
+    margins: { top: 0, bottom: 0, left: 0, right: 0 },
+  });
+  const suggestedName = filename || 'phoenix-certificate.pdf';
+  const { filePath } = await dialog.showSaveDialog(mainWindow, {
+    defaultPath: suggestedName,
+    filters: [{ name: 'PDF', extensions: ['pdf'] }],
+  });
+  if (filePath) {
+    fs.writeFileSync(filePath, pdfData);
+    return filePath;
+  }
+  return null;
+});
 
 // ---------------------------------------------------------------------------
 // Binary path resolution
@@ -70,7 +94,7 @@ function backendExecutablePath() {
 function backendReady() {
   return new Promise((resolve) => {
     const request = http.get(
-      { host: HOST, port: PORT, path: READY_URL_PATH, timeout: 1_000 },
+      { host: HOST, port: PORT, path: READY_URL_PATH, timeout: 2_000 },
       (response) => {
         response.resume();
         resolve(response.statusCode >= 200 && response.statusCode < 300);
@@ -109,12 +133,36 @@ async function waitForBackend() {
 /** Spawn the backend binary as a managed child process. */
 function startBackend() {
   if (!app.isPackaged) {
-    backendProcess = spawn('python3', ['../backend/run_server.py'], {
-      cwd: path.resolve(__dirname, '..'),
+    const projectRoot = path.resolve(__dirname, '..', '..');
+    const scriptPath = path.resolve(projectRoot, 'backend', 'run_server.py');
+    
+    // Prefer the project .venv Python so dependencies are always found,
+    // regardless of which Python is on the system PATH.
+    const venvPython = process.platform === 'win32'
+      ? path.join(projectRoot, '.venv', 'Scripts', 'python.exe')
+      : path.join(projectRoot, '.venv', 'bin', 'python');
+    
+    const pyCommand = fs.existsSync(venvPython)
+      ? venvPython
+      : (process.platform === 'win32' ? 'python' : 'python3');
+    
+    console.log(`[startup] Spawning backend: ${pyCommand} ${scriptPath}`);
+    
+    backendProcess = spawn(pyCommand, [scriptPath], {
+      cwd: projectRoot,
       stdio: ['ignore', 'pipe', 'pipe'],
       windowsHide: true,
       env: { ...process.env, PHOENIX_LEDGER_SECRET: 'dummy' }
     });
+    
+    backendProcess.on('error', (error) => {
+      console.error('[backend] spawn error:', error.message);
+    });
+    
+    backendProcess.on('exit', (code, signal) => {
+      console.log(`[backend] process exited with code=${code} signal=${signal}`);
+    });
+    
     backendProcess.stdout?.on('data', (data) => console.log(`[backend] ${data}`));
     backendProcess.stderr?.on('data', (data) => console.error(`[backend] ${data}`));
     return;
@@ -209,12 +257,14 @@ function stopBackend() {
 async function createMainWindow() {
   startBackend();
   await waitForBackend();
+  console.log('[startup] Backend is ready, creating window...');
 
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 850,
     minWidth: 1024,
     minHeight: 700,
+    show: false,
     title: 'NTRO DVR/NVR Forensic Analysis Tool',
     webPreferences: {
       contextIsolation: true,
@@ -224,11 +274,33 @@ async function createMainWindow() {
     },
   });
 
+  // Show window only after content is ready — avoids white flash
+  mainWindow.once('ready-to-show', () => {
+    console.log('[startup] Window ready-to-show, displaying...');
+    mainWindow.show();
+    mainWindow.focus();
+  });
+
+  // Open devtools in development for debugging
+  if (!app.isPackaged) {
+    mainWindow.webContents.openDevTools({ mode: 'bottom' });
+  }
+
+  // Log any renderer crashes
+  mainWindow.webContents.on('render-process-gone', (_event, details) => {
+    console.error('[renderer] crashed:', details.reason, details.exitCode);
+  });
+
+  mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription) => {
+    console.error(`[renderer] failed to load: ${errorCode} ${errorDescription}`);
+  });
+
   if (app.isPackaged) {
     await mainWindow.loadFile(path.join(__dirname, '..', 'dist', 'index.html'));
   } else {
     const devUrl =
       process.env.VITE_DEV_SERVER_URL || 'http://localhost:5173';
+    console.log(`[startup] Loading dev URL: ${devUrl}`);
     await mainWindow.loadURL(devUrl);
   }
 

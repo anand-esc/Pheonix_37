@@ -59,10 +59,16 @@ async function fetchJson(url, options = {}, action) {
 }
 
 
-export async function createCase({ name, examiner }) {
-  return fetchJson(buildUrl(API_BASE, "/cases", "TRIGGER_ACQUISITION"), {
+export async function createCase(data) {
+  return fetchJson(buildUrl(API_BASE, "/cases"), {
     method: "POST",
-    body: JSON.stringify({ name, examiner }),
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteCase(caseId) {
+  return fetchJson(buildUrl(API_BASE, `/cases/${caseId}`), {
+    method: "DELETE",
   });
 }
 

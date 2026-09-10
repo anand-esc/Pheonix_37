@@ -15,12 +15,12 @@ export function Badge({ label, variant, size = "md", className = "" }) {
   }
 
   const variantStyles = {
-    emerald: "bg-[var(--accent-green-dim)] text-[var(--accent-green)] border border-[rgba(52,211,153,0.2)] font-mono",
-    amber: "bg-[var(--accent-amber-dim)] text-[var(--accent-amber)] border border-[rgba(240,169,58,0.2)] font-mono",
-    cyan: "bg-[var(--accent-cyan-dim)] text-[var(--accent-cyan)] border border-[rgba(62,214,196,0.2)] font-mono",
-    red: "bg-[var(--accent-red-dim)] text-[var(--accent-red)] border border-[rgba(248,113,113,0.2)] font-mono",
+    emerald: "bg-[var(--accent-green-dim)] text-phx-green border border-[rgba(52,211,153,0.2)] font-mono",
+    amber: "bg-phx-amber/10 text-phx-amber border border-[rgba(240,169,58,0.2)] font-mono",
+    cyan: "bg-phx-cyan/10 text-phx-cyan border border-phx-cyan/20 font-mono",
+    red: "bg-[var(--accent-red-dim)] text-phx-red border border-[rgba(248,113,113,0.2)] font-mono",
     indigo: "bg-[rgba(129,140,248,0.1)] text-[#818CF8] border border-[rgba(129,140,248,0.2)] font-mono",
-    slate: "bg-[var(--bg-panel-lighter)] text-[var(--text-secondary)] border border-[var(--border)] font-mono",
+    slate: "bg-phx-panel-lighter text-phx-secondary border border-phx-border font-mono",
   };
 
   const sizeStyles = {

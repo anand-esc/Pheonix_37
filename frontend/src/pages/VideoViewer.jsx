@@ -196,11 +196,11 @@ export function VideoViewer() {
 
   if (isLoading) {
     return (
-      <div className="phx-page" style={{ background: "var(--phx-cream)", minHeight: "100vh" }}>
+      <div className="phx-page" style={{ background: "var(--color-phx-deep)", minHeight: "100vh" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-            <Loader2 className="phx-spinner" size={32} style={{ color: "var(--phx-navy)" }} />
-            <span style={{ fontFamily: "var(--phx-font-mono)", fontSize: "0.78rem", color: "var(--phx-text-muted)" }}>
+            <Loader2 className="phx-spinner" size={32} style={{ color: "var(--color-phx-cyan)" }} />
+            <span style={{ fontFamily: "var(--phx-font-mono)", fontSize: "0.78rem", color: "var(--color-phx-muted)" }}>
               LOADING CASE DATA...
             </span>
           </div>
@@ -211,7 +211,7 @@ export function VideoViewer() {
 
   if (error) {
     return (
-      <div className="phx-page" style={{ background: "var(--phx-cream)", minHeight: "100vh", padding: "2rem" }}>
+      <div className="phx-page" style={{ background: "var(--color-phx-deep)", minHeight: "100vh", padding: "2rem" }}>
         <CaseHeader
           caseId={caseData?.case_id || id}
           title={caseData?.title || "Video Fragment Viewer"}
@@ -220,20 +220,20 @@ export function VideoViewer() {
         />
         <div style={{ maxWidth: 760, margin: "0 auto", padding: "2rem 1.5rem" }}>
           <div style={{
-            background: "var(--phx-red-tint)",
-            border: "1px solid var(--phx-red)",
-            borderRadius: "var(--phx-radius)",
+            background: "var(--color-phx-red)",
+            border: "1px solid var(--color-phx-red)",
+            borderRadius: "0.5rem",
             padding: "1.5rem",
             display: "flex",
             alignItems: "flex-start",
             gap: 12
           }}>
-            <AlertCircle size={24} style={{ color: "var(--phx-red)", flexShrink: 0 }} />
+            <AlertCircle size={24} style={{ color: "var(--color-phx-red)", flexShrink: 0 }} />
             <div>
-              <h3 style={{ fontFamily: "var(--phx-font-serif)", fontSize: "1rem", color: "var(--phx-red)", marginBottom: 4 }}>
+              <h3 style={{ fontFamily: "var(--phx-font-serif)", fontSize: "1rem", color: "var(--color-phx-red)", marginBottom: 4 }}>
                 Playback Error
               </h3>
-              <p style={{ fontFamily: "var(--phx-font-sans)", fontSize: "0.82rem", color: "var(--phx-ink)" }}>
+              <p style={{ fontFamily: "var(--phx-font-sans)", fontSize: "0.82rem", color: "var(--color-phx-primary)" }}>
                 {error}
               </p>
               <button
@@ -241,10 +241,10 @@ export function VideoViewer() {
                 style={{
                   marginTop: 12,
                   padding: "8px 16px",
-                  background: "var(--phx-navy)",
-                  color: "var(--phx-on-navy)",
+                  background: "var(--color-phx-cyan)",
+                  color: "var(--color-phx-deep)",
                   border: "none",
-                  borderRadius: "var(--phx-radius)",
+                  borderRadius: "0.5rem",
                   fontFamily: "var(--phx-font-sans)",
                   fontSize: "0.78rem",
                   cursor: "pointer"
@@ -260,7 +260,7 @@ export function VideoViewer() {
   }
 
   return (
-    <div className="phx-page" style={{ background: "var(--phx-cream)", minHeight: "100vh" }}>
+    <div className="phx-page" style={{ background: "var(--color-phx-deep)", minHeight: "100vh" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "1.5rem" }}>
         <CaseHeader
           caseId={caseData?.case_id || id}
@@ -270,9 +270,9 @@ export function VideoViewer() {
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: "1.5rem" }}>
           <div className="phx-video-panel" style={{
-            background: "var(--phx-paper)",
-            border: "1px solid var(--phx-border)",
-            borderRadius: "var(--phx-radius)",
+            background: "var(--color-phx-panel)",
+            border: "1px solid var(--color-phx-border)",
+            borderRadius: "0.5rem",
             overflow: "hidden",
             display: "flex",
             flexDirection: "column"
@@ -305,7 +305,7 @@ export function VideoViewer() {
 
             <div className="phx-video-controls" style={{
               padding: "12px 16px",
-              borderTop: "1px solid var(--phx-border)",
+              borderTop: "1px solid var(--color-phx-border)",
               display: "flex",
               alignItems: "center",
               gap: 12,
@@ -317,17 +317,17 @@ export function VideoViewer() {
                 style={{
                   background: "transparent", border: "none", cursor: "pointer",
                   padding: 4, display: "flex", alignItems: "center", justifyContent: "center",
-                  color: "var(--phx-ink)"
+                  color: "var(--color-phx-primary)"
                 }}
               >
                 {isPlaying ? <Pause size={24} stroke={2} /> : <Play size={24} stroke={2} />}
               </button>
 
               <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-                <span style={{ fontFamily: "var(--phx-font-mono)", fontSize: "0.75rem", color: "var(--phx-text-secondary)", minWidth: 55 }}>
+                <span style={{ fontFamily: "var(--phx-font-mono)", fontSize: "0.75rem", color: "var(--color-phx-secondary)", minWidth: 55 }}>
                   {formatTime(currentTime)}
                 </span>
-                <div style={{ flex: 1, height: 4, background: "var(--phx-border)", borderRadius: 2, cursor: "pointer", position: "relative", overflow: "hidden" }} onClick={handleSeek}>
+                <div style={{ flex: 1, height: 4, background: "var(--color-phx-border)", borderRadius: 2, cursor: "pointer", position: "relative", overflow: "hidden" }} onClick={handleSeek}>
                   {buffered.end > 0 && (
                     <div style={{
                       position: "absolute", left: 0, top: 0, bottom: 0,
@@ -338,10 +338,10 @@ export function VideoViewer() {
                   <div style={{
                     position: "absolute", left: 0, top: 0, bottom: 0,
                     width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%`,
-                    background: "var(--phx-gold)", borderRadius: 2
+                    background: "var(--color-phx-amber)", borderRadius: 2
                   }} />
                 </div>
-                <span style={{ fontFamily: "var(--phx-font-mono)", fontSize: "0.75rem", color: "var(--phx-text-secondary)", minWidth: 55, textAlign: "right" }}>
+                <span style={{ fontFamily: "var(--phx-font-mono)", fontSize: "0.75rem", color: "var(--color-phx-secondary)", minWidth: 55, textAlign: "right" }}>
                   {formatTime(duration)}
                 </span>
               </div>
@@ -350,7 +350,7 @@ export function VideoViewer() {
                 <button
                   onClick={toggleMute}
                   aria-label={isMuted ? "Unmute" : "Mute"}
-                  style={{ background: "transparent", border: "none", cursor: "pointer", padding: 4, color: "var(--phx-ink)" }}
+                  style={{ background: "transparent", border: "none", cursor: "pointer", padding: 4, color: "var(--color-phx-primary)" }}
                 >
                   {isMuted || volume === 0 ? <VolumeX size={20} stroke={2} /> : <Volume2 size={20} stroke={2} />}
                 </button>
@@ -361,14 +361,14 @@ export function VideoViewer() {
                   step={0.1}
                   value={volume}
                   onChange={handleVolumeChange}
-                  style={{ width: 80, accentColor: "var(--phx-gold)" }}
+                  style={{ width: 80, accentColor: "var(--color-phx-amber)" }}
                 />
               </div>
 
               <button
                 onClick={toggleFullscreen}
                 aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-                style={{ background: "transparent", border: "none", cursor: "pointer", padding: 4, color: "var(--phx-text-secondary)" }}
+                style={{ background: "transparent", border: "none", cursor: "pointer", padding: 4, color: "var(--color-phx-secondary)" }}
               >
                 {isFullscreen ? <Minimize size={20} stroke={2} /> : <Maximize size={20} stroke={2} />}
               </button>
@@ -377,57 +377,57 @@ export function VideoViewer() {
 
           <div className="phx-video-sidebar" style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
             <div style={{
-              background: "var(--phx-paper)",
-              border: "1px solid var(--phx-border)",
-              borderRadius: "var(--phx-radius)",
+              background: "var(--color-phx-panel)",
+              border: "1px solid var(--color-phx-border)",
+              borderRadius: "0.5rem",
               padding: "1rem"
             }}>
               <div style={{
                 fontFamily: "var(--phx-font-sans)",
                 fontSize: "0.8rem",
-                color: "var(--phx-text-secondary)",
+                color: "var(--color-phx-secondary)",
                 marginBottom: 8
               }}>FRAGMENT DETAIL</div>
               {currentFragment && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                   <div>
-                    <span style={{ fontFamily: "var(--phx-font-mono)", fontSize: "0.75rem", color: "var(--phx-text-muted)" }}>ID</span>
-                    <div style={{ fontFamily: "var(--phx-font-mono)", fontSize: "0.82rem", color: "var(--phx-ink)", wordBreak: "break-all" }}>
+                    <span style={{ fontFamily: "var(--phx-font-mono)", fontSize: "0.75rem", color: "var(--color-phx-muted)" }}>ID</span>
+                    <div style={{ fontFamily: "var(--phx-font-mono)", fontSize: "0.82rem", color: "var(--color-phx-primary)", wordBreak: "break-all" }}>
                       {currentFragment.fragment_id || `frag-${fragmentIndex}`}
                     </div>
                   </div>
                   <div>
-                    <span style={{ fontFamily: "var(--phx-font-mono)", fontSize: "0.75rem", color: "var(--phx-text-muted)" }}>CODEC</span>
-                    <div style={{ fontFamily: "var(--phx-font-sans)", fontSize: "0.82rem", color: "var(--phx-ink)" }}>
+                    <span style={{ fontFamily: "var(--phx-font-mono)", fontSize: "0.75rem", color: "var(--color-phx-muted)" }}>CODEC</span>
+                    <div style={{ fontFamily: "var(--phx-font-sans)", fontSize: "0.82rem", color: "var(--color-phx-primary)" }}>
                       {currentFragment.codec_info || "Unknown"}
                     </div>
                   </div>
                   <div>
-                    <span style={{ fontFamily: "var(--phx-font-mono)", fontSize: "0.75rem", color: "var(--phx-text-muted)" }}>BYTE RANGE</span>
-                    <div style={{ fontFamily: "var(--phx-font-mono)", fontSize: "0.82rem", color: "var(--phx-ink)" }}>
+                    <span style={{ fontFamily: "var(--phx-font-mono)", fontSize: "0.75rem", color: "var(--color-phx-muted)" }}>BYTE RANGE</span>
+                    <div style={{ fontFamily: "var(--phx-font-mono)", fontSize: "0.82rem", color: "var(--color-phx-primary)" }}>
                       {currentFragment.byte_offset_start || 0} – {currentFragment.byte_offset_end || 0}
                     </div>
                   </div>
                   <div>
-                    <span style={{ fontFamily: "var(--phx-font-mono)", fontSize: "0.75rem", color: "var(--phx-text-muted)" }}>RECOVERY METHOD</span>
-                    <div style={{ fontFamily: "var(--phx-font-sans)", fontSize: "0.82rem", color: "var(--phx-ink)" }}>
+                    <span style={{ fontFamily: "var(--phx-font-mono)", fontSize: "0.75rem", color: "var(--color-phx-muted)" }}>RECOVERY METHOD</span>
+                    <div style={{ fontFamily: "var(--phx-font-sans)", fontSize: "0.82rem", color: "var(--color-phx-primary)" }}>
                       {currentFragment.recovery_method || "Unknown"}
                     </div>
                   </div>
                   <div>
-                    <span style={{ fontFamily: "var(--phx-font-mono)", fontSize: "0.75rem", color: "var(--phx-text-muted)" }}>CONFIDENCE</span>
+                    <span style={{ fontFamily: "var(--phx-font-mono)", fontSize: "0.75rem", color: "var(--color-phx-muted)" }}>CONFIDENCE</span>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <div style={{ flex: 1, height: 4, background: "var(--phx-border)", borderRadius: 2, overflow: "hidden" }}>
+                      <div style={{ flex: 1, height: 4, background: "var(--color-phx-border)", borderRadius: 2, overflow: "hidden" }}>
                         <div style={{
                           height: "100%",
                           width: `${Math.round((currentFragment.confidence_score || 0) * 100)}%`,
-                          background: "var(--phx-gold)"
+                          background: "var(--color-phx-amber)"
                         }} />
                       </div>
                       <span style={{
                         fontFamily: "var(--phx-font-mono)",
                         fontSize: "0.75rem",
-                        color: "var(--phx-text-secondary)",
+                        color: "var(--color-phx-secondary)",
                         minWidth: 35,
                         textAlign: "right"
                       }}>
@@ -437,11 +437,11 @@ export function VideoViewer() {
                   </div>
                   {currentFragment.confidence_rationale && (
                     <div>
-                      <span style={{ fontFamily: "var(--phx-font-mono)", fontSize: "0.75rem", color: "var(--phx-text-muted)" }}>RATIONALE</span>
+                      <span style={{ fontFamily: "var(--phx-font-mono)", fontSize: "0.75rem", color: "var(--color-phx-muted)" }}>RATIONALE</span>
                       <div style={{
                         fontFamily: "var(--phx-font-sans)",
                         fontSize: "0.75rem",
-                        color: "var(--phx-text-secondary)",
+                        color: "var(--color-phx-secondary)",
                         marginTop: 4,
                         lineHeight: 1.4
                       }}>
@@ -454,15 +454,15 @@ export function VideoViewer() {
             </div>
 
             <div style={{
-              background: "var(--phx-paper)",
-              border: "1px solid var(--phx-border)",
-              borderRadius: "var(--phx-radius)",
+              background: "var(--color-phx-panel)",
+              border: "1px solid var(--color-phx-border)",
+              borderRadius: "0.5rem",
               padding: "1rem"
             }}>
               <div style={{
                 fontFamily: "var(--phx-font-sans)",
                 fontSize: "0.8rem",
-                color: "var(--phx-text-secondary)",
+                color: "var(--color-phx-secondary)",
                 marginBottom: 8
               }}>ALL FRAGMENTS</div>
               <div style={{ maxHeight: 300, overflow: "auto" }}>
@@ -475,19 +475,19 @@ export function VideoViewer() {
                       textAlign: "left",
                       padding: "8px 12px",
                       marginBottom: 4,
-                      background: idx === fragmentIndex ? "var(--phx-navy-tint)" : "transparent",
-                      border: idx === fragmentIndex ? "1px solid var(--phx-navy)" : "1px solid transparent",
-                      borderRadius: "var(--phx-radius-sm)",
+                      background: idx === fragmentIndex ? "var(--color-phx-cyan)" : "transparent",
+                      border: idx === fragmentIndex ? "1px solid var(--color-phx-cyan)" : "1px solid transparent",
+                      borderRadius: "0.25rem",
                       cursor: "pointer",
                       transition: "all 0.15s ease"
                     }}
-                    onMouseEnter={(e) => e.target.style.background = idx === fragmentIndex ? "var(--phx-navy-tint)" : "var(--phx-navy-tint)"}
-                    onMouseLeave={(e) => e.target.style.background = idx === fragmentIndex ? "var(--phx-navy-tint)" : "transparent"}
+                    onMouseEnter={(e) => e.target.style.background = idx === fragmentIndex ? "var(--color-phx-cyan)" : "var(--color-phx-cyan)"}
+                    onMouseLeave={(e) => e.target.style.background = idx === fragmentIndex ? "var(--color-phx-cyan)" : "transparent"}
                   >
-                    <div style={{ fontFamily: "var(--phx-font-mono)", fontSize: "0.72rem", color: idx === fragmentIndex ? "var(--phx-navy)" : "var(--phx-ink)" }}>
+                    <div style={{ fontFamily: "var(--phx-font-mono)", fontSize: "0.72rem", color: idx === fragmentIndex ? "var(--color-phx-cyan)" : "var(--color-phx-primary)" }}>
                       {frag.fragment_id || `frag-${idx}`}
                     </div>
-                    <div style={{ fontFamily: "var(--phx-font-sans)", fontSize: "0.7rem", color: "var(--phx-text-muted)", marginTop: 2 }}>
+                    <div style={{ fontFamily: "var(--phx-font-sans)", fontSize: "0.7rem", color: "var(--color-phx-muted)", marginTop: 2 }}>
                       {frag.codec_info || "Unknown"} • {Math.round((frag.confidence_score || 0) * 100)}%
                     </div>
                   </button>

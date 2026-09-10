@@ -41,13 +41,13 @@ export function BinaryHeroIllustration() {
         .animate-glow { animation: pulseGlow 3.5s ease-in-out infinite; }
       `}</style>
 
-      <div className="relative z-10 w-full max-w-lg bg-[var(--bg-deep)] border border-[var(--border)] rounded p-4 sm:p-5 font-mono text-[10px] sm:text-[11px] leading-tight text-[var(--text-muted)]">
-        <div className="flex items-center justify-between border-b border-[var(--border)] pb-2 mb-3 text-[10px] text-[var(--text-muted)] font-sans tracking-wide">
+      <div className="relative z-10 w-full max-w-lg bg-phx-deep border border-phx-border rounded p-4 sm:p-5 font-mono text-[10px] sm:text-[11px] leading-tight text-phx-muted">
+        <div className="flex items-center justify-between border-b border-phx-border pb-2 mb-3 text-[10px] text-phx-muted font-sans tracking-wide">
           <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-[var(--accent-green)]" />
-            <span className="font-semibold text-[var(--text-secondary)]">RAW IMAGE SUBSTRATE</span>
+            <span className="w-2 h-2 rounded-full bg-phx-green" />
+            <span className="font-semibold text-phx-secondary">RAW IMAGE SUBSTRATE</span>
           </div>
-          <span className="font-mono text-[var(--accent-cyan)] text-[10px]">DHFS / WFS / NAL CARVER</span>
+          <span className="font-mono text-phx-cyan text-[10px]">DHFS / WFS / NAL CARVER</span>
         </div>
 
         <div className="space-y-1 my-2">
@@ -56,18 +56,18 @@ export function BinaryHeroIllustration() {
               return (
                 <div
                   key={idx}
-                  className="my-1.5 py-1 px-2 rounded bg-[var(--bg-deep)] border border-[rgba(62,214,196,0.3)] text-[var(--accent-cyan)] font-bold text-center tracking-wider text-[11px] sm:text-xs shadow-inner animate-glow flex items-center justify-between"
+                  className="my-1.5 py-1 px-2 rounded bg-phx-deep border border-phx-cyan/30 text-phx-cyan font-bold text-center tracking-wider text-[11px] sm:text-xs shadow-inner animate-glow flex items-center justify-between"
                 >
-                  <span className="text-[var(--text-muted)] font-semibold">[VERIFIED HASH]</span>
-                  <span className="font-mono text-[var(--accent-cyan)]">{row.text}</span>
-                  <span className="text-[var(--accent-green)] text-[9px] px-1 bg-[var(--accent-green-dim)] rounded border border-[rgba(52,211,153,0.2)]">SHA-256</span>
+                  <span className="text-phx-muted font-semibold">[VERIFIED HASH]</span>
+                  <span className="font-mono text-phx-cyan">{row.text}</span>
+                  <span className="text-phx-green text-[9px] px-1 bg-[var(--accent-green-dim)] rounded border border-[rgba(52,211,153,0.2)]">SHA-256</span>
                 </div>
               );
             }
             return (
               <div
                 key={idx}
-                className={`text-center tracking-widest ${row.dim ? "text-[var(--text-muted)]/50" : "text-[var(--text-secondary)]/70"}`}
+                className={`text-center tracking-widest ${row.dim ? "text-phx-muted/50" : "text-phx-secondary/70"}`}
               >
                 {row.text}
               </div>
@@ -75,10 +75,10 @@ export function BinaryHeroIllustration() {
           })}
         </div>
 
-        <div className="flex items-center justify-between border-t border-[var(--border)] pt-2 mt-3 text-[9px] text-[var(--text-muted)] font-mono">
+        <div className="flex items-center justify-between border-t border-phx-border pt-2 mt-3 text-[9px] text-phx-muted font-mono">
           <span>OFFSET: 0x0004F200</span>
           <span>ENTROPY: 7.98 (COMPRESSED STREAM)</span>
-          <span className="text-[var(--accent-cyan)]">STATE: LOCK_VERIFIED</span>
+          <span className="text-phx-cyan">STATE: LOCK_VERIFIED</span>
         </div>
       </div>
     </div>

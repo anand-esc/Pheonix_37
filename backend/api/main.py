@@ -179,6 +179,18 @@ def create_case(req: CreateCaseRequest) -> dict:
     }
 
 
+@app.delete("/api/cases/{case_id}", summary="Delete a case")
+def delete_case(case_id: str) -> dict:
+    import shutil
+    case_dir = CASE_STORE_ROOT / case_id
+    if not case_dir.exists():
+        raise HTTPException(status_code=404, detail="Case not found")
+    try:
+        shutil.rmtree(case_dir)
+        return {"success": True, "message": f"Case {case_id} deleted successfully."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/api/cases", summary="List all cases (dashboard list view)")
 def list_cases() -> list[dict]:
     """Returns a lightweight list of cases from the ledger / case store."""
