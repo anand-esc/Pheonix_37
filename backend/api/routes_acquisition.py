@@ -93,6 +93,7 @@ class _Job:
         self._events: list[PipelineEvent] = []
         self._subscription_active = False
         self._subscription_lock = threading.Lock()
+        self._filtered_callback_ref = None  # stored for unsubscribe
         self.error: str | None = None
         self.result: PipelineResult | None = None
         self.lock = threading.Lock()
@@ -115,8 +116,9 @@ class _Job:
             if event_case_id == case_id:
                 # Convert to PipelineEvent if needed
                 if hasattr(event, "model_dump"):
-                    # Already a PipelineEvent
-                    self._events.append(event)
+                    # Already a PipelineEvent — guard with lock
+                    with self.lock:
+                        self._events.append(event)
                 elif isinstance(event, dict):
                     # Convert ledger's dict format to PipelineEvent
                     try:
@@ -132,7 +134,8 @@ class _Job:
                                 if k not in ("evidence_id", "stage", "timestamp_utc")
                             },
                         )
-                        self._events.append(pe)
+                        with self.lock:
+                            self._events.append(pe)
                     except Exception:
                         # A malformed ledger entry must never break a running
                         # pipeline; record it and carry on.
@@ -141,8 +144,16 @@ class _Job:
                             exc_info=True,
                         )
 
+        self._filtered_callback_ref = _filtered_callback
         shared_sink.subscribe(_filtered_callback)
         self._subscription_active = True
+
+    def _unsubscribe_from_shared_sink(self) -> None:
+        """Unsubscribe filtered callback so completed jobs don't leak."""
+        with self._subscription_lock:
+            if self._subscription_active and self._filtered_callback_ref is not None:
+                get_event_sink().unsubscribe(self._filtered_callback_ref)
+                self._subscription_active = False
 
     def view(self) -> JobView:
         with self.lock:
@@ -190,6 +201,7 @@ class _Job:
             self.status = JobStatus.FAILED
         finally:
             self.finished_utc = datetime.now(UTC)
+            self._unsubscribe_from_shared_sink()
 
 
 class JobStore:
