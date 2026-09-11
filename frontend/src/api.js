@@ -1,5 +1,11 @@
-const API_BASE = import.meta.env.VITE_API_BASE || "/api";
-const ACQ_BASE = import.meta.env.VITE_ACQ_BASE || "/acquisition";
+const isElectron =
+  typeof window !== "undefined" &&
+  (window.location?.protocol === "file:" ||
+    (typeof navigator !== "undefined" && /electron/i.test(navigator.userAgent || "")));
+
+const DEFAULT_HOST = isElectron ? "http://127.0.0.1:8000" : "";
+const API_BASE = import.meta.env.VITE_API_BASE || `${DEFAULT_HOST}/api`;
+const ACQ_BASE = import.meta.env.VITE_ACQ_BASE || `${DEFAULT_HOST}/acquisition`;
 
 const ROLE_ACTIONS = {
   INVESTIGATOR: ["VIEW_EVIDENCE", "EXPORT_BUNDLE", "TRIGGER_ACQUISITION"],

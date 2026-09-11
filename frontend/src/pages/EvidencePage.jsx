@@ -42,12 +42,24 @@ export function EvidencePage() {
         if (isMounted) {
           setCaseData(c);
           if (c && c.hasEvidence) {
+          const primaryEvidence = c?.evidence_items?.[0] || c?.evidence;
+          const intakeHash = primaryEvidence?.hash_lineage?.find(
+            (h) => h.pipeline_stage?.toLowerCase() === "intake" && (h.algorithm === "SHA-256" || !h.algorithm)
+          )?.hex_digest || primaryEvidence?.hash_lineage?.find(
+            (h) => h.pipeline_stage?.toLowerCase() === "intake"
+          )?.hex_digest || primaryEvidence?.hash;
+
+          if (primaryEvidence && (primaryEvidence.fragments?.length > 0 || intakeHash || c?.hasEvidence)) {
             setAcquisitionStage("done");
             setAcquisitionResult({
               hash: c.evidence?.hash || "",
               fileName: c.evidence?.fileName || "",
               fileSize: c.evidence?.fileSize || 0,
               acquiredAt: c.evidence?.acquiredAt || "",
+              hash: intakeHash || "RECORDED",
+              fileName: primaryEvidence.source_device_info || primaryEvidence.fileName || "evidence.img",
+              fileSize: parseInt(primaryEvidence.metadata?.bytes_read || primaryEvidence.fileSize || 0, 10),
+              acquiredAt: primaryEvidence.metadata?.acquired_utc || primaryEvidence.acquiredAt || c.intake_timestamp_utc || "",
             });
           }
         }

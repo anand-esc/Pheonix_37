@@ -47,6 +47,27 @@ export function ProvenanceChain({ caseId, initialCaseData }) {
   const origTime = caseData?.evidence?.acquiredAt || null;
   const parsedHash = caseData?.parsedHash || null;
   const parsedTime = caseData?.parsedAt || null;
+  const primaryEvidence = caseData?.evidence_items?.[0] || caseData?.evidence;
+  const hashLineage = primaryEvidence?.hash_lineage || [];
+
+  const intakeRecord = hashLineage.find(
+    (h) => h.pipeline_stage?.toLowerCase() === "intake" && (h.algorithm === "SHA-256" || !h.algorithm)
+  ) || hashLineage.find(
+    (h) => h.pipeline_stage?.toLowerCase() === "intake"
+  );
+  const origHash = intakeRecord?.hex_digest || primaryEvidence?.hash || caseData?.evidence?.hash || null;
+  const origTime = intakeRecord?.timestamp_utc || primaryEvidence?.metadata?.acquired_utc || caseData?.evidence?.acquiredAt || caseData?.intake_timestamp_utc || null;
+
+  const parsedRecord = hashLineage.find(
+    (h) => h.pipeline_stage?.toLowerCase() === "parsed" || h.pipeline_stage?.toLowerCase() === "detection"
+  );
+  const parsedHash = parsedRecord?.hex_digest || caseData?.parsedHash || null;
+  const parsedTime = parsedRecord?.timestamp_utc || caseData?.parsedAt || null;
+
+  const carveRecord = hashLineage.find(
+    (h) => h.pipeline_stage?.toLowerCase() === "carve" || h.pipeline_stage?.toLowerCase() === "recovery"
+  );
+  const firstFragment = primaryEvidence?.fragments?.[0];
   const lastRec =
     caseData?.lastRecovery ||
     (caseData?.recoveries ? Object.values(caseData.recoveries).slice(-1)[0] : null);
@@ -65,7 +86,23 @@ export function ProvenanceChain({ caseId, initialCaseData }) {
       recTime = lastRec.timestamp || new Date().toISOString();
       recMethod = lastRec.method;
     }
+  } else if (carveRecord) {
+    recState = "completed";
+    recHash = carveRecord.hex_digest;
+    recTime = carveRecord.timestamp_utc;
+    recMethod = "Pipeline Carver Engine";
+  } else if (firstFragment) {
+    recState = "completed";
+    recHash = firstFragment.sha256 || null;
+    recTime = firstFragment.created_utc || origTime;
+    recMethod = firstFragment.recovery_method || "NAL Carver";
   }
+
+  const reportRecord = hashLineage.find(
+    (h) => h.pipeline_stage?.toLowerCase() === "report" || h.pipeline_stage?.toLowerCase() === "certificate"
+  );
+  const reportHash = reportRecord?.hex_digest || null;
+  const reportTime = reportRecord?.timestamp_utc || null;
 
   const nodes = [
     {
@@ -110,6 +147,13 @@ export function ProvenanceChain({ caseId, initialCaseData }) {
       timestamp: null,
       details: "Generated on legal report submission.",
       note: "Generated on report submission",
+      state: reportHash ? "completed" : "pending",
+      hash: reportHash,
+      timestamp: reportTime,
+      details: reportHash
+        ? "Cryptographically signed Section 63 BSA legal certificate sealed."
+        : "Generated on legal report submission.",
+      note: reportHash ? "Court Certificate Sealed" : "Generated on report submission",
     },
   ];
 
