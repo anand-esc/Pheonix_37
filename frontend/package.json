@@ -24,7 +24,6 @@
     "electron:build": "npm run dist"
   },
   "dependencies": {
-    "@rolldown/binding-linux-x64-gnu": "^1.2.8",
     "@tabler/icons-react": "^3.46.0",
     "lucide-react": "^1.41.0",
     "react": "^19.2.8",
