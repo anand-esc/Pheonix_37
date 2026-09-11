@@ -1,14 +1,14 @@
-"""Tests for concrete adapter stubs.
+"""Tests for concrete adapters.
 
-Each test confirms:
-1. The adapter can be instantiated (satisfies the BaseAdapter ABC)
-2. Calling any method raises NotImplementedError (correctly stubbed, not silent pass)
+Each test confirms the adapter satisfies the BaseAdapter ABC and behaves correctly.
 """
 
 import pytest
+from pathlib import Path
 
 from backend.adapters.dahua import DahuaAdapter
 from backend.adapters.hikvision import HikvisionAdapter
+from backend.core.evidence_model import ValidationStatus
 
 
 def test_hikvision_adapter_instantiates():
@@ -17,22 +17,31 @@ def test_hikvision_adapter_instantiates():
     assert isinstance(adapter, HikvisionAdapter)
 
 
-def test_hikvision_detect_raises_not_implemented():
+def test_hikvision_detect_returns_false_for_missing_file():
     adapter = HikvisionAdapter()
-    with pytest.raises(NotImplementedError):
-        adapter.detect("/fake/path/to/disk.img")
+    assert adapter.detect("/fake/path/to/disk.img") is False
 
 
-def test_hikvision_parse_raises_not_implemented():
+def test_hikvision_detect_returns_false_for_non_wfs_file(tmp_path):
+    fake_file = tmp_path / "fake.img"
+    fake_file.write_bytes(b"NOT_HIKVISION_DATA" + b"\x00" * 1000)
     adapter = HikvisionAdapter()
-    with pytest.raises(NotImplementedError):
-        adapter.parse("/fake/path/to/disk.img")
+    assert adapter.detect(str(fake_file)) is False
 
 
-def test_hikvision_list_channels_raises_not_implemented():
+def test_hikvision_parse_returns_empty_for_missing_file():
     adapter = HikvisionAdapter()
-    with pytest.raises(NotImplementedError):
-        adapter.list_channels("/fake/path/to/disk.img")
+    res = adapter.parse("/fake/path/to/disk.img")
+    assert res.vendor_info.vendor_name == "Hikvision"
+    assert res.vendor_info.validation_status == ValidationStatus.VALIDATED
+    assert res.fragments == []
+    assert res.channels == []
+
+
+def test_hikvision_list_channels_returns_empty_for_missing_file():
+    adapter = HikvisionAdapter()
+    res = adapter.list_channels("/fake/path/to/disk.img")
+    assert res == []
 
 
 # ---------------------------------------------------------------------------

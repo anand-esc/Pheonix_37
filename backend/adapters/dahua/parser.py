@@ -10,9 +10,8 @@ from __future__ import annotations
 
 import hashlib
 import struct
-from datetime import datetime, timezone
 from pathlib import Path
-from typing import Union, Optional
+from typing import Union, Optional, BinaryIO
 
 from backend.adapters.generic_carver.adapter import GenericCarverAdapter
 from backend.adapters.generic_carver.models import CarveOptions
@@ -34,6 +33,11 @@ DHAV_HEADER_SIZE: int = 16
 
 H264_NAL_START: bytes = b"\x00\x00\x00\x01"
 H265_NAL_START: bytes = b"\x00\x00\x01"
+
+# Streaming read chunk size (4 MiB)
+STREAM_CHUNK_SIZE = 4 * 1024 * 1024
+# Overlap buffer to catch magic bytes split across chunks
+OVERLAP_SIZE = 64
 
 
 class DahuaAdapter(GenericCarverAdapter):
@@ -96,8 +100,22 @@ class DahuaAdapter(GenericCarverAdapter):
         self,
         file_path_or_bytes: Union[str, Path, bytes],
     ) -> list[dict]:
-        """Scan a Dahua container for DHAV frames and extract NAL slice metadata."""
-        data = self._resolve_input(file_path_or_bytes)
+        """Scan a Dahua container for DHAV frames and extract NAL slice metadata.
+        
+        Streams large files in chunks to avoid OOM on multi-GB disk images.
+        """
+        if isinstance(file_path_or_bytes, bytes):
+            # For bytes input (tests), use the original in-memory approach
+            return self._parse_fragments_in_memory(file_path_or_bytes)
+        
+        path = Path(file_path_or_bytes)
+        if not path.exists() or not path.is_file():
+            return []
+        
+        return self._parse_fragments_streaming(path)
+
+    def _parse_fragments_in_memory(self, data: bytes) -> list[dict]:
+        """Original in-memory parsing for small inputs / tests."""
         fragments: list[dict] = []
         offset = 0
 
@@ -136,6 +154,107 @@ class DahuaAdapter(GenericCarverAdapter):
             offset = magic_pos + max(frame_length, DHAV_HEADER_SIZE)
 
         return fragments
+
+    def _parse_fragments_streaming(self, path: Path) -> list[dict]:
+        """Stream large file and find DHAV frames without loading entire file."""
+        fragments: list[dict] = []
+        file_size = path.stat().st_size
+        
+        with open(path, "rb") as f:
+            buffer = b""
+            buffer_start_offset = 0
+            search_offset = 0
+            
+            while True:
+                chunk = f.read(STREAM_CHUNK_SIZE)
+                if not chunk:
+                    # Process remaining buffer
+                    fragments.extend(self._scan_buffer_for_frames(
+                        buffer, buffer_start_offset, is_final=True
+                    ))
+                    break
+                
+                buffer += chunk
+                # Scan for frames in the buffer
+                new_fragments, consumed = self._scan_buffer_for_frames(
+                    buffer, buffer_start_offset, is_final=False
+                )
+                fragments.extend(new_fragments)
+                
+                # Keep only the unconsumed tail (overlap region) for next iteration
+                if consumed < len(buffer):
+                    buffer = buffer[consumed:]
+                    buffer_start_offset += consumed
+                else:
+                    buffer = b""
+                    buffer_start_offset += len(chunk)
+        
+        return fragments
+
+    def _scan_buffer_for_frames(
+        self, 
+        buffer: bytes, 
+        buffer_start_offset: int, 
+        is_final: bool
+    ) -> tuple[list[dict], int]:
+        """Scan a buffer for DHAV frames. Returns (fragments, bytes_consumed)."""
+        fragments: list[dict] = []
+        offset = 0
+        buffer_len = len(buffer)
+        
+        while offset + DHAV_HEADER_SIZE <= buffer_len:
+            magic_pos = buffer.find(DHAV_MAGIC, offset)
+            if magic_pos == -1:
+                # No more magic in buffer - keep overlap for next chunk
+                if not is_final and buffer_len > OVERLAP_SIZE:
+                    return fragments, buffer_len - OVERLAP_SIZE
+                return fragments, buffer_len
+            
+            if magic_pos + DHAV_HEADER_SIZE > buffer_len:
+                # Header split across chunks - need more data
+                if not is_final:
+                    return fragments, max(0, magic_pos - OVERLAP_SIZE)
+                break
+            
+            hdr = buffer[magic_pos : magic_pos + DHAV_HEADER_SIZE]
+            sub_type = hdr[5]
+            sequence_id = hdr[7]
+            frame_length = struct.unpack("<I", hdr[8:12])[0]
+            timestamp = struct.unpack("<I", hdr[12:16])[0]
+
+            if frame_length < DHAV_HEADER_SIZE:
+                offset = magic_pos + 4
+                continue
+
+            payload_start = magic_pos + DHAV_HEADER_SIZE
+            payload_end = magic_pos + frame_length
+            
+            if payload_end > buffer_len:
+                # Frame payload split across chunks - need more data
+                if not is_final:
+                    return fragments, max(0, magic_pos - OVERLAP_SIZE)
+                # Final chunk - take what we have
+                payload_end = buffer_len
+            
+            payload = buffer[payload_start:payload_end]
+            codec = self._detect_codec(payload, sub_type)
+            sha = hashlib.sha256(payload).hexdigest()
+            
+            absolute_offset = buffer_start_offset + magic_pos
+            fragments.append(
+                {
+                    "offset": absolute_offset,
+                    "length": len(payload),
+                    "timestamp": timestamp,
+                    "sequence_id": sequence_id,
+                    "codec": codec,
+                    "sha256": sha,
+                }
+            )
+            
+            offset = magic_pos + max(frame_length, DHAV_HEADER_SIZE)
+        
+        return fragments, offset
 
     def parse(self, source_path: str) -> EvidenceItem:
         """Parses the source into the Common Evidence Representation (EvidenceItem)."""
@@ -207,17 +326,6 @@ class DahuaAdapter(GenericCarverAdapter):
         raw_frags = self.parse_fragments(source_path)
         channels_set = set(str(f["sequence_id"]) for f in raw_frags)
         return [ChannelInfo(channel_id=cid) for cid in sorted(channels_set)]
-
-    @staticmethod
-    def _resolve_input(src: Union[str, Path, bytes]) -> bytes:
-        if isinstance(src, (str, Path)):
-            path = Path(src)
-            if not path.exists():
-                return b""
-            return path.read_bytes()
-        if isinstance(src, bytes):
-            return src
-        raise TypeError(f"Expected str, Path, or bytes — got {type(src).__name__}")
 
     @staticmethod
     def _detect_codec(payload: bytes, sub_type: int) -> str:

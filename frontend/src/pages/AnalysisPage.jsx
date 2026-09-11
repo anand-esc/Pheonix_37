@@ -74,14 +74,14 @@ export function AnalysisPage() {
         <div className="flex items-center justify-between">
           <button
             onClick={() => navigate("/cases")}
-            className="inline-flex items-center gap-2 text-[11px] font-medium text-[var(--text-muted)] hover:text-[var(--accent-cyan)] transition-colors bg-transparent border-none cursor-pointer font-mono"
+            className="inline-flex items-center gap-2 text-[11px] font-medium text-phx-muted hover:text-phx-cyan transition-colors bg-transparent border-none cursor-pointer font-mono"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Dashboard</span>
           </button>
           <div className="flex items-center gap-2 text-[11px]">
-            <span className="text-[var(--text-muted)]">Active Role:</span>
-            <span className="px-2.5 py-0.5 rounded bg-[var(--accent-amber-dim)] text-[var(--accent-amber)] border border-[rgba(240,169,58,0.2)] font-mono">
+            <span className="text-phx-muted">Active Role:</span>
+            <span className="px-2.5 py-0.5 rounded bg-phx-amber/10 text-phx-amber border border-[rgba(240,169,58,0.2)] font-mono">
               {role}
             </span>
           </div>
@@ -94,24 +94,24 @@ export function AnalysisPage() {
             icon={Play}
             badge={<Badge label={caseData?.status || "Processing"} />}
           />
-          <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed">
+          <p className="text-[11px] text-phx-secondary leading-relaxed">
             Deep signature format parsing, missing NAL-unit carving, and real-time court-admissible cryptographic provenance chain verification.
           </p>
         </div>
 
         {/* Tabs */}
-        <div className="flex items-center gap-1 border-b border-[var(--border)] pb-2 overflow-x-auto">
+        <div className="flex items-center gap-1 border-b border-phx-border pb-2 overflow-x-auto">
           <button
             onClick={() => setActiveTab("provenance")}
             className={`px-4 py-2.5 rounded text-[11px] font-medium flex items-center gap-2 transition-all cursor-pointer border ${
               activeTab === "provenance"
-                ? "bg-[var(--accent-cyan-dim)] text-[var(--accent-cyan)] border-[rgba(62,214,196,0.2)] font-semibold"
-                : "text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-panel-lighter)] border-transparent"
+                ? "bg-phx-cyan/10 text-phx-cyan border-phx-cyan/20 font-semibold"
+                : "text-phx-muted hover:text-phx-secondary hover:bg-phx-panel-lighter border-transparent"
             }`}
           >
             <GitCommit className="w-4 h-4" />
             <span>Provenance Chain</span>
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--accent-cyan-dim)] text-[var(--accent-cyan)] font-mono font-semibold">
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-phx-cyan/10 text-phx-cyan font-mono font-semibold">
               CORE LINK
             </span>
           </button>
@@ -119,8 +119,8 @@ export function AnalysisPage() {
             onClick={() => setActiveTab("detection")}
             className={`px-4 py-2.5 rounded text-[11px] font-medium flex items-center gap-2 transition-all cursor-pointer border ${
               activeTab === "detection"
-                ? "bg-[var(--accent-cyan-dim)] text-[var(--accent-cyan)] border-[rgba(62,214,196,0.2)] font-semibold"
-                : "text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-panel-lighter)] border-transparent"
+                ? "bg-phx-cyan/10 text-phx-cyan border-phx-cyan/20 font-semibold"
+                : "text-phx-muted hover:text-phx-secondary hover:bg-phx-panel-lighter border-transparent"
             }`}
           >
             <Cpu className="w-4 h-4" />
@@ -130,8 +130,8 @@ export function AnalysisPage() {
             onClick={() => setActiveTab("fragments")}
             className={`px-4 py-2.5 rounded text-[11px] font-medium flex items-center gap-2 transition-all cursor-pointer border ${
               activeTab === "fragments"
-                ? "bg-[var(--accent-cyan-dim)] text-[var(--accent-cyan)] border-[rgba(62,214,196,0.2)] font-semibold"
-                : "text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-panel-lighter)] border-transparent"
+                ? "bg-phx-cyan/10 text-phx-cyan border-phx-cyan/20 font-semibold"
+                : "text-phx-muted hover:text-phx-secondary hover:bg-phx-panel-lighter border-transparent"
             }`}
           >
             <Film className="w-4 h-4" />
@@ -141,8 +141,8 @@ export function AnalysisPage() {
             onClick={() => setActiveTab("ledger")}
             className={`px-4 py-2.5 rounded text-[11px] font-medium flex items-center gap-2 transition-all cursor-pointer border ${
               activeTab === "ledger"
-                ? "bg-[var(--accent-cyan-dim)] text-[var(--accent-cyan)] border-[rgba(62,214,196,0.2)] font-semibold"
-                : "text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-panel-lighter)] border-transparent"
+                ? "bg-phx-cyan/10 text-phx-cyan border-phx-cyan/20 font-semibold"
+                : "text-phx-muted hover:text-phx-secondary hover:bg-phx-panel-lighter border-transparent"
             }`}
           >
             <Layers className="w-4 h-4" />
@@ -152,13 +152,13 @@ export function AnalysisPage() {
             onClick={() => setActiveTab("ledger-demo")}
             className={`px-4 py-2.5 rounded text-[11px] font-medium flex items-center gap-2 transition-all cursor-pointer border ${
               activeTab === "ledger-demo"
-                ? "bg-[var(--accent-amber-dim)] text-[var(--accent-amber)] border-[rgba(240,169,58,0.2)] font-semibold"
-                : "text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-panel-lighter)] border-transparent"
+                ? "bg-phx-amber/10 text-phx-amber border-[rgba(240,169,58,0.2)] font-semibold"
+                : "text-phx-muted hover:text-phx-secondary hover:bg-phx-panel-lighter border-transparent"
             }`}
           >
             <Shield className="w-4 h-4" />
             <span>Ledger Demo</span>
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--accent-amber-dim)] text-[var(--accent-amber)] font-mono font-semibold">
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-phx-amber/10 text-phx-amber font-mono font-semibold">
               DEMO
             </span>
           </button>
@@ -166,8 +166,8 @@ export function AnalysisPage() {
 
         {isLoading && (
           <div className="data-panel p-12 flex flex-col items-center justify-center gap-4 text-center">
-            <div className="flex items-center gap-2 text-[11px] font-mono text-[var(--accent-cyan)]">
-              <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent-cyan)] animate-pulse" />
+            <div className="flex items-center gap-2 text-[11px] font-mono text-phx-cyan">
+              <div className="w-1.5 h-1.5 rounded-full bg-phx-cyan animate-pulse" />
               <span>LOADING CASE DATA...</span>
             </div>
           </div>
@@ -195,7 +195,7 @@ export function AnalysisPage() {
                     <button
                       onClick={handleDetectFormat}
                       disabled={!caseData?.hasEvidence}
-                      className="px-4 py-2.5 bg-[var(--accent-cyan)]/10 border border-[rgba(62,214,196,0.3)] text-[var(--accent-cyan)] text-[11px] font-medium rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all font-mono hover:bg-[var(--accent-cyan-dim)]"
+                      className="px-4 py-2.5 bg-phx-cyan/10 border border-phx-cyan/30 text-phx-cyan text-[11px] font-medium rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all font-mono hover:bg-phx-cyan/10"
                     >
                       <Play className="w-4 h-4" />
                       <span>RUN DETECTION</span>
@@ -203,37 +203,37 @@ export function AnalysisPage() {
                   </div>
 
                   {detectError && (
-                    <div className="bg-[var(--accent-red-dim)] border border-[rgba(248,113,113,0.2)] rounded p-4 mb-4 text-[11px] text-[var(--accent-red)] font-mono">
+                    <div className="bg-[var(--accent-red-dim)] border border-[rgba(248,113,113,0.2)] rounded p-4 mb-4 text-[11px] text-phx-red font-mono">
                       {detectError}
                     </div>
                   )}
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="space-y-1 border-b border-[var(--border)] pb-4 md:pb-0 md:border-r md:pr-4">
-                      <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block">Detected Manufacturer</span>
+                    <div className="space-y-1 border-b border-phx-border pb-4 md:pb-0 md:border-r md:pr-4">
+                      <span className="text-[10px] font-mono text-phx-muted uppercase tracking-wider block">Detected Manufacturer</span>
                       <div className="flex items-center gap-2.5 pt-1">
-                        <span className="text-sm font-bold text-[var(--text-primary)]">
+                        <span className="text-sm font-bold text-phx-primary">
                           {formatData?.vendor_info?.vendor_name || "—"}
                         </span>
                         {formatData?.vendor_info?.validation_status && (
                           <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold">
-                            {formatData.vendor_info.validation_status === 'VALIDATED' ? 'bg-[var(--accent-green-dim)] text-[var(--accent-green)] border border-[rgba(52,211,153,0.2)]' :
-                             formatData.vendor_info.validation_status === 'GENERIC_FALLBACK' ? 'bg-[var(--accent-amber-dim)] text-[var(--accent-amber)] border border-[rgba(240,169,58,0.2)]' :
-                             'bg-[var(--accent-cyan-dim)] text-[var(--accent-cyan)] border border-[rgba(62,214,196,0.2)]'}
+                            {formatData.vendor_info.validation_status === 'VALIDATED' ? 'bg-[var(--accent-green-dim)] text-phx-green border border-[rgba(52,211,153,0.2)]' :
+                             formatData.vendor_info.validation_status === 'GENERIC_FALLBACK' ? 'bg-phx-amber/10 text-phx-amber border border-[rgba(240,169,58,0.2)]' :
+                             'bg-phx-cyan/10 text-phx-cyan border border-phx-cyan/20'}
                             {formatData.vendor_info.validation_status}
                           </span>
                         )}
                       </div>
                     </div>
-                    <div className="space-y-1 border-b border-[var(--border)] pb-4 md:pb-0 md:border-r md:pr-4">
-                      <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block">Filesystem Container</span>
-                      <p className="text-sm font-mono text-[var(--accent-cyan)] pt-1">
+                    <div className="space-y-1 border-b border-phx-border pb-4 md:pb-0 md:border-r md:pr-4">
+                      <span className="text-[10px] font-mono text-phx-muted uppercase tracking-wider block">Filesystem Container</span>
+                      <p className="text-sm font-mono text-phx-cyan pt-1">
                         {formatData?.vendor_info?.detected_format_signature || "—"}
                       </p>
                     </div>
                     <div className="space-y-1">
-                      <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block">Detection Confidence</span>
-                      <p className="text-sm font-medium text-[var(--text-primary)] pt-1 font-mono">
+                      <span className="text-[10px] font-mono text-phx-muted uppercase tracking-wider block">Detection Confidence</span>
+                      <p className="text-sm font-medium text-phx-primary pt-1 font-mono">
                         {formatData?.confidence !== undefined ? `${(formatData.confidence * 100).toFixed(1)}%` : "—"}
                       </p>
                     </div>
@@ -241,10 +241,10 @@ export function AnalysisPage() {
 
                   {formatData?.rationale && formatData.rationale.length > 0 && (
                     <div className="mt-6">
-                      <span className="text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-wider block mb-2">Detection Rationale</span>
-                      <ul className="space-y-1 text-[11px] text-[var(--text-secondary)]">
+                      <span className="text-[10px] font-mono text-phx-muted uppercase tracking-wider block mb-2">Detection Rationale</span>
+                      <ul className="space-y-1 text-[11px] text-phx-secondary">
                         {formatData.rationale.map((r, i) => (
-                          <li key={i} className="font-mono bg-[var(--bg-deep)] p-2 rounded border border-[var(--border)]">{r}</li>
+                          <li key={i} className="font-mono bg-phx-deep p-2 rounded border border-phx-border">{r}</li>
                         ))}
                       </ul>
                     </div>
@@ -279,17 +279,17 @@ export function AnalysisPage() {
                             <td className="forensic-table td"><Badge label={frag.recovery_method || "GENERIC"} variant="slate" size="xs" /></td>
                             <td className="forensic-table td">
                               <div className="flex items-center gap-2">
-                                <span className="font-mono font-bold text-[var(--text-primary)]">{((frag.confidence_score || 0) * 100).toFixed(0)}%</span>
+                                <span className="font-mono font-bold text-phx-primary">{((frag.confidence_score || 0) * 100).toFixed(0)}%</span>
                               </div>
                             </td>
-                            <td className="forensic-table td text-[10px] font-mono text-[var(--text-secondary)]">
+                            <td className="forensic-table td text-[10px] font-mono text-phx-secondary">
                               {frag.confidence_rationale || "—"}
                             </td>
                           </tr>
                         ))}
                         {fragments.length === 0 && (
                           <tr>
-                            <td colSpan={6} className="py-8 text-center text-[var(--text-muted)] font-mono">No fragments recovered.</td>
+                            <td colSpan={6} className="py-8 text-center text-phx-muted font-mono">No fragments recovered.</td>
                           </tr>
                         )}
                       </tbody>
@@ -327,7 +327,7 @@ export function AnalysisPage() {
                       <tbody className="divide-y divide-[var(--border)]">
                         {fragments.map((frag, idx) => (
                           <tr key={frag.fragment_id || idx}>
-                            <td className="forensic-table td font-mono text-[var(--accent-cyan)]">{idx + 1}</td>
+                            <td className="forensic-table td font-mono text-phx-cyan">{idx + 1}</td>
                             <td className="forensic-table td font-mono">{frag.fragment_id || `frag-${idx}`}</td>
                             <td className="forensic-table td font-mono">{frag.byte_offset_start || 0} – {frag.byte_offset_end || 0}</td>
                             <td className="forensic-table td font-mono">{(frag.byte_offset_end || 0) - (frag.byte_offset_start || 0)} bytes</td>
@@ -335,15 +335,15 @@ export function AnalysisPage() {
                             <td className="forensic-table td"><Badge label={frag.recovery_method || "GENERIC"} variant="slate" size="xs" /></td>
                             <td className="forensic-table td">
                               <div className="flex items-center gap-2">
-                                <span className="font-mono font-bold text-[var(--text-primary)]">{((frag.confidence_score || 0) * 100).toFixed(0)}%</span>
+                                <span className="font-mono font-bold text-phx-primary">{((frag.confidence_score || 0) * 100).toFixed(0)}%</span>
                               </div>
                             </td>
-                            <td className="forensic-table td text-[10px] font-mono text-[var(--text-secondary)]">{frag.confidence_rationale || "—"}</td>
+                            <td className="forensic-table td text-[10px] font-mono text-phx-secondary">{frag.confidence_rationale || "—"}</td>
                           </tr>
                         ))}
                         {fragments.length === 0 && (
                           <tr>
-                            <td colSpan={8} className="py-8 text-center text-[var(--text-muted)] font-mono">No fragments recovered yet.</td>
+                            <td colSpan={8} className="py-8 text-center text-phx-muted font-mono">No fragments recovered yet.</td>
                           </tr>
                         )}
                       </tbody>
@@ -379,10 +379,10 @@ export function AnalysisPage() {
                       </thead>
                       <tbody className="divide-y divide-[var(--border)]">
                         {ledgerEntries.map((entry, idx) => (
-                          <tr key={idx} className={entry.event_type === "GENESIS" ? "bg-[var(--accent-amber-dim)]" : ""}>
-                            <td className="forensic-table td font-mono text-[var(--accent-cyan)]">{entry.index}</td>
+                          <tr key={idx} className={entry.event_type === "GENESIS" ? "bg-phx-amber/10" : ""}>
+                            <td className="forensic-table td font-mono text-phx-cyan">{entry.index}</td>
                             <td className="forensic-table td font-medium">
-                              {entry.event_type === "GENESIS" && <span className="text-[var(--accent-amber)] font-bold">GENESIS</span>}
+                              {entry.event_type === "GENESIS" && <span className="text-phx-amber font-bold">GENESIS</span>}
                               {entry.event_type !== "GENESIS" && entry.event_type}
                             </td>
                             <td className="forensic-table td font-mono">{entry.operator_id}</td>
@@ -394,7 +394,7 @@ export function AnalysisPage() {
                         ))}
                         {ledgerEntries.length === 0 && (
                           <tr>
-                            <td colSpan={7} className="py-8 text-center text-[var(--text-muted)] font-mono">No ledger entries found.</td>
+                            <td colSpan={7} className="py-8 text-center text-phx-muted font-mono">No ledger entries found.</td>
                           </tr>
                         )}
                       </tbody>

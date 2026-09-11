@@ -134,10 +134,10 @@ export function ProvenanceChain({ caseId, initialCaseData }) {
                 }}
                 className={`rounded p-4 border transition-all flex flex-col justify-between h-full space-y-4 cursor-pointer ${
                   node.state === "completed"
-                    ? "bg-[var(--bg-panel-lighter)] border-[rgba(62,214,196,0.2)] hover:border-[var(--accent-cyan)]"
+                    ? "bg-phx-panel-lighter border-phx-cyan/20 hover:border-phx-cyan"
                     : node.state === "failed"
                     ? "bg-[var(--accent-red-dim)] border-[rgba(248,113,113,0.2)] hover:border-[var(--accent-red)]"
-                    : "bg-[var(--bg-deep)] border-dashed border-[var(--border)] opacity-50 cursor-not-allowed"
+                    : "bg-phx-deep border-dashed border-phx-border opacity-50 cursor-not-allowed"
                 }`}
               >
                 <div className="flex items-center justify-between">
@@ -145,69 +145,69 @@ export function ProvenanceChain({ caseId, initialCaseData }) {
                     <div
                       className={`w-8 h-8 rounded flex items-center justify-center border ${
                         node.state === "completed"
-                          ? "bg-[var(--accent-cyan-dim)] border-[rgba(62,214,196,0.3)] text-[var(--accent-cyan)]"
+                          ? "bg-phx-cyan/10 border-phx-cyan/30 text-phx-cyan"
                           : node.state === "failed"
-                          ? "bg-[var(--accent-red-dim)] border-[rgba(248,113,113,0.3)] text-[var(--accent-red)]"
-                          : "bg-[var(--bg-panel)] border border-[var(--border)] text-[var(--text-muted)]"
+                          ? "bg-[var(--accent-red-dim)] border-[rgba(248,113,113,0.3)] text-phx-red"
+                          : "bg-phx-panel border border-phx-border text-phx-muted"
                       }`}
                     >
                       <Icon className="w-4 h-4" />
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold text-[var(--text-primary)]">{node.title}</h4>
-                      <p className="text-[10px] text-[var(--text-secondary)]">{node.subtitle}</p>
+                      <h4 className="text-xs font-bold text-phx-primary">{node.title}</h4>
+                      <p className="text-[10px] text-phx-secondary">{node.subtitle}</p>
                     </div>
                   </div>
 
                   <div>
                     {node.state === "completed" && (
-                      <CheckCircle2 className="w-4 h-4 text-[var(--accent-green)]" />
+                      <CheckCircle2 className="w-4 h-4 text-phx-green" />
                     )}
                     {node.state === "failed" && (
-                      <XCircle className="w-4 h-4 text-[var(--accent-red)]" />
+                      <XCircle className="w-4 h-4 text-phx-red" />
                     )}
                     {node.state === "pending" && (
-                      <Clock className="w-4 h-4 text-[var(--text-muted)]" />
+                      <Clock className="w-4 h-4 text-phx-muted" />
                     )}
                   </div>
                 </div>
 
                 <div className="space-y-2 pt-1">
                   {node.state === "completed" && node.hash && (
-                    <div className="bg-[var(--bg-deep)] border border-[rgba(62,214,196,0.2)] rounded px-2 py-1.5 font-mono text-[11px] text-[var(--accent-cyan)] font-semibold flex items-center justify-between">
+                    <div className="bg-phx-deep border border-phx-cyan/20 rounded px-2 py-1.5 font-mono text-[11px] text-phx-cyan font-semibold flex items-center justify-between">
                       <span>{truncateHash(node.hash)}</span>
-                      <span className="text-[10px] font-sans font-medium text-[var(--accent-green)] bg-[var(--accent-green-dim)] px-1.5 py-0.5 rounded border border-[rgba(52,211,153,0.2)]">
+                      <span className="text-[10px] font-sans font-medium text-phx-green bg-[var(--accent-green-dim)] px-1.5 py-0.5 rounded border border-[rgba(52,211,153,0.2)]">
                         Verified
                       </span>
                     </div>
                   )}
                   {node.state === "failed" && (
-                    <div className="bg-[var(--accent-red-dim)] border border-[rgba(248,113,113,0.2)] rounded px-2 py-1.5 font-mono text-[11px] text-[var(--accent-red)] font-semibold space-y-1">
+                    <div className="bg-[var(--accent-red-dim)] border border-[rgba(248,113,113,0.2)] rounded px-2 py-1.5 font-mono text-[11px] text-phx-red font-semibold space-y-1">
                       <div className="flex items-center gap-1.5">
-                        <AlertTriangle className="w-3.5 h-3.5 text-[var(--accent-red)] shrink-0" />
+                        <AlertTriangle className="w-3.5 h-3.5 text-phx-red shrink-0" />
                         <span>Chain Gap</span>
                       </div>
-                      <p className="text-[10px] font-sans text-[var(--accent-red)] font-normal">
+                      <p className="text-[10px] font-sans text-phx-red font-normal">
                         Unrecoverable sector
                       </p>
                     </div>
                   )}
                   {node.state === "pending" && (
-                    <div className="bg-[var(--bg-panel)] border border-[var(--border)] rounded px-2 py-1.5 font-mono text-[11px] text-[var(--text-muted)] flex items-center justify-between">
+                    <div className="bg-phx-panel border border-phx-border rounded px-2 py-1.5 font-mono text-[11px] text-phx-muted flex items-center justify-between">
                       <span>—</span>
-                      <span className="text-[10px] font-sans text-[var(--text-muted)]">
+                      <span className="text-[10px] font-sans text-phx-muted">
                         {node.note || "Pending Stage"}
                       </span>
                     </div>
                   )}
                 </div>
 
-                <div className="text-[10px] text-[var(--text-muted)] font-mono flex items-center justify-between pt-1 border-t border-[var(--border)]">
+                <div className="text-[10px] text-phx-muted font-mono flex items-center justify-between pt-1 border-t border-phx-border">
                   <span>
                     {node.timestamp ? formatDate(node.timestamp) : "Awaiting stage"}
                   </span>
                   {node.state !== "pending" && (
-                    <span className="text-[var(--accent-cyan)] font-sans font-medium">
+                    <span className="text-phx-cyan font-sans font-medium">
                       Details →
                     </span>
                   )}
@@ -220,32 +220,32 @@ export function ProvenanceChain({ caseId, initialCaseData }) {
 
       {selectedNode && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[var(--bg-deep)]/80"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-phx-deep/80"
           onClick={() => setSelectedNode(null)}
         >
           <div
-            className="bg-[var(--bg-panel)] border border-[var(--border)] rounded w-full max-w-lg overflow-hidden p-6 space-y-5"
+            className="bg-phx-panel border border-phx-border rounded w-full max-w-lg overflow-hidden p-6 space-y-5"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-start justify-between border-b border-[var(--border)] pb-3">
+            <div className="flex items-start justify-between border-b border-phx-border pb-3">
               <div className="flex items-center gap-2.5">
                 <div
                   className={`w-8 h-8 rounded flex items-center justify-center ${
                     selectedNode.state === "completed"
-                      ? "bg-[var(--accent-cyan-dim)] text-[var(--accent-cyan)] border border-[rgba(62,214,196,0.2)]"
-                      : "bg-[var(--accent-red-dim)] text-[var(--accent-red)] border border-[rgba(248,113,113,0.2)]"
+                      ? "bg-phx-cyan/10 text-phx-cyan border border-phx-cyan/20"
+                      : "bg-[var(--accent-red-dim)] text-phx-red border border-[rgba(248,113,113,0.2)]"
                   }`}
                 >
                   <selectedNode.icon className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-[var(--text-primary)]">{selectedNode.title}</h3>
-                  <p className="text-xs text-[var(--text-secondary)]">{selectedNode.subtitle}</p>
+                  <h3 className="text-sm font-bold text-phx-primary">{selectedNode.title}</h3>
+                  <p className="text-xs text-phx-secondary">{selectedNode.subtitle}</p>
                 </div>
               </div>
               <button
                 onClick={() => setSelectedNode(null)}
-                className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-2.5 py-1 rounded bg-[var(--bg-panel-lighter)] border border-[var(--border)]"
+                className="text-xs text-phx-secondary hover:text-phx-primary px-2.5 py-1 rounded bg-phx-panel-lighter border border-phx-border"
               >
                 Close
               </button>
@@ -254,20 +254,20 @@ export function ProvenanceChain({ caseId, initialCaseData }) {
             {selectedNode.hash ? (
               <HashDisplay hash={selectedNode.hash} label="Full SHA-256 Digest" verified={true} allowExpand={true} />
             ) : (
-              <div className="p-3 bg-[var(--accent-red-dim)] border border-[rgba(248,113,113,0.2)] rounded text-xs text-[var(--accent-red)] space-y-1">
+              <div className="p-3 bg-[var(--accent-red-dim)] border border-[rgba(248,113,113,0.2)] rounded text-xs text-phx-red space-y-1">
                 <span className="font-semibold block">No Digest Produced</span>
-                <p className="text-[var(--accent-red)] text-[11px]">{selectedNode.details}</p>
+                <p className="text-phx-red text-[11px]">{selectedNode.details}</p>
               </div>
             )}
 
-            <div className="bg-[var(--bg-deep)] p-3.5 rounded border border-[var(--border)] text-xs space-y-1">
-              <span className="text-[11px] font-semibold uppercase text-[var(--text-muted)]">Forensic Stage Details</span>
-              <p className="text-[var(--text-secondary)]">{selectedNode.details}</p>
+            <div className="bg-phx-deep p-3.5 rounded border border-phx-border text-xs space-y-1">
+              <span className="text-[11px] font-semibold uppercase text-phx-muted">Forensic Stage Details</span>
+              <p className="text-phx-secondary">{selectedNode.details}</p>
             </div>
 
-            <div className="flex items-center justify-between text-xs text-[var(--text-muted)] pt-2 border-t border-[var(--border)]">
+            <div className="flex items-center justify-between text-xs text-phx-muted pt-2 border-t border-phx-border">
               <span>Timestamp: {selectedNode.timestamp ? formatDate(selectedNode.timestamp) : "N/A"}</span>
-              <span className="font-mono text-[var(--accent-cyan)] font-medium">BSA Sec 63 Chain Anchor</span>
+              <span className="font-mono text-phx-cyan font-medium">BSA Sec 63 Chain Anchor</span>
             </div>
           </div>
         </div>

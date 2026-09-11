@@ -17,7 +17,7 @@ from fastapi.responses import StreamingResponse
 from backend.api.ledger_routes import router as ledger_router
 from backend.api.routes_acquisition import router as acquisition_router
 from backend.api.shared import get_event_sink, get_ledger, get_rbac_controller
-from backend.core.evidence_model import Case, Fragment
+from backend.core.evidence_model import Case, Fragment, DetectionResult
 from backend.ledger.rbac import Role, enforce_access
 
 
@@ -178,6 +178,18 @@ def create_case(req: CreateCaseRequest) -> dict:
         "hasEvidence": False
     }
 
+
+@app.delete("/api/cases/{case_id}", summary="Delete a case")
+def delete_case(case_id: str) -> dict:
+    import shutil
+    case_dir = CASE_STORE_ROOT / case_id
+    if not case_dir.exists():
+        raise HTTPException(status_code=404, detail="Case not found")
+    try:
+        shutil.rmtree(case_dir)
+        return {"success": True, "message": f"Case {case_id} deleted successfully."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/cases", summary="List all cases (dashboard list view)")
 def list_cases() -> list[dict]:
@@ -426,3 +438,74 @@ def protected_evidence(
         "evidence_count": len(case.evidence_items),
         "message": "RBAC check passed — access granted",
     }
+
+from fastapi.responses import FileResponse
+
+@app.post("/api/case/{case_id}/certificate", summary="Generate BSA Certificate")
+def generate_case_certificate(case_id: str) -> dict:
+    run_dir = _find_case_dir(case_id)
+    if not run_dir:
+        raise HTTPException(status_code=404, detail="Case run not found")
+    
+    facts_path = run_dir / "custody_facts.json"
+    if not facts_path.exists():
+        raise HTTPException(status_code=400, detail="custody_facts.json not found. Pipeline must finish first.")
+        
+    out_dir = CASE_STORE_ROOT / case_id / "certificate"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    
+    from backend.reporting.certificate_draft import generate_draft
+    try:
+        generate_draft(facts_path=str(facts_path), output_dir=str(out_dir))
+        return {"success": True, "message": "Certificate generated successfully."}
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Failed to generate certificate: {exc}")
+
+@app.get("/api/case/{case_id}/certificate/download", summary="Download BSA Certificate PDF")
+def download_case_certificate(case_id: str):
+    out_dir = CASE_STORE_ROOT / case_id / "certificate"
+    pdf_path = out_dir / "certificate_draft.pdf"
+    if not pdf_path.exists():
+        raise HTTPException(status_code=404, detail="Certificate not generated yet.")
+        
+    return FileResponse(
+        path=pdf_path,
+        media_type="application/pdf",
+        filename=f"BSA63-Certificate-{case_id}.pdf"
+    )
+
+
+# ---------------------------------------------------------------------------
+# GET /api/case/{case_id}/detections — AI triage results
+# ---------------------------------------------------------------------------
+@app.get(
+    "/api/case/{case_id}/detections",
+    response_model=list[DetectionResult],
+    summary="AI triage detections for a case",
+)
+def get_case_detections(case_id: str) -> list[DetectionResult]:
+    """Returns all AI triage detections from the latest pipeline run."""
+    case = _load_case_from_run(case_id)
+    if case is not None:
+        detections: list[DetectionResult] = []
+        for item in case.evidence_items:
+            if item.detections:
+                detections.extend(item.detections)
+        return detections
+    # Demo fallback
+    from backend.api.mock_data import MOCK_CASE, MOCK_CASE_ID
+    if case_id != MOCK_CASE_ID:
+        raise HTTPException(status_code=404, detail=f"Case '{case_id}' not found")
+    detections = []
+    for item in MOCK_CASE.evidence_items:
+        if item.detections:
+            detections.extend(item.detections)
+    return detections
+
+@app.get("/health", summary="Health check endpoint")
+def health_check():
+    return {"status": "ok"}
+
+@app.get("/ready", summary="Readiness endpoint")
+def ready_check():
+    return {"status": "ready"}

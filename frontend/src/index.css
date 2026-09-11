@@ -1,127 +1,121 @@
-@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400&display=swap");
 @import "tailwindcss";
+
+@theme {
+  --color-phx-deep: #F9FAFB;
+  --color-phx-surface: #F4F4F5;
+  --color-phx-panel: #FFFFFF;
+  --color-phx-panel-lighter: #FAFAFA;
+  --color-phx-row-alt: #F9FAFB;
+  --color-phx-border: #E4E4E7;
+  --color-phx-border-light: #F4F4F5;
+  --color-phx-primary: #27272A;
+  --color-phx-secondary: #52525B;
+  --color-phx-muted: #A1A1AA;
+  --color-phx-amber: #F59E0B;
+  --color-phx-cyan: #4F46E5;
+  --color-phx-green: #10B981;
+  --color-phx-red: #F43F5E;
+
+  --font-mono: "ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", monospace;
+  --font-sans: "Inter", "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica Neue", sans-serif;
+  --font-serif: "Inter", "system-ui", sans-serif;
+}
 
 @layer base {
   :root {
-    --bg-deep: #0B0D10;
-    --bg-surface: #12151A;
-    --bg-panel: #161A20;
-    --bg-panel-lighter: #1E2329;
-    --bg-row-alt: #191D24;
-    --border: #2A3038;
-    --border-light: #353C47;
-    --text-primary: #E8EAED;
-    --text-secondary: #8A919C;
-    --text-muted: #5A6170;
-    --accent-amber: #F0A93A;
-    --accent-amber-dim: rgba(240, 169, 58, 0.12);
-    --accent-cyan: #3ED6C4;
-    --accent-cyan-dim: rgba(62, 214, 196, 0.12);
-    --accent-green: #34D399;
-    --accent-green-dim: rgba(52, 211, 153, 0.12);
-    --accent-red: #F87171;
-    --accent-red-dim: rgba(248, 113, 113, 0.12);
-
-    /* Legacy --phx-* variable aliases for backward compatibility with existing pages */
-    --phx-cream: var(--bg-deep);
-    --phx-navy: var(--accent-amber);
-    --phx-navy-tint: var(--accent-amber-dim);
-    --phx-navy-2: var(--accent-cyan);
-    --phx-gold: var(--accent-amber);
-    --phx-border: var(--border);
-    --phx-border-light: var(--border-light);
-    --phx-paper: var(--bg-panel);
-    --phx-red: var(--accent-red);
-    --phx-red-tint: var(--accent-red-dim);
-    --phx-green: var(--accent-green);
-    --phx-green-tint: var(--accent-green-dim);
-    --phx-cyan: var(--accent-cyan);
-    --phx-cyan-dim: var(--accent-cyan-dim);
-    --phx-ink: var(--text-primary);
-    --phx-on-navy: var(--bg-deep);
-    --phx-text-primary: var(--text-primary);
-    --phx-text-secondary: var(--text-secondary);
-    --phx-text-muted: var(--text-muted);
-    --phx-font-mono: "JetBrains Mono", "IBM Plex Mono", "Fira Code", monospace;
-    --phx-font-sans: "IBM Plex Sans", "Inter", system-ui, sans-serif;
-    --phx-font-serif: "Source Serif 4", "IBM Plex Serif", "Georgia", "Times New Roman", serif;
-    --phx-radius: 6px;
-    --phx-radius-sm: 4px;
+    --bg-deep: var(--color-phx-deep);
+    --bg-surface: var(--color-phx-surface);
+    --bg-panel: var(--color-phx-panel);
+    --border: var(--color-phx-border);
+    --accent-cyan: var(--color-phx-cyan);
+    --accent-amber: var(--color-phx-amber);
+    --accent-red: var(--color-phx-red);
+    --accent-green: var(--color-phx-green);
+    --text-primary: var(--color-phx-primary);
+    --text-muted: var(--color-phx-muted);
+    --text-secondary: var(--color-phx-secondary);
+    --accent-green-dim: rgba(16, 185, 129, 0.1);
+    --accent-red-dim: rgba(244, 63, 94, 0.1);
   }
 
+  html {
+    scroll-behavior: smooth;
+  }
+  
   body {
-    @apply bg-[var(--bg-deep)] text-[var(--text-primary)] font-sans antialiased min-h-screen selection:bg-[var(--accent-cyan)] selection:text-[var(--bg-deep)];
+    @apply bg-phx-surface text-phx-primary font-sans antialiased min-h-screen;
+    scroll-behavior: smooth;
   }
-
-  /* All data panels: flat, no shadows, 1px borders */
-  .data-panel {
-    @apply bg-[var(--bg-panel)] border border-[var(--border)] rounded;
-    box-shadow: none;
-  }
-
-  /* Monospace utility for all forensic values */
-  .mono {
-    font-family: "JetBrains Mono", "IBM Plex Mono", "Fira Code", monospace;
-  }
-
-  /* Serif/slab-serif for legal document bodies */
-  .serif-document {
-    font-family: "Source Serif 4", "IBM Plex Serif", "Georgia", "Times New Roman", serif;
+  
+  main {
+    scroll-behavior: smooth;
   }
 }
 
 @layer components {
-  .forensic-table {
-    @apply w-full text-left text-xs border-collapse;
+  @media print {
+    body, .phx-page, main, div {
+      background: white !important;
+      color: black !important;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    
+    .no-print, nav, header, button {
+      display: none !important;
+    }
+    
+    * {
+      border-color: #E4E4E7 !important;
+    }
+    
+    .print-a4 {
+      width: 210mm;
+      min-height: 297mm;
+      padding: 20mm;
+      margin: 0 auto;
+      border: none !important;
+      box-shadow: none !important;
+      page-break-after: auto;
+    }
   }
 
-  .forensic-table th {
-    @apply py-3 px-4 bg-[var(--bg-panel-lighter)] border-b border-[var(--border)] text-[var(--text-secondary)] font-semibold font-mono;
+  .glass-panel {
+    @apply bg-phx-panel border border-phx-border shadow-sm rounded-lg;
+  }
+  
+  .glass-panel-hover {
+    @apply bg-phx-panel border border-phx-border shadow-sm transition-all hover:border-phx-cyan hover:shadow-md rounded-lg;
   }
 
-  .forensic-table td {
-    @apply py-2.5 px-4 border-b border-[rgba(42,48,56,0.5)] font-mono text-[var(--text-primary)] text-[11px];
+  .btn-primary {
+    @apply px-4 py-2 bg-phx-cyan text-white border border-phx-cyan font-sans text-sm font-medium hover:bg-[#4338CA] hover:border-[#4338CA] transition-colors flex items-center justify-center gap-2 rounded-md shadow-sm;
+  }
+  
+  .btn-secondary {
+    @apply px-4 py-2 bg-phx-panel text-phx-primary border border-phx-border font-sans text-sm font-medium hover:bg-phx-surface hover:text-phx-cyan transition-colors flex items-center justify-center gap-2 rounded-md shadow-sm;
   }
 
-  .forensic-table tr:nth-child(even) {
-    @apply bg-[var(--bg-row-alt)];
+  .mono {
+    font-family: var(--font-mono);
   }
 
-  .forensic-table tr:hover {
-    @apply bg-[var(--bg-panel-lighter)];
+  .serif-document {
+    font-family: var(--font-serif);
   }
-
-  .forensic-table tr:hover td {
-    @apply text-[var(--text-primary)];
-  }
-
-  /* Scrollbar for forensic data tables */
+  
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
   ::-webkit-scrollbar-track {
-    background: var(--bg-deep);
+    background: var(--color-phx-surface);
   }
   ::-webkit-scrollbar-thumb {
-    background: var(--border);
+    background: var(--color-phx-border);
     border-radius: 3px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: var(--border-light);
-  }
-}
-
-@layer utilities {
-  .shadow-none-data {
-    box-shadow: none !important;
-  }
-
-  .border-data {
-    border: 1px solid var(--border);
-  }
-
-  .text-monospace {
-    font-family: "JetBrains Mono", "IBM Plex Mono", monospace;
+    background: var(--color-phx-cyan);
   }
 }

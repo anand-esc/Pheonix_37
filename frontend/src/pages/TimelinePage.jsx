@@ -1,15 +1,18 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Clock, Loader2, AlertCircle } from "lucide-react";
-import { getCase, getCaseFragments, formatBytes } from "../api";
+import { ArrowLeft, Clock, Loader2, AlertCircle, Activity, Video, ShieldCheck, Database, LayoutList, PieChart as PieChartIcon, BarChart2 } from "lucide-react";
+import { getCase, getCaseFragments } from "../api";
 import { useRole } from "../context/RoleContext";
 import CaseHeader from "../components/phoenix-ui-kit/CaseHeader";
+import { 
+  ResponsiveContainer, PieChart, Pie, Cell, Tooltip as RechartsTooltip,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend
+} from 'recharts';
 
 export function TimelinePage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { role } = useRole();
-
   const [caseData, setCaseData] = useState(null);
   const [fragments, setFragments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -20,286 +23,358 @@ export function TimelinePage() {
       try {
         setIsLoading(true);
         const [c, frags] = await Promise.all([getCase(id), getCaseFragments(id)]);
-        if (isMounted) {
-          setCaseData(c);
-          setFragments(frags || []);
-        }
-      } catch (err) {
-        console.error("Failed to load timeline data", err);
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
+        if (isMounted) { setCaseData(c); setFragments(frags || []); }
+      } catch (err) { console.error("Failed to load timeline data", err); }
+      finally { if (isMounted) setIsLoading(false); }
     };
     loadTimelineData();
     return () => { isMounted = false; };
   }, [id]);
 
-  const channelGroups = fragments.reduce((acc, frag) => {
-    const channel = frag.metadata?.channel || "unattributed";
-    if (!acc[channel]) acc[channel] = [];
-    acc[channel].push(frag);
-    return acc;
-  }, {});
+  const { channelGroups, parsedTimeSegments, minTimeMs, maxTimeMs, totalRangeMs, majorTicks, minorTicks, stats, methodData, channelChartData } = useMemo(() => {
+    const channelGroups = fragments.reduce((acc, frag) => {
+      const channel = frag.metadata?.channel || "unattributed";
+      if (!acc[channel]) acc[channel] = [];
+      acc[channel].push(frag);
+      return acc;
+    }, {});
 
-  const parsedTimeSegments = fragments.map((f) => {
-    const start = f.metadata?.estimated_start_utc || f.metadata?.start_time || "";
-    const end = f.metadata?.estimated_end_utc || f.metadata?.end_time || "";
-    return {
-      ...f,
-      startMs: parseTimestamp(start),
-      endMs: parseTimestamp(end),
+    const parsedTimeSegments = fragments.map((f) => {
+      const start = f.metadata?.estimated_start_utc || f.metadata?.start_time || "";
+      const end = f.metadata?.estimated_end_utc || f.metadata?.end_time || "";
+      return { ...f, startMs: parseTimestamp(start), endMs: parseTimestamp(end) };
+    });
+
+    const allStarts = parsedTimeSegments.map((s) => s.startMs).filter(t => t > 0);
+    const allEnds = parsedTimeSegments.map((s) => s.endMs).filter(t => t > 0);
+    const minTimeMs = allStarts.length > 0 ? Math.min(...allStarts) : Date.now();
+    const maxTimeMs = allEnds.length > 0 ? Math.max(...allEnds) : Date.now() + 3600000;
+    const totalRangeMs = Math.max(1, maxTimeMs - minTimeMs);
+
+    const majorTicks = Array.from({ length: 11 }, (_, i) => ({
+      label: formatTimeTick(minTimeMs + (totalRangeMs / 10) * i),
+      pct: i * 10,
+    }));
+    const minorTicks = Array.from({ length: 10 }, (_, i) => ({
+      pct: i * 10 + 5,
+    }));
+
+    // Calculate stats
+    let totalDuration = 0;
+    let validatedCount = 0;
+    let fallbackCount = 0;
+    let maxConfidence = 0;
+
+    const methodCounts = { Validated: 0, 'Generic Fallback': 0, 'Research Target': 0, Unknown: 0 };
+    const channelDurations = {};
+
+    fragments.forEach(f => {
+      totalDuration += (f.duration || 0);
+      maxConfidence = Math.max(maxConfidence, f.confidence_score || 0);
+      
+      const channel = f.metadata?.channel || "unattributed";
+      if (!channelDurations[channel]) channelDurations[channel] = 0;
+      channelDurations[channel] += (f.duration || 0);
+
+      let methodGroup = 'Unknown';
+      if (f.recovery_method?.includes('VALIDATED') || f.recovery_method === 'DHAV_PARSER') {
+        validatedCount++;
+        methodGroup = 'Validated';
+      } else if (f.recovery_method?.includes('GENERIC') || f.recovery_method === 'annexb_nal_carve') {
+        fallbackCount++;
+        methodGroup = 'Generic Fallback';
+      } else if (f.recovery_method?.includes('RESEARCH')) {
+        methodGroup = 'Research Target';
+      }
+      methodCounts[methodGroup]++;
+    });
+
+    const stats = {
+      totalFragments: fragments.length,
+      totalChannels: Object.keys(channelGroups).length,
+      durationLabel: `${Math.floor(totalDuration / 60)}m ${Math.floor(totalDuration % 60)}s`,
+      avgConfidence: maxConfidence,
+      validatedPct: fragments.length ? Math.round((validatedCount / fragments.length) * 100) : 0
     };
-  });
 
-  const allStarts = parsedTimeSegments.map((s) => s.startMs).filter(t => t > 0);
-  const allEnds = parsedTimeSegments.map((s) => s.endMs).filter(t => t > 0);
-  const minTimeMs = allStarts.length > 0 ? Math.min(...allStarts) : Date.now();
-  const maxTimeMs = allEnds.length > 0 ? Math.max(...allEnds) : Date.now() + 3600000;
-  const totalRangeMs = Math.max(1, maxTimeMs - minTimeMs);
-
-  const tickCount = 5;
-  const ticks = Array.from({ length: tickCount }, (_, i) => {
-    const timeMs = minTimeMs + (totalRangeMs / (tickCount - 1)) * i;
-    return {
-      label: formatTimeTick(timeMs),
-      pct: (i / (tickCount - 1)) * 100,
+    const COLORS = {
+      Validated: '#f59e0b',
+      'Generic Fallback': '#22c55e',
+      'Research Target': '#1f2937',
+      Unknown: '#9ca3af'
     };
-  });
 
-  const statusMap = {
-    "Intake": "pending",
-    "Processing": "pending",
-    "Recovered": "validated",
-    "Reported": "validated",
-  };
+    const methodData = Object.entries(methodCounts)
+      .filter(([_, count]) => count > 0)
+      .map(([name, value]) => ({ name, value, color: COLORS[name] }));
+
+    const channelChartData = Object.entries(channelDurations).map(([name, duration]) => ({
+      name,
+      duration: Number((duration / 60).toFixed(1)) // in minutes
+    }));
+
+    return { channelGroups, parsedTimeSegments, minTimeMs, maxTimeMs, totalRangeMs, majorTicks, minorTicks, stats, methodData, channelChartData };
+  }, [fragments]);
+
+  const statusMap = { "Intake": "pending", "Processing": "pending", "Recovered": "validated", "Reported": "validated" };
 
   return (
-    <div className="phx-page" style={{ background: "var(--phx-cream)", minHeight: "100vh" }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "2rem 1.5rem" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem" }}>
-          <button
-            onClick={() => navigate(`/cases/${id}`)}
-            style={{
-              background: "transparent", border: "none", cursor: "pointer",
-              display: "flex", alignItems: "center", gap: 6,
-              fontFamily: "var(--phx-font-mono)", fontSize: "0.78rem",
-              color: "var(--phx-text-secondary)", padding: 4
-            }}
-          >
-            <ArrowLeft size={16} stroke={2} />
-            <span>Back to Case Detail</span>
-          </button>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--phx-font-mono)", fontSize: "0.72rem", color: "var(--phx-text-muted)" }}>
-            <span>Active Role:</span>
-            <strong style={{ color: "var(--phx-ink)" }}>{role}</strong>
-          </div>
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="flex items-center justify-between mb-6">
+        <button onClick={() => navigate(`/cases/${id}`)} className="flex items-center gap-2 text-sm text-phx-secondary hover:text-phx-primary transition-colors">
+          <ArrowLeft size={16} />
+          <span>Back to Case Detail</span>
+        </button>
+        <div className="text-xs text-phx-muted bg-phx-surface px-3 py-1.5 rounded border border-phx-border">
+          Active Role: <strong className="text-phx-primary">{role}</strong>
         </div>
-
-        <CaseHeader
-          caseId={caseData?.case_id || id}
-          title={caseData?.title || `Case ${id}`}
-          status={statusMap[caseData?.status] || "pending"}
-          statusLabel={caseData?.status}
-        />
-
-        <div style={{
-          marginBottom: "1.5rem", padding: "1rem",
-          background: "var(--phx-red-tint)", border: "1px solid var(--phx-red)",
-          borderRadius: "var(--phx-radius)", display: "flex", gap: 12
-        }}>
-          <AlertCircle size={20} style={{ color: "var(--phx-red)", flexShrink: 0, marginTop: 2 }} />
-          <div style={{ fontFamily: "var(--phx-font-sans)", fontSize: "0.82rem", color: "var(--phx-ink)" }}>
-            <strong style={{ color: "var(--phx-red)" }}>SCOPE NOTE — ANCHOR ALIGNMENT NOT AVAILABLE</strong>
-            <p style={{ marginTop: 4, color: "var(--phx-text-secondary)" }}>
-              Manual cross-camera frame alignment requires backend endpoints for anchor storage
-              (/api/case/{id}/anchors POST/GET). Timeline shows recovered fragments with estimated
-              timing from SPS VUI. This is a documented scope limitation, not a defect.
-            </p>
-          </div>
-        </div>
-
-        {isLoading ? (
-          <div style={{
-            padding: "3rem", textAlign: "center",
-            background: "var(--phx-paper)", border: "1px solid var(--phx-border)",
-            borderRadius: "var(--phx-radius)"
-          }}>
-            <Loader2 className="phx-spinner" size={32} style={{ color: "var(--phx-navy)", margin: "0 auto 12px" }} />
-            <div style={{ fontFamily: "var(--phx-font-mono)", fontSize: "0.78rem", color: "var(--phx-text-muted)" }}>
-              LOADING TIMELINE DATA...
-            </div>
-          </div>
-        ) : (
-          <div style={{
-            background: "var(--phx-paper)", border: "1px solid var(--phx-border)",
-            borderRadius: "var(--phx-radius)", overflow: "hidden"
-          }}>
-            <div style={{
-              padding: "1rem 1.5rem", borderBottom: "1px solid var(--phx-border)",
-              display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 12
-            }}>
-              <div style={{ fontFamily: "var(--phx-font-sans)", fontSize: "0.875rem", fontWeight: 500, color: "var(--phx-ink)" }}>
-                Channel Tracks & Time Axis
-              </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 12, fontFamily: "var(--phx-font-mono)", fontSize: "0.7rem" }}>
-                <LegendItem color="var(--phx-gold)" label="Recovered" />
-                <LegendItem color="var(--phx-navy)" label="Validated" />
-                <LegendItem color="var(--phx-text-muted)" label="Generic Fallback" />
-                <LegendItem color="var(--phx-navy-2)" label="Research Target" />
-              </div>
-            </div>
-
-            <div style={{ padding: "1.5rem" }}>
-              <div className="phx-time-ruler" style={{
-                height: 40, background: "var(--phx-navy-tint)", border: "1px solid var(--phx-border)",
-                borderRadius: "var(--phx-radius)", position: "relative", marginBottom: 16,
-                fontFamily: "var(--phx-font-mono)", fontSize: "0.7rem", color: "var(--phx-text-secondary)"
-              }}>
-                {ticks.map((t, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      position: "absolute", left: `${t.pct}%`, top: 0, bottom: 0,
-                      transform: "translateX(-50%)", display: "flex", flexDirection: "column",
-                      alignItems: "center"
-                    }}
-                  >
-                    <span style={{ marginTop: 4 }}>{t.label}</span>
-                    <div style={{ width: 1, height: 12, background: "var(--phx-border)", marginTop: 4 }} />
-                  </div>
-                ))}
-              </div>
-
-              <div className="phx-tracks" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {Object.entries(channelGroups).map(([channelName, fragList]) => (
-                  <div key={channelName} style={{
-                    background: "var(--phx-navy-tint)", border: "1px solid var(--phx-border)",
-                    borderRadius: "var(--phx-radius)", padding: "1rem"
-                  }}>
-                    <div style={{
-                      display: "flex", alignItems: "center", justifyContent: "space-between",
-                      marginBottom: 8, fontFamily: "var(--phx-font-mono)", fontSize: "0.75rem"
-                    }}>
-                      <span style={{ fontWeight: 600, color: "var(--phx-navy)" }}>{channelName}</span>
-                      <span style={{ color: "var(--phx-text-secondary)" }}>{fragList.length} Fragments</span>
-                    </div>
-
-                    <div style={{
-                      position: "relative", height: 60, background: "var(--phx-paper)",
-                      border: "1px solid var(--phx-border)", borderRadius: "var(--phx-radius)",
-                      overflow: "hidden"
-                    }}>
-                      {fragList.map((frag) => {
-                        const pSeg = parsedTimeSegments.find((p) => p.fragment_id === frag.fragment_id);
-                        const leftPct = pSeg && pSeg.startMs > 0 ? ((pSeg.startMs - minTimeMs) / totalRangeMs) * 100 : 0;
-                        const widthPct = pSeg && pSeg.endMs > pSeg.startMs ? Math.max(4, ((pSeg.endMs - pSeg.startMs) / totalRangeMs) * 100) : 4;
-
-                        let blockColor = "var(--phx-border)";
-                        let textColor = "var(--phx-text-secondary)";
-                        let statusLabel = frag.recovery_method || "UNKNOWN";
-
-                        if (frag.recovery_method?.includes("VALIDATED") || frag.recovery_method === "DHAV_PARSER") {
-                          blockColor = "var(--phx-gold)";
-                          textColor = "var(--phx-navy)";
-                          statusLabel = "Validated";
-                        } else if (frag.recovery_method?.includes("GENERIC") || frag.recovery_method === "annexb_nal_carve") {
-                          blockColor = "var(--phx-navy)";
-                          textColor = "var(--phx-on-navy)";
-                          statusLabel = "Generic Fallback";
-                        } else if (frag.recovery_method?.includes("RESEARCH")) {
-                          blockColor = "var(--phx-navy-2)";
-                          textColor = "var(--phx-on-navy)";
-                          statusLabel = "Research Target";
-                        }
-
-                        return (
-                          <div
-                            key={frag.fragment_id}
-                            style={{
-                              position: "absolute", top: 4, bottom: 4,
-                              left: `${Math.max(0, Math.min(96, leftPct))}%`,
-                              width: `${Math.min(100 - leftPct, widthPct)}%`,
-                              background: blockColor, color: textColor,
-                              borderRadius: "2px", padding: "2px 8px",
-                              display: "flex", alignItems: "center", justifyContent: "space-between",
-                              fontFamily: "var(--phx-font-mono)", fontSize: "0.7rem",
-                              cursor: "pointer", whiteSpace: "nowrap"
-                            }}
-                            title={`${frag.fragment_id}: ${frag.confidence_rationale || "No rationale"} (${((frag.confidence_score || 0) * 100).toFixed(0)}%)`}
-                          >
-                            <span style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis" }}>
-                              {frag.fragment_id?.slice(0, 12)}
-                            </span>
-                            <span style={{ fontSize: "0.65rem", opacity: 0.8, marginLeft: 8 }}>
-                              {statusLabel}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {Object.keys(channelGroups).length === 0 && !isLoading && (
-          <div style={{
-            padding: "3rem", textAlign: "center",
-            background: "var(--phx-paper)", border: "1px solid var(--phx-border)",
-            borderRadius: "var(--phx-radius)", marginTop: "1.5rem"
-          }}>
-            <Clock size={48} style={{ color: "var(--phx-text-muted)", marginBottom: 12 }} />
-            <h3 style={{ fontFamily: "var(--phx-font-serif)", fontSize: "1.1rem", color: "var(--phx-ink)", marginBottom: 4 }}>
-              No Timeline Data
-            </h3>
-            <p style={{ fontFamily: "var(--phx-font-sans)", fontSize: "0.82rem", color: "var(--phx-text-secondary)" }}>
-              No fragments with timing metadata found for this case.
-            </p>
-          </div>
-        )}
       </div>
 
-      <style jsx>{`
-        .phx-spinner {
-          animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
+      <CaseHeader
+        caseId={caseData?.case_id || id}
+        title={caseData?.name || caseData?.title || `Case ${id}`}
+        status={statusMap[caseData?.status] || "pending"}
+        statusLabel={caseData?.status}
+      />
+
+      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6 flex gap-3 shadow-sm">
+        <AlertCircle size={20} className="text-amber-600 shrink-0 mt-0.5" />
+        <div>
+          <p className="text-sm font-semibold text-amber-800">Scope Note — Anchor Alignment Not Available</p>
+          <p className="text-sm text-amber-700 mt-1">
+            Manual cross-camera frame alignment requires backend endpoints for anchor storage.
+            Timeline shows recovered fragments with estimated timing from SPS VUI.
+          </p>
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="bg-white border border-phx-border rounded-lg p-12 text-center shadow-sm">
+          <Loader2 className="w-8 h-8 text-phx-red animate-spin mx-auto mb-4" />
+          <div className="text-xs text-phx-muted uppercase tracking-widest">Loading timeline data...</div>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {/* STATS OVERVIEW */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <StatCard icon={Video} label="Recovered Fragments" value={stats.totalFragments} />
+            <StatCard icon={Activity} label="Total Duration" value={stats.durationLabel} />
+            <StatCard icon={ShieldCheck} label="Validated Methods" value={`${stats.validatedPct}%`} />
+            <StatCard icon={Database} label="Video Channels" value={stats.totalChannels} />
+          </div>
+
+          {/* CHARTS SECTION */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white border border-phx-border rounded-lg shadow-sm p-5">
+              <h3 className="text-sm font-semibold text-phx-primary mb-4 flex items-center gap-2">
+                <PieChartIcon size={16} className="text-phx-secondary"/> Recovery Methods
+              </h3>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={methodData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {methodData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <RechartsTooltip content={<CustomTooltip />} />
+                    <Legend verticalAlign="bottom" height={36}/>
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="bg-white border border-phx-border rounded-lg shadow-sm p-5">
+              <h3 className="text-sm font-semibold text-phx-primary mb-4 flex items-center gap-2">
+                <BarChart2 size={16} className="text-phx-secondary"/> Channel Duration (Minutes)
+              </h3>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={channelChartData} margin={{ top: 5, right: 30, left: -20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                    <XAxis dataKey="name" tick={{fontSize: 12, fill: '#6b7280'}} axisLine={false} tickLine={false} />
+                    <YAxis tick={{fontSize: 12, fill: '#6b7280'}} axisLine={false} tickLine={false} />
+                    <RechartsTooltip cursor={{fill: '#f3f4f6'}} content={<CustomTooltip />} />
+                    <Bar dataKey="duration" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+
+          {/* TIMELINE TRACKS */}
+          <div className="bg-white border border-phx-border rounded-lg shadow-sm flex flex-col mt-6">
+            <div className="px-6 py-4 border-b border-phx-border bg-phx-surface flex justify-between items-center rounded-t-lg">
+              <h3 className="text-sm font-semibold text-phx-primary flex items-center gap-2">
+                <LayoutList size={16} className="text-phx-red"/> Synchronized Fragment Timeline
+              </h3>
+              <div className="flex gap-4 text-xs">
+                <LegendItem color="#f59e0b" label="Validated" />
+                <LegendItem color="#22c55e" label="Generic Fallback" />
+                <LegendItem color="#1f2937" label="Research Target" />
+              </div>
+            </div>
+            
+            <div className="relative flex bg-phx-surface rounded-b-lg overflow-hidden border-t border-white">
+              {/* Left sidebar for channel names */}
+              <div className="w-56 shrink-0 border-r border-phx-border bg-white z-20 flex flex-col shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
+                <div className="h-10 border-b border-phx-border bg-gray-50 flex items-center px-4">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Channels</span>
+                </div>
+                {Object.keys(channelGroups).map(channel => (
+                  <div key={channel} className="h-16 border-b border-gray-100 flex items-center px-4 justify-between bg-white group hover:bg-gray-50 transition-colors">
+                    <span className="font-semibold text-xs text-phx-primary truncate pr-2" title={channel}>{channel}</span>
+                    <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-mono">{channelGroups[channel].length}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Right side for tracks (scrollable horizontally) */}
+              <div className="flex-1 overflow-x-auto relative min-h-[300px]" style={{ minWidth: 0 }}>
+                <div className="min-w-[800px] h-full flex flex-col">
+                  {/* Time Axis Header */}
+                  <div className="h-10 border-b border-phx-border bg-gray-50 relative sticky top-0 z-10">
+                     {majorTicks.map(t => (
+                        <div key={t.pct} className="absolute top-0 bottom-0 border-l border-gray-300 flex flex-col justify-end pb-1" style={{ left: t.pct === 100 ? 'calc(100% - 1px)' : `${t.pct}%` }}>
+                           <span 
+                             className="absolute bottom-2 text-[10px] font-mono text-gray-500 bg-gray-50 px-1 whitespace-nowrap"
+                             style={{ transform: t.pct === 0 ? 'translateX(0)' : t.pct === 100 ? 'translateX(-100%)' : 'translateX(-50%)' }}
+                           >
+                             {t.label}
+                           </span>
+                           <div className="w-px h-1.5 bg-gray-400 absolute bottom-0 left-0 -ml-px" />
+                        </div>
+                     ))}
+                     {minorTicks.map(t => (
+                        <div key={t.pct} className="absolute bottom-0 w-px h-1 bg-gray-300" style={{ left: `${t.pct}%` }} />
+                     ))}
+                  </div>
+
+                  {/* Tracks */}
+                  <div className="relative flex-1 bg-white">
+                    {/* Background grid lines */}
+                    {majorTicks.map(t => (
+                      <div key={t.pct} className="absolute top-0 bottom-0 w-px bg-gray-100 z-0 pointer-events-none" style={{ left: `${t.pct}%` }} />
+                    ))}
+                    {minorTicks.map(t => (
+                      <div key={t.pct} className="absolute top-0 bottom-0 w-px bg-gray-50 z-0 pointer-events-none" style={{ left: `${t.pct}%` }} />
+                    ))}
+
+                    {Object.entries(channelGroups).map(([channel, frags]) => (
+                      <div key={channel} className="h-16 border-b border-gray-100 relative z-10 hover:bg-blue-50/30 transition-colors group">
+                        {frags.map(frag => {
+                          const pSeg = parsedTimeSegments.find((p) => p.fragment_id === frag.fragment_id);
+                          const leftPct = pSeg && pSeg.startMs > 0 ? ((pSeg.startMs - minTimeMs) / totalRangeMs) * 100 : 0;
+                          const widthPct = pSeg && pSeg.endMs > pSeg.startMs ? Math.max(0.5, ((pSeg.endMs - pSeg.startMs) / totalRangeMs) * 100) : 0.5;
+
+                          let bgColor = 'linear-gradient(180deg, #f3f4f6 0%, #e5e7eb 100%)';
+                          let borderColor = '#d1d5db';
+                          
+                          if (frag.recovery_method?.includes('VALIDATED') || frag.recovery_method === 'DHAV_PARSER') {
+                            bgColor = 'linear-gradient(180deg, #fbbf24 0%, #f59e0b 100%)';
+                            borderColor = '#d97706';
+                          } else if (frag.recovery_method?.includes('GENERIC') || frag.recovery_method === 'annexb_nal_carve') {
+                            bgColor = 'linear-gradient(180deg, #4ade80 0%, #22c55e 100%)';
+                            borderColor = '#16a34a';
+                          } else if (frag.recovery_method?.includes('RESEARCH')) {
+                            bgColor = 'linear-gradient(180deg, #374151 0%, #1f2937 100%)';
+                            borderColor = '#111827';
+                          }
+
+                          return (
+                            <div
+                              key={frag.fragment_id}
+                              className="absolute top-2 bottom-2 rounded-sm cursor-pointer shadow-sm hover:shadow-md hover:scale-y-[1.1] hover:z-20 transition-all group/frag"
+                              style={{
+                                left: `${Math.max(0, Math.min(99.5, leftPct))}%`,
+                                width: `${Math.min(100 - leftPct, widthPct)}%`,
+                                background: bgColor,
+                                border: `1px solid ${borderColor}`,
+                              }}
+                            >
+                              <div className="hidden group-hover/frag:block absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max bg-gray-900 text-white text-[10px] p-2 rounded shadow-xl z-50 pointer-events-none">
+                                <p className="font-bold border-b border-gray-700 pb-1 mb-1">{frag.fragment_id}</p>
+                                <p><span className="text-gray-400">Method:</span> {frag.recovery_method}</p>
+                                <p><span className="text-gray-400">Confidence:</span> {((frag.confidence_score || 0) * 100).toFixed(0)}%</p>
+                                <p><span className="text-gray-400">Duration:</span> {frag.duration}s</p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {Object.keys(channelGroups).length === 0 && !isLoading && (
+        <div className="bg-white border border-phx-border rounded-lg p-12 text-center mt-6 shadow-sm">
+          <Clock size={40} className="text-phx-muted mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-phx-primary mb-2">No Timeline Data</h3>
+          <p className="text-sm text-phx-secondary">No fragments with timing metadata found for this case.</p>
+        </div>
+      )}
     </div>
   );
 }
 
+function StatCard({ icon: Icon, label, value }) {
+  return (
+    <div className="bg-white border border-phx-border p-4 rounded-lg shadow-sm flex items-center gap-4">
+      <div className="p-3 bg-phx-surface rounded-md">
+        <Icon className="w-6 h-6 text-phx-red" />
+      </div>
+      <div>
+        <p className="text-xs font-medium text-phx-secondary uppercase tracking-wider">{label}</p>
+        <p className="text-2xl font-bold text-phx-primary">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white p-3 border border-gray-200 rounded shadow-lg text-sm">
+        <p className="font-semibold mb-1">{label || payload[0].name}</p>
+        <p className="text-gray-600">
+          Value: <span className="font-medium text-gray-900">{payload[0].value}</span>
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
 function LegendItem({ color, label }) {
   return (
-    <span style={{
-      display: "flex", alignItems: "center", gap: 6,
-      padding: "4px 8px", background: "var(--phx-navy-tint)",
-      borderRadius: "var(--phx-radius)"
-    }}>
-      <span style={{ width: 12, height: 12, borderRadius: 2, background: color }} />
-      <span>{label}</span>
+    <span className="flex items-center gap-2 px-2.5 py-1 bg-phx-surface rounded border border-phx-border">
+      <span className="w-3 h-3 rounded-sm shadow-sm" style={{ background: color }} />
+      <span className="text-phx-secondary font-medium">{label}</span>
     </span>
   );
 }
 
 function parseTimestamp(ts) {
   if (!ts) return 0;
-  try {
-    const clean = ts.replace(" IST", "").replace(" ", "T");
-    return new Date(clean).getTime() || 0;
-  } catch { return 0; }
+  try { return new Date(ts.replace(" IST", "").replace(" ", "T")).getTime() || 0; } catch { return 0; }
 }
 
 function formatTimeTick(timeMs) {
   try {
     const d = new Date(timeMs);
-    const hrs = String(d.getHours()).padStart(2, "0");
-    const mins = String(d.getMinutes()).padStart(2, "0");
-    return `${hrs}:${mins}`;
-  } catch { return "00:00"; }
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  } catch { return '00:00'; }
 }

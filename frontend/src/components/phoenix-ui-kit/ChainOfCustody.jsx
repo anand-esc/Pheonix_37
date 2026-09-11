@@ -1,5 +1,4 @@
 import { IconFlag, IconFileSearch, IconScan, IconX, IconLock, IconCheck } from '@tabler/icons-react';
-import './ChainOfCustody.css';
 
 const ICONS = {
   genesis: IconFlag,
@@ -10,57 +9,49 @@ const ICONS = {
   halted: IconLock,
 };
 
-/**
- * Usage:
- * <ChainOfCustody entries={[
- *   { id: 1, type: 'genesis', label: 'Genesis', detail: '00000...0000' },
- *   { id: 2, type: 'detected', label: 'Format detected', timestamp: '09:14:02',
- *     detail: 'a1c9…4f02 → hikvision, validated' },
- *   { id: 3, type: 'recovered', label: 'Recovery completed', timestamp: '09:14:37',
- *     detail: '8 fragments, byte-exact' },
- *   { id: 4, type: 'tampered', label: 'Encryption completed', timestamp: '09:15:10',
- *     detail: 'signature mismatch — expected 7e2f…, got 91bd…' },
- *   { id: 5, type: 'halted', label: 'Chain halted — restore required before continuing' },
- * ]} />
- *
- * Map real ledger entries straight from GET /api/case/{id}/ledger:
- *   type: entry.event_type === 'GENESIS' ? 'genesis'
- *       : entry.verification_failed ? 'tampered'
- *       : mapEventTypeToIconKey(entry.event_type)   // 'detected' | 'recovered' | 'verified' | 'halted'
- */
 export default function ChainOfCustody({ entries }) {
   return (
-    <div className="phx-chain">
-      <div className="phx-chain__label">Chain of custody</div>
-      <div className="phx-chain__list">
-        <div className="phx-chain__rail" />
+    <div className="bg-white p-6 rounded-lg border border-phx-border shadow-sm">
+      <div className="font-sans text-xs font-bold text-phx-red uppercase tracking-wider mb-6">
+        Chain of custody
+      </div>
+      <div className="relative pl-6">
+        <div className="absolute top-2 bottom-2 left-[11px] w-px bg-phx-border" />
+        
         {entries.map((entry) => {
           const Icon = ICONS[entry.type] || IconCheck;
           const isTampered = entry.type === 'tampered';
           const isHalted = entry.type === 'halted';
           const isGenesis = entry.type === 'genesis';
 
-          const dotClass = isTampered
-            ? 'phx-chain__dot--red'
+          const dotColors = isTampered
+            ? 'bg-red-500 text-white'
             : isHalted
-            ? 'phx-chain__dot--halted'
+            ? 'bg-gray-200 text-gray-500'
             : isGenesis
-            ? 'phx-chain__dot--neutral'
-            : 'phx-chain__dot--gold';
+            ? 'bg-white border-2 border-gray-300 text-gray-500'
+            : 'bg-green-100 border border-green-300 text-green-700';
 
           return (
-            <div
-              key={entry.id}
-              className={`phx-chain__entry ${isTampered ? 'phx-chain__entry--tampered' : ''}`}
-            >
-              <div className={`phx-chain__dot ${dotClass}`}>
-                <Icon size={11} stroke={2} aria-hidden="true" />
+            <div key={entry.id} className="relative mb-6 last:mb-0 group">
+              <div className={`absolute -left-[32px] top-0 w-6 h-6 rounded-full flex items-center justify-center z-10 transition-transform group-hover:scale-110 ${dotColors}`}>
+                <Icon size={12} stroke={2.5} aria-hidden="true" />
               </div>
-              <div className="phx-chain__row">
-                <span className="phx-chain__title">{entry.label}</span>
-                {entry.timestamp && <span className="phx-chain__time">{entry.timestamp}</span>}
+              <div className={`bg-phx-surface p-3 rounded border transition-colors ${isTampered ? 'border-red-200 bg-red-50' : 'border-phx-border hover:border-gray-400'}`}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className={`font-sans text-sm font-semibold ${isTampered ? 'text-red-700' : 'text-phx-primary'}`}>
+                    {entry.label || entry.type}
+                  </span>
+                  {entry.timestamp && (
+                    <span className="font-mono text-[10px] text-phx-muted">{entry.timestamp}</span>
+                  )}
+                </div>
+                {entry.detail && (
+                  <div className={`font-mono text-[11px] ${isTampered ? 'text-red-600' : 'text-phx-secondary'} break-all mt-2 bg-white p-2 rounded border ${isTampered ? 'border-red-200' : 'border-phx-border'}`}>
+                    {entry.detail}
+                  </div>
+                )}
               </div>
-              {entry.detail && <div className="phx-chain__detail">{entry.detail}</div>}
             </div>
           );
         })}

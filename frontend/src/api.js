@@ -59,10 +59,16 @@ async function fetchJson(url, options = {}, action) {
 }
 
 
-export async function createCase({ name, examiner }) {
-  return fetchJson(buildUrl(API_BASE, "/cases", "TRIGGER_ACQUISITION"), {
+export async function createCase(data) {
+  return fetchJson(buildUrl(API_BASE, "/cases"), {
     method: "POST",
-    body: JSON.stringify({ name, examiner }),
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteCase(caseId) {
+  return fetchJson(buildUrl(API_BASE, `/cases/${caseId}`), {
+    method: "DELETE",
   });
 }
 
@@ -95,6 +101,7 @@ export async function getCase(caseId) {
     status: mapBackendStatus(rawCase.status),
     hasEvidence,
     evidence,
+    evidence_items: rawCase.evidence_items || [],
     parsedHash: rawCase.parsedHash || null,
     parsedAt: rawCase.parsedAt || null,
     recoveries: {},
@@ -252,4 +259,17 @@ export function mapLedgerEntry(entry) {
     "CHAIN_HALTED": "halted",
   };
   return { ...entry, type: typeMap[eventType] || "detected" };
+}
+export async function generateCertificate(caseId) {
+  return fetchJson(buildUrl(API_BASE, `/case/${encodeURIComponent(caseId)}/certificate`, "VIEW_EVIDENCE"), {
+    method: "POST"
+  });
+}
+
+export function getCertificateDownloadUrl(caseId) {
+  return buildUrl(API_BASE, `/case/${encodeURIComponent(caseId)}/certificate/download`, "VIEW_EVIDENCE");
+}
+
+export async function getCaseDetections(caseId) {
+  return fetchJson(buildUrl(API_BASE, `/case/${encodeURIComponent(caseId)}/detections`, "VIEW_EVIDENCE"));
 }

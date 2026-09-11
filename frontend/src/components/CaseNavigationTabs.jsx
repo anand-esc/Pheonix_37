@@ -13,7 +13,7 @@ export function CaseNavigationTabs() {
   ];
 
   return (
-    <div className="bg-[var(--bg-panel)] border-b border-[var(--border)] px-4 lg:px-8">
+    <div className="bg-phx-panel border-b border-phx-border px-4 lg:px-8">
       <div className="max-w-7xl mx-auto flex items-center gap-1 overflow-x-auto py-2">
         {tabs.map((tab) => {
           const Icon = tab.icon;
@@ -24,8 +24,8 @@ export function CaseNavigationTabs() {
               className={({ isActive }) =>
                 `flex items-center gap-2 px-3.5 py-2 rounded text-xs font-medium transition-all whitespace-nowrap border ${
                   isActive
-                    ? "bg-[var(--accent-cyan-dim)] text-[var(--accent-cyan)] border-[rgba(62,214,196,0.2)] font-semibold"
-                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-panel-lighter)] border-transparent"
+                    ? "bg-phx-cyan/10 text-phx-cyan border-phx-cyan/20 font-semibold"
+                    : "text-phx-secondary hover:text-phx-primary hover:bg-phx-panel-lighter border-transparent"
                 }`
               }
             >

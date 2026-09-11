@@ -14,6 +14,7 @@ again immediately before encryption (``pre_encryption`` stage via the shared
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 import logging
 import time
@@ -280,16 +281,52 @@ def run_pipeline(
                     c.index: c.fragment.fragment_id for c in carve_result.fragments
                 },
             )
-    assert parsed is not None  # either branch above produced an item
+        else:
+            playable = []
+    
+    recovery_end = time.perf_counter()
+    timings.append(StageTiming(stage="recovery", seconds=recovery_end - t0))
+    t0 = recovery_end
+    
+    # 3b. AI Triage (runs on playable MP4 views) ---------------------------
+    detections: list[DetectionResult] = []
+    if playable:
+        t0 = time.perf_counter()
+        try:
+            from backend.adapters.generic_carver.frame_extractor import extract_frames_from_playable
+            from backend.ai.triage import analyze_frame
+            
+            frames = extract_frames_from_playable(playable, max_frames_per_fragment=3)
+            for frame in frames:
+                img_bytes = io.BytesIO()
+                frame.image.save(img_bytes, format="JPEG", quality=85)
+                frame_detections = analyze_frame(
+                    img_bytes.getvalue(),
+                    confidence_threshold=0.4,
+                    fragment_id=playable[frame.fragment_index].fragment_id if frame.fragment_index >= 0 else None
+                )
+                detections.extend(frame_detections)
+            
+            timings.append(StageTiming(stage="triage", seconds=time.perf_counter() - t0))
+            logger.info(f"AI triage completed: {len(detections)} detections across {len(frames)} frames")
+        except Exception as e:
+            logger.warning(f"AI triage failed (non-fatal): {e}")
+            timings.append(StageTiming(stage="triage", seconds=time.perf_counter() - t0))
+    else:
+        timings.append(StageTiming(stage="triage", seconds=0.0))
+
+    if parsed is None:
+        raise PipelineError("Adapter parse returned None unexpectedly")
 
     evidence = evidence.model_copy(
         update={
             "channels": parsed.channels,
             "fragments": parsed.fragments,
+            "hash_lineage": evidence.hash_lineage + parsed.hash_lineage,
+            "detections": detections if detections else None,
             "metadata": {**evidence.metadata, **parsed.metadata},
         }
     )
-    timings.append(StageTiming(stage="recovery", seconds=time.perf_counter() - t0))
 
     # 4. hash-then-encrypt ------------------------------------------------
     encrypted: list[EncryptedArtifact] = []
@@ -298,8 +335,10 @@ def run_pipeline(
         t0 = time.perf_counter()
         if crypto is None:
             from backend.crypto.provider import PhoenixCryptoProvider
+            import os
 
-            crypto = PhoenixCryptoProvider()
+            demo_mode = os.environ.get("PHOENIX_DEMO_MODE", "").lower() in ("1", "true", "yes")
+            crypto = PhoenixCryptoProvider(demo_mode=demo_mode)
         vault = out_dir / VAULT_DIR
         vault.mkdir(exist_ok=True)
         lineage: list[HashRecord] = list(evidence.hash_lineage)

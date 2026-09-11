@@ -25,7 +25,7 @@ DETECTOR = FormatDetector(head_bytes=64 * 1024, sample_windows=16, window_bytes=
 CARVE = CarveOptions(block_size=64 * 1024)
 
 
-def _image(tmp_path, variant="hikvision", seed=21):
+def _image(tmp_path, variant="avi", seed=21):
     src = tmp_path / "source.img"
     return src, build_dvr_image(
         src, size_bytes=512 * 1024, seed=seed, vendor_variant=variant
@@ -54,7 +54,7 @@ def test_full_run_end_to_end(tmp_path):
     assert result.evidence_id == f"ev-{result.acquisition.acquisition_id}"
 
     # detection routed Hikvision to the generic fallback (no vendor adapter here)
-    assert result.detection.vendor_info.vendor_name == "Hikvision"
+    assert result.detection.vendor_info.vendor_name == "Generic AVI"
     assert result.adapter.fallback is True and result.adapter.available is True
     assert result.adapter.module == "backend.adapters.generic_carver"
     assert result.evidence.vendor_info == result.detection.vendor_info
@@ -134,6 +134,7 @@ def test_full_run_end_to_end(tmp_path):
         "intake",
         "detection",
         "recovery",
+        "triage",
         "encryption",
     ]
 
@@ -202,7 +203,7 @@ class StubVendorAdapter(BaseAdapter):
 
 
 def test_vendor_adapter_is_used_when_available(tmp_path):
-    src, _ = _image(tmp_path)
+    src, _ = _image(tmp_path, variant="hikvision")
     result = run_pipeline(
         src,
         case_id="CASE-004",
@@ -230,7 +231,7 @@ class HalfBuiltAdapter(StubVendorAdapter):
 
 
 def test_vendor_adapter_without_parser_falls_back_to_generic(tmp_path):
-    src, manifest = _image(tmp_path)
+    src, manifest = _image(tmp_path, variant="hikvision")
     sink = InMemoryEventSink()
     result = run_pipeline(
         src,

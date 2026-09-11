@@ -24,7 +24,7 @@ const SAMPLE_FRAGMENTS = [
 
 export default function ExampleCasePage() {
   return (
-    <div style={{ maxWidth: 760, margin: '0 auto', padding: '2rem 1.5rem', background: 'var(--phx-cream)' }}>
+    <div style={{ maxWidth: 760, margin: '0 auto', padding: '2rem 1.5rem', background: 'var(--color-phx-deep)' }}>
       <CaseHeader
         caseId="case-2026-0091"
         title="Hikvision NVR — sector 4 recovery"
@@ -34,7 +34,7 @@ export default function ExampleCasePage() {
       <ChainOfCustody entries={SAMPLE_LEDGER} />
 
       <div style={{ marginTop: '2rem' }}>
-        <div style={{ fontFamily: 'var(--phx-font-sans)', fontSize: '0.8rem', color: 'var(--phx-text-secondary)', marginBottom: 8 }}>
+        <div style={{ fontFamily: 'var(--phx-font-sans)', fontSize: '0.8rem', color: 'var(--color-phx-secondary)', marginBottom: 8 }}>
           Recovered fragments
         </div>
         {SAMPLE_FRAGMENTS.map((f) => (

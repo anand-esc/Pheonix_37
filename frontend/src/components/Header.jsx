@@ -1,91 +1,75 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Shield, UserCheck, ChevronRight, Home, FolderOpen } from "lucide-react";
-import { useRole, ROLES } from "../context/RoleContext";
+import { UserCheck, ChevronRight, FolderOpen } from "lucide-react";
+import { useRole } from "../context/RoleContext";
+import { OPERATORS } from "../api";
 
 export function Header() {
-  const { role, setRole } = useRole();
+  const { operatorId, role, setOperator, logout } = useRole();
   const location = useLocation();
 
   const caseIdMatch = location.pathname.match(/\/cases\/([^/]+)/);
   const currentCaseId = caseIdMatch ? caseIdMatch[1] : null;
 
   return (
-    <header className="bg-[var(--bg-panel)] border-b border-[var(--border)] sticky top-0 z-40 px-4 lg:px-8 py-3">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+    <header className="bg-phx-panel border-b border-phx-border sticky top-0 z-40 px-4 lg:px-8 py-3 no-print shadow-sm">
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
         
-        <div className="flex items-center gap-4">
-          <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-9 h-9 rounded bg-[var(--accent-cyan)]/10 border border-[rgba(62,214,196,0.3)] flex items-center justify-center">
-              <Shield className="w-5 h-5 text-[var(--accent-cyan)]" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-base font-bold text-[var(--text-primary)] tracking-tight group-hover:text-[var(--accent-cyan)] transition-colors">
-                  Phoenix Forensic Toolkit
-                </h1>
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-[var(--accent-cyan-dim)] text-[var(--accent-cyan)] border border-[rgba(62,214,196,0.2)] hidden sm:inline-block">
-                  v0.2
-                </span>
-              </div>
-              <p className="text-xs text-[var(--text-secondary)] flex items-center gap-1.5 mt-0.5">
-                <span>NTRO SIH26150</span>
-                <span className="text-[var(--text-muted)]">•</span>
-                <span>BSA Sec 63 Compliant</span>
-              </p>
-            </div>
-          </Link>
+        <div className="flex items-center gap-6">
+          <div className="flex flex-col">
+            <h1 className="text-base font-bold text-phx-primary tracking-tight group-hover:text-phx-cyan transition-colors">
+              Pheonix_37
+            </h1>
+            <p className="text-[11px] text-phx-secondary mt-0.5 font-medium tracking-wide">
+              NTRO SIH26150 <span className="text-phx-border-light mx-1">|</span> BSA Sec 63 Compliant
+            </p>
+          </div>
 
-          <div className="hidden sm:flex items-center gap-1.5 ml-4 pl-4 border-l border-[var(--border)]">
-            <Link
-              to="/"
-              className={`px-2.5 py-1 text-xs font-medium rounded transition-colors flex items-center gap-1.5 ${
-                location.pathname === "/"
-                  ? "bg-[var(--bg-panel-lighter)] text-[var(--text-primary)] font-semibold"
-                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-              }`}
-            >
-              <Home className="w-3.5 h-3.5" />
-              Home
-            </Link>
+          <div className="hidden sm:flex items-center gap-1.5 ml-2 pl-6 border-l border-phx-border">
             <Link
               to="/cases"
-              className={`px-2.5 py-1 text-xs font-medium rounded transition-colors flex items-center gap-1.5 ${
-                location.pathname === "/cases"
-                  ? "bg-[var(--bg-panel-lighter)] text-[var(--text-primary)] font-semibold"
-                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              className={`px-3 py-1.5 text-sm font-medium rounded transition-colors flex items-center gap-2 ${
+                location.pathname.startsWith("/cases")
+                  ? "bg-phx-surface text-phx-red border border-phx-border"
+                  : "text-phx-secondary hover:text-phx-primary hover:bg-phx-surface border border-transparent"
               }`}
             >
-              <FolderOpen className="w-3.5 h-3.5" />
+              <FolderOpen className="w-4 h-4" />
               Dashboard
             </Link>
           </div>
 
           {currentCaseId && (
-            <div className="hidden xl:flex items-center gap-2 text-xs text-[var(--text-secondary)] pl-4 border-l border-[var(--border)]">
-              <ChevronRight className="w-4 h-4 text-[var(--text-muted)]" />
-              <span className="font-mono text-[var(--accent-cyan)] bg-[var(--accent-cyan-dim)] px-2 py-0.5 rounded border border-[rgba(62,214,196,0.2)]">
+            <div className="hidden xl:flex items-center gap-2 text-sm text-phx-secondary pl-6 border-l border-phx-border">
+              <ChevronRight className="w-4 h-4 text-phx-muted" />
+              <span className="font-mono text-phx-red font-semibold bg-phx-red/5 px-2 py-0.5 rounded border border-phx-red/20">
                 {currentCaseId}
               </span>
             </div>
           )}
         </div>
 
-        <div className="flex items-center gap-3 self-end md:self-auto">
-          <div className="flex items-center gap-2 bg-[var(--bg-deep)] px-3 py-1.5 rounded border border-[var(--border)]">
-            <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-wider font-semibold">RBAC</span>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 bg-phx-surface px-3 py-1.5 rounded border border-phx-border transition-colors hover:border-phx-red/40">
+            <UserCheck className="w-3.5 h-3.5 text-phx-muted" />
             <select
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              className="bg-transparent text-xs text-[var(--text-primary)] font-mono focus:outline-none cursor-pointer pr-1 border-none"
+              value={operatorId}
+              onChange={(e) => setOperator(e.target.value)}
+              className="bg-transparent text-xs text-phx-primary font-medium focus:outline-none cursor-pointer border-none"
             >
-              {ROLES.map((r) => (
-                <option key={r.id} value={r.id} className="bg-[var(--bg-panel)] text-[var(--text-primary)]">
-                  {r.label}
+              {OPERATORS.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.label} ({o.role})
                 </option>
               ))}
             </select>
           </div>
+          <button
+            onClick={logout}
+            className="text-xs font-medium text-phx-secondary hover:text-phx-red transition-colors"
+          >
+            Log Out
+          </button>
         </div>
       </div>
     </header>

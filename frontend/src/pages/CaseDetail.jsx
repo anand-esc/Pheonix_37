@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Play, Loader2, AlertCircle, FileText, Clock, Layers } from "lucide-react";
-import { getCase, getCaseFragments, getCaseLedger, formatDate, mapBackendStatus, mapLedgerEntry } from "../api";
+import { ArrowLeft, Play, Loader2, AlertCircle, FileText, Clock, Layers, Cpu } from "lucide-react";
+import { getCase, getCaseFragments, getCaseLedger, mapLedgerEntry } from "../api";
 import { useRole } from "../context/RoleContext";
 import CaseHeader from "../components/phoenix-ui-kit/CaseHeader";
 import ChainOfCustody from "../components/phoenix-ui-kit/ChainOfCustody";
@@ -11,13 +11,46 @@ export function CaseDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { role } = useRole();
-
   const [caseData, setCaseData] = useState(null);
   const [fragments, setFragments] = useState([]);
   const [ledgerEntries, setLedgerEntries] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("fragments");
+
+  const [isAcquireModalOpen, setIsAcquireModalOpen] = useState(false);
+  const [sourcePath, setSourcePath] = useState("");
+  const [isAcquiring, setIsAcquiring] = useState(false);
+
+  const handleAcquire = async () => {
+    // Strip leading and trailing quotes (single and double) and whitespace
+    let cleanPath = sourcePath.trim().replace(/^["']|["']$/g, '');
+    
+    if (!cleanPath) return;
+    try {
+      setIsAcquiring(true);
+      const api = await import("../api");
+      const run = await api.startAcquisitionRun({
+        source_path: cleanPath,
+        case_id: id,
+        operator_id: role,
+        out_dir: `case_store/${id}/run`,
+        encrypt: true,
+      });
+      setIsAcquireModalOpen(false);
+      setSourcePath("");
+      
+      await api.pollAcquisitionRun(run.job_id, (progressRun) => {
+        console.log("Acquisition progress:", progressRun);
+      });
+      
+      alert("Acquisition completed successfully!");
+      window.location.reload();
+    } catch (err) {
+      alert("Acquisition failed: " + err.message);
+      setIsAcquiring(false);
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -46,25 +79,14 @@ export function CaseDetail() {
     return () => { isMounted = false; };
   }, [id]);
 
-  const statusMap = {
-    "Intake": "pending",
-    "Processing": "pending",
-    "Recovered": "validated",
-    "Reported": "validated",
-  };
+  const statusMap = { "Intake": "pending", "Processing": "pending", "Recovered": "validated", "Reported": "validated" };
 
   if (isLoading) {
     return (
-      <div className="phx-page" style={{ background: "var(--phx-cream)", minHeight: "100vh" }}>
-        <div style={{ maxWidth: 1000, margin: "0 auto", padding: "2rem 1.5rem" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-              <Loader2 className="phx-spinner" size={32} style={{ color: "var(--phx-navy)" }} />
-              <span style={{ fontFamily: "var(--phx-font-mono)", fontSize: "0.78rem", color: "var(--phx-text-muted)" }}>
-                LOADING CASE DATA...
-              </span>
-            </div>
-          </div>
+      <div className="flex-1 flex items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 text-phx-red animate-spin" />
+          <span className="text-xs text-phx-muted uppercase tracking-widest">Loading case...</span>
         </div>
       </div>
     );
@@ -72,39 +94,13 @@ export function CaseDetail() {
 
   if (error || !caseData) {
     return (
-      <div className="phx-page" style={{ background: "var(--phx-cream)", minHeight: "100vh", padding: "2rem" }}>
-        <div style={{ maxWidth: 760, margin: "0 auto" }}>
-          <CaseHeader
-            caseId={id}
-            title="Case Not Found"
-            status="tampered"
-            statusLabel="Load failed"
-          />
-          <div style={{
-            marginTop: "1.5rem", padding: "1.5rem",
-            background: "var(--phx-red-tint)", border: "1px solid var(--phx-red)",
-            borderRadius: "var(--phx-radius)", display: "flex", gap: 12
-          }}>
-            <AlertCircle size={24} style={{ color: "var(--phx-red)", flexShrink: 0 }} />
-            <div>
-              <h3 style={{ fontFamily: "var(--phx-font-serif)", fontSize: "1rem", color: "var(--phx-red)", marginBottom: 4 }}>
-                Case Load Error
-              </h3>
-              <p style={{ fontFamily: "var(--phx-font-sans)", fontSize: "0.82rem", color: "var(--phx-ink)" }}>
-                {error || `Case "${id}" could not be retrieved from the database.`}
-              </p>
-              <button
-                onClick={() => navigate("/cases")}
-                style={{
-                  marginTop: 12, padding: "8px 16px",
-                  background: "var(--phx-navy)", color: "var(--phx-on-navy)",
-                  border: "none", borderRadius: "var(--phx-radius)",
-                  fontFamily: "var(--phx-font-sans)", fontSize: "0.78rem", cursor: "pointer"
-                }}
-              >
-                Back to Dashboard
-              </button>
-            </div>
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 flex gap-4">
+          <AlertCircle size={24} className="text-red-600 shrink-0" />
+          <div>
+            <h3 className="font-semibold text-red-800 mb-1">Case Load Error</h3>
+            <p className="text-sm text-red-700">{error || `Case "${id}" could not be retrieved.`}</p>
+            <button onClick={() => navigate("/cases")} className="mt-4 btn-secondary text-sm">Back to Dashboard</button>
           </div>
         </div>
       </div>
@@ -112,99 +108,85 @@ export function CaseDetail() {
   }
 
   return (
-    <div className="phx-page" style={{ background: "var(--phx-cream)", minHeight: "100vh" }}>
-      <div style={{ maxWidth: 1000, margin: "0 auto", padding: "2rem 1.5rem" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem" }}>
-          <button
-            onClick={() => navigate("/cases")}
-            style={{
-              background: "transparent", border: "none", cursor: "pointer",
-              display: "flex", alignItems: "center", gap: 6,
-              fontFamily: "var(--phx-font-mono)", fontSize: "0.78rem",
-              color: "var(--phx-text-secondary)", padding: 4
+    <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="flex items-center justify-between mb-6">
+        <button onClick={() => navigate("/cases")} className="flex items-center gap-2 text-sm text-phx-secondary hover:text-phx-primary transition-colors">
+          <ArrowLeft size={16} />
+          <span>Back to Dashboard</span>
+        </button>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={async () => {
+              if (window.confirm("Are you sure you want to delete this case completely? This will wipe the blockchain ledger and all carved fragments from disk. This cannot be undone.")) {
+                try {
+                  const api = await import("../api");
+                  await api.deleteCase(id);
+                  navigate("/cases");
+                } catch (err) {
+                  alert("Failed to delete case: " + err.message);
+                }
+              }
             }}
+            className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-phx-red hover:bg-phx-red hover:text-white border border-phx-red rounded transition-colors"
           >
-            <ArrowLeft size={16} stroke={2} />
-            <span>Back to Dashboard</span>
+            Delete Case
           </button>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--phx-font-mono)", fontSize: "0.72rem", color: "var(--phx-text-muted)" }}>
-            <span>Active Role:</span>
-            <strong style={{ color: "var(--phx-ink)" }}>{role}</strong>
+          <div className="text-xs text-phx-muted bg-phx-surface px-3 py-1.5 rounded border border-phx-border">
+            Active Role: <strong className="text-phx-primary">{role}</strong>
           </div>
         </div>
+      </div>
 
-        <CaseHeader
-          caseId={caseData.case_id || id}
-          title={caseData.title || `Case ${id}`}
-          status={statusMap[caseData.status] || "pending"}
-          statusLabel={caseData.status}
-        />
+      <CaseHeader
+        caseId={caseData.id || id}
+        title={caseData.name || `Case ${id}`}
+        status={statusMap[caseData.status] || "pending"}
+        statusLabel={caseData.status}
+      />
 
-        <div className="phx-tabs" style={{
-          display: "flex", gap: 4, marginBottom: "1.5rem",
-          borderBottom: "1px solid var(--phx-border)", paddingBottom: 4
-        }}>
-          {[
-            { id: "fragments", label: "Fragments", count: fragments.length, icon: Play },
-            { id: "ledger", label: "Chain of Custody", count: ledgerEntries.length, icon: Layers },
-            { id: "timeline", label: "Timeline", count: 0, icon: Clock },
-            { id: "report", label: "Certificate", count: 0, icon: FileText },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              style={{
-                display: "flex", alignItems: "center", gap: 6,
-                padding: "10px 16px", background: "transparent", border: "none",
-                borderBottom: activeTab === tab.id ? "2px solid var(--phx-navy)" : "2px solid transparent",
-                fontFamily: "var(--phx-font-sans)", fontSize: "0.82rem", fontWeight: 500,
-                color: activeTab === tab.id ? "var(--phx-navy)" : "var(--phx-text-secondary)",
-                cursor: "pointer", transition: "all 0.15s ease"
-              }}
-            >
-              <tab.icon size={16} stroke={2} />
-              <span>{tab.label}</span>
-              {tab.count > 0 && (
-                <span style={{
-                  background: activeTab === tab.id ? "var(--phx-navy)" : "var(--phx-border)",
-                  color: activeTab === tab.id ? "var(--phx-on-navy)" : "var(--phx-text-secondary)",
-                  padding: "2px 8px", borderRadius: "999px",
-                  fontFamily: "var(--phx-font-mono)", fontSize: "0.7rem"
-                }}>
-                  {tab.count}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
+      <div className="flex gap-1 mb-6 border-b border-phx-border">
+        {[
+          { id: "fragments", label: "Fragments", count: fragments.length, icon: Play },
+          { id: "ledger", label: "Chain of Custody", count: ledgerEntries.length, icon: Layers },
+          { id: "timeline", label: "Timeline", count: 0, icon: Clock },
+          { id: "triage", label: "AI Triage", count: caseData?.evidence_items?.[0]?.detections?.length || 0, icon: Cpu },
+          { id: "report", label: "Certificate", count: 0, icon: FileText },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all border-b-2 ${
+              activeTab === tab.id
+                ? "text-phx-red border-phx-red bg-white"
+                : "text-phx-secondary border-transparent hover:text-phx-primary hover:border-phx-border hover:bg-phx-surface"
+            }`}
+          >
+            <tab.icon size={16} />
+            <span>{tab.label}</span>
+            {tab.count > 0 && (
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                activeTab === tab.id ? "bg-phx-red/10 text-phx-red" : "bg-phx-surface text-phx-secondary border border-phx-border"
+              }`}>{tab.count}</span>
+            )}
+          </button>
+        ))}
+      </div>
 
+      <div className="min-h-[400px]">
         {activeTab === "fragments" && (
-          <div className="phx-tab-content">
-            <div style={{
-              fontFamily: "var(--phx-font-sans)", fontSize: "0.8rem",
-              color: "var(--phx-text-secondary)", marginBottom: 8
-            }}>
-              Recovered fragments
-            </div>
+          <div>
+            <div className="text-xs text-phx-secondary mb-3 uppercase tracking-wider font-semibold">Recovered Fragments</div>
             {fragments.length === 0 ? (
-              <div style={{
-                padding: "2rem", textAlign: "center",
-                background: "var(--phx-paper)", border: "1px solid var(--phx-border)",
-                borderRadius: "var(--phx-radius)"
-              }}>
-                <Play size={48} style={{ color: "var(--phx-text-muted)", marginBottom: 12 }} />
-                <h3 style={{ fontFamily: "var(--phx-font-serif)", fontSize: "1.1rem", color: "var(--phx-ink)", marginBottom: 4 }}>
-                  No Fragments Recovered
-                </h3>
-                <p style={{ fontFamily: "var(--phx-font-sans)", fontSize: "0.82rem", color: "var(--phx-text-secondary)" }}>
-                  Run the acquisition pipeline to carve video fragments from the evidence.
-                </p>
+              <div className="bg-white border border-phx-border rounded-lg p-12 text-center">
+                <Play size={40} className="text-phx-muted mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-phx-primary mb-2">No Fragments Recovered</h3>
+                <p className="text-sm text-phx-secondary mb-4">Run the acquisition pipeline to carve video fragments.</p>
+                <button onClick={() => setIsAcquireModalOpen(true)} className="btn-primary mx-auto">
+                  Start Acquisition
+                </button>
               </div>
             ) : (
-              <div style={{
-                background: "var(--phx-paper)", border: "1px solid var(--phx-border)",
-                borderRadius: "var(--phx-radius)", overflow: "hidden"
-              }}>
+              <div className="bg-white border border-phx-border rounded-lg overflow-hidden shadow-sm">
                 {fragments.map((f, idx) => (
                   <FragmentRow
                     key={f.fragment_id || idx}
@@ -213,6 +195,8 @@ export function CaseDetail() {
                     durationLabel={f.duration ? `${Math.floor(f.duration / 60)}:${String(Math.floor(f.duration % 60)).padStart(2, '0')}` : undefined}
                     confidence={f.confidence_score || 0}
                     rationale={f.confidence_rationale || "No rationale provided"}
+                    caseId={id}
+                    fragmentIndex={idx}
                   />
                 ))}
               </div>
@@ -220,78 +204,106 @@ export function CaseDetail() {
           </div>
         )}
 
-        {activeTab === "ledger" && (
-          <div className="phx-tab-content">
-            <ChainOfCustody entries={ledgerEntries} />
+        {activeTab === "ledger" && <ChainOfCustody entries={ledgerEntries} />}
+
+
+        {activeTab === "triage" && (
+          <div>
+            <div className="text-xs text-phx-secondary mb-3 uppercase tracking-wider font-semibold">AI Triage Results</div>
+            {!(caseData?.evidence_items?.[0]?.detections?.length) ? (
+              <div className="bg-white border border-phx-border rounded-lg p-12 text-center">
+                <Cpu size={40} className="text-phx-muted mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-phx-primary mb-2">No Detections Found</h3>
+                <p className="text-sm text-phx-secondary mb-4">AI triage did not flag any objects of interest.</p>
+              </div>
+            ) : (
+              <div className="bg-white border border-phx-border rounded-lg overflow-hidden shadow-sm p-4">
+                <table className="w-full text-left text-sm text-phx-primary">
+                  <thead className="bg-phx-surface text-phx-secondary font-mono text-xs border-b border-phx-border">
+                    <tr>
+                      <th className="py-2 px-4">Fragment ID</th>
+                      <th className="py-2 px-4">Detected Object</th>
+                      <th className="py-2 px-4">Confidence</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {caseData.evidence_items[0].detections.map((d, i) => (
+                      <tr key={i} className="border-b border-phx-border hover:bg-phx-surface transition-colors">
+                        <td className="py-3 px-4 font-mono text-phx-red">{d.fragment_id || 'Unknown'}</td>
+                        <td className="py-3 px-4 capitalize font-semibold">{d.object_class}</td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2">
+                            <div className="h-1.5 w-16 bg-phx-border rounded-full overflow-hidden">
+                              <div className="h-full bg-phx-amber rounded-full" style={{ width: `${Math.round(d.confidence_score * 100)}%` }} />
+                            </div>
+                            <span className="font-mono text-[10px] font-bold text-phx-secondary">{Math.round(d.confidence_score * 100)}%</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
 
         {activeTab === "timeline" && (
-          <div className="phx-tab-content">
-            <div style={{
-              padding: "2rem", textAlign: "center",
-              background: "var(--phx-paper)", border: "1px solid var(--phx-border)",
-              borderRadius: "var(--phx-radius)"
-            }}>
-              <Clock size={48} style={{ color: "var(--phx-text-muted)", marginBottom: 12 }} />
-              <h3 style={{ fontFamily: "var(--phx-font-serif)", fontSize: "1.1rem", color: "var(--phx-ink)", marginBottom: 4 }}>
-                Timeline View
-              </h3>
-              <p style={{ fontFamily: "var(--phx-font-sans)", fontSize: "0.82rem", color: "var(--phx-text-secondary)", marginBottom: 16 }}>
-                Cross-camera/channel timeline requires anchor alignment endpoints.
-              </p>
-              <button
-                onClick={() => navigate(`/cases/${id}/timeline`)}
-                style={{
-                  padding: "8px 16px", background: "var(--phx-navy)", color: "var(--phx-on-navy)",
-                  border: "none", borderRadius: "var(--phx-radius)",
-                  fontFamily: "var(--phx-font-sans)", fontSize: "0.78rem", cursor: "pointer"
-                }}
-              >
-                Open Full Timeline
-              </button>
-            </div>
+          <div className="bg-white border border-phx-border rounded-lg p-16 text-center">
+            <Clock size={40} className="text-phx-muted mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-phx-primary mb-2">Timeline View</h3>
+            <p className="text-sm text-phx-secondary mb-6">Cross-camera timeline with anchor alignment.</p>
+            <button onClick={() => navigate(`/cases/${id}/timeline`)} className="btn-primary mx-auto">Open Full Timeline</button>
           </div>
         )}
 
         {activeTab === "report" && (
-          <div className="phx-tab-content">
-            <div style={{
-              padding: "2rem", textAlign: "center",
-              background: "var(--phx-paper)", border: "1px solid var(--phx-border)",
-              borderRadius: "var(--phx-radius)"
-            }}>
-              <FileText size={48} style={{ color: "var(--phx-text-muted)", marginBottom: 12 }} />
-              <h3 style={{ fontFamily: "var(--phx-font-serif)", fontSize: "1.1rem", color: "var(--phx-ink)", marginBottom: 4 }}>
-                BSA Section 63 Certificate
-              </h3>
-              <p style={{ fontFamily: "var(--phx-font-sans)", fontSize: "0.82rem", color: "var(--phx-text-secondary)", marginBottom: 16 }}>
-                Certificate generation is performed via backend CLI tool.
-              </p>
-              <button
-                onClick={() => navigate(`/cases/${id}/report`)}
-                style={{
-                  padding: "8px 16px", background: "var(--phx-navy)", color: "var(--phx-on-navy)",
-                  border: "none", borderRadius: "var(--phx-radius)",
-                  fontFamily: "var(--phx-font-sans)", fontSize: "0.78rem", cursor: "pointer"
-                }}
-              >
-                Open Certificate Draft
-              </button>
-            </div>
+          <div className="bg-white border border-phx-border rounded-lg p-16 text-center">
+            <FileText size={40} className="text-phx-muted mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-phx-primary mb-2">BSA Section 63 Certificate</h3>
+            <p className="text-sm text-phx-secondary mb-6">Generate court-admissible certificate.</p>
+            <button onClick={() => navigate(`/cases/${id}/report`)} className="btn-primary mx-auto">Open Certificate Draft</button>
           </div>
         )}
       </div>
 
-      <style jsx>{`
-        .phx-spinner {
-          animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
+      {isAcquireModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-md overflow-hidden">
+            <div className="px-6 py-4 border-b border-phx-border bg-phx-surface">
+              <h3 className="font-semibold text-phx-primary">Acquire Evidence</h3>
+            </div>
+            <div className="p-6">
+              <label className="block text-sm font-medium text-phx-secondary mb-2">Source Path (File/Device)</label>
+              <input
+                type="text"
+                autoFocus
+                value={sourcePath}
+                onChange={(e) => setSourcePath(e.target.value)}
+                placeholder="e.g. C:\evidence\dvr_dump.bin"
+                className="w-full py-2 px-3 bg-phx-surface border border-phx-border rounded text-sm text-phx-primary focus:outline-none focus:border-phx-red/40 focus:ring-1 focus:ring-phx-red/20 mb-6"
+              />
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setIsAcquireModalOpen(false)}
+                  className="btn-secondary"
+                  disabled={isAcquiring}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAcquire}
+                  disabled={!sourcePath.trim() || isAcquiring}
+                  className="btn-primary"
+                >
+                  {isAcquiring ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />}
+                  <span>Start Pipeline</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

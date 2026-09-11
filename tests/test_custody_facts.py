@@ -21,7 +21,7 @@ def run(tmp_path_factory):
         src,
         size_bytes=1024 * 1024,
         seed=11,
-        vendor_variant="hikvision",
+        vendor_variant="avi",
         segments=[
             SegmentSpec(frames=25, declared_fps=25.0),
             SegmentSpec(frames=25, deleted=True),  # no declared rate
@@ -66,8 +66,8 @@ def test_source_and_custody_sections_match_the_run(run):
     facts = build_custody_facts(result)
     assert facts.source.case_id == "CASE-CUSTODY-1"
     assert facts.source.evidence_id == result.evidence_id
-    assert facts.source.declared_vendor == "Hikvision"
-    assert facts.source.vendor_validation_status == "VALIDATED"
+    assert facts.source.declared_vendor == "Generic AVI"
+    assert facts.source.vendor_validation_status == "GENERIC_FALLBACK"
     assert facts.source.detection_rationale == result.detection.rationale
     assert facts.custody.operator_id == "op-amritansh"
     assert facts.custody.acquisition_id == result.acquisition.acquisition_id
