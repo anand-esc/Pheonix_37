@@ -17,7 +17,7 @@ from fastapi.responses import StreamingResponse
 from backend.api.ledger_routes import router as ledger_router
 from backend.api.routes_acquisition import router as acquisition_router
 from backend.api.shared import get_event_sink, get_ledger, get_rbac_controller
-from backend.core.evidence_model import Case, Fragment
+from backend.core.evidence_model import Case, Fragment, DetectionResult
 from backend.ledger.rbac import Role, enforce_access
 
 
@@ -473,6 +473,34 @@ def download_case_certificate(case_id: str):
         media_type="application/pdf",
         filename=f"BSA63-Certificate-{case_id}.pdf"
     )
+
+
+# ---------------------------------------------------------------------------
+# GET /api/case/{case_id}/detections — AI triage results
+# ---------------------------------------------------------------------------
+@app.get(
+    "/api/case/{case_id}/detections",
+    response_model=list[DetectionResult],
+    summary="AI triage detections for a case",
+)
+def get_case_detections(case_id: str) -> list[DetectionResult]:
+    """Returns all AI triage detections from the latest pipeline run."""
+    case = _load_case_from_run(case_id)
+    if case is not None:
+        detections: list[DetectionResult] = []
+        for item in case.evidence_items:
+            if item.detections:
+                detections.extend(item.detections)
+        return detections
+    # Demo fallback
+    from backend.api.mock_data import MOCK_CASE, MOCK_CASE_ID
+    if case_id != MOCK_CASE_ID:
+        raise HTTPException(status_code=404, detail=f"Case '{case_id}' not found")
+    detections = []
+    for item in MOCK_CASE.evidence_items:
+        if item.detections:
+            detections.extend(item.detections)
+    return detections
 
 @app.get("/health", summary="Health check endpoint")
 def health_check():

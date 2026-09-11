@@ -101,6 +101,7 @@ export async function getCase(caseId) {
     status: mapBackendStatus(rawCase.status),
     hasEvidence,
     evidence,
+    evidence_items: rawCase.evidence_items || [],
     parsedHash: rawCase.parsedHash || null,
     parsedAt: rawCase.parsedAt || null,
     recoveries: {},
@@ -267,4 +268,8 @@ export async function generateCertificate(caseId) {
 
 export function getCertificateDownloadUrl(caseId) {
   return buildUrl(API_BASE, `/case/${encodeURIComponent(caseId)}/certificate/download`, "VIEW_EVIDENCE");
+}
+
+export async function getCaseDetections(caseId) {
+  return fetchJson(buildUrl(API_BASE, `/case/${encodeURIComponent(caseId)}/detections`, "VIEW_EVIDENCE"));
 }
