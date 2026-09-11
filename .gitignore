@@ -30,3 +30,6 @@ chrome-headless-shell/
 
 # Pipeline run data (changes on every run — keep out of version control)
 case_store/
+
+# Demonstration image built by demo/build_demo_case.py (regenerated on demand)
+demo/out/

@@ -179,3 +179,48 @@ cd frontend && npx oxlint && npx vite build # frontend: lint + production bundle
   which is why the packaged Windows app requests administrator rights.
 - Wall-clock timestamps are not available from a bare elementary stream;
   the timeline is relative to each channel.
+
+## 8. The demonstration case (CASE2026NTRO)
+
+One command builds a complete case with nothing left to type. Use it when a live
+recorder is not available, or as a rehearsal before demonstrating with one.
+
+```bash
+.venv\Scripts\python demo\build_demo_case.py --download
+```
+
+It lays real MP4 files into a recorder-style volume, lists only some of them in
+the volume index, runs the whole pipeline as `CASE2026NTRO`, and checks every
+recovered file against the original byte for byte.
+
+Other ways to source the videos:
+
+```bash
+python demo\build_demo_case.py --videos D:\evidence\clips   # your own files
+python demo\build_demo_case.py                              # synthesised, offline
+```
+
+Expected output ends with a verification table and the line
+`All 3 recordings recovered byte-exact, including the 1 the index does not list.`
+
+Then open the client: `CASE2026NTRO` is on the dashboard, and its **Recovered
+Videos** tab plays each file inline and offers it for download. The acquisition
+dialog also offers a **Use the demonstration image** button whenever that image
+exists, so the path never has to be typed.
+
+### Recovering a file after the original is deleted
+
+1. Put a video anywhere the backend can read, for example `D:\clips\camera1.mp4`.
+2. Create a case, **Start Acquisition**, paste that path, run it.
+3. Delete `D:\clips\camera1.mp4`.
+4. The case is unaffected: intake copied the bytes into `evidence.img` and hashed
+   them before anything else ran. **Recovered Videos** still plays the file, and
+   **Save file** writes back a copy whose SHA-256 matches what was acquired.
+
+This is the ordinary forensic sequence — image first, then the original may be
+lost or destroyed, because the image is the evidence. Recovering a file that was
+deleted *before* imaging is a different and weaker claim: it needs an image of the
+whole volume taken while the blocks are still intact, it needs an elevated
+backend to read the raw device, and it fails once the blocks have been
+overwritten. The demonstration case models that case honestly by leaving
+recordings out of the volume index rather than pretending otherwise.

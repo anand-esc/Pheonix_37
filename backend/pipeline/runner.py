@@ -513,6 +513,21 @@ def _wrap_playable(
     views: list[PlayableView] = []
     for item in exported:
         src = Path(item.out_path)
+        if src.suffix.lower() in (".mp4", ".mov", ".m4v", ".avi"):
+            # A file recovered whole by the container pass is already a
+            # playable file. Wrapping it would change its bytes, so the view
+            # points at the exhibit itself.
+            views.append(
+                PlayableView(
+                    fragment_id=ids.get(item.index),
+                    fragment_index=item.index,
+                    fragment_path=item.out_path,
+                    mp4_path=item.out_path,
+                    mp4_sha256=item.sha256,
+                    note="recovered container file; played as recovered, not re-wrapped",
+                )
+            )
+            continue
         dst = out_dir / (src.stem + ".mp4")
         try:
             info = wrap_fragment_file(src, dst, fps=fps)

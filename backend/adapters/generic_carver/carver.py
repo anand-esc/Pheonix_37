@@ -1,6 +1,16 @@
-"""Generic Annex-B NAL carver (the vendor-agnostic fallback recovery engine).
+"""Generic carver: the vendor-agnostic fallback recovery engine.
 
-Rules, in the order they are applied (see docs/generic_carver.md):
+Two passes run over the image, in this order:
+
+A. Container pass (``container.py``) — whole MP4/MOV and AVI files are
+   recovered as files and their byte ranges are then excluded from pass B.
+   A copied ``.mp4`` keeps its NAL units length-prefixed inside ``mdat`` and
+   carries no start codes, so without this pass it is reported as a handful
+   of fragments built from coincidental ``00 00 01`` byte sequences.
+B. Annex-B pass — runs of NAL units, which is what a recorder writes to its
+   own disk.
+
+Rules for pass B, in the order they are applied (see docs/generic_carver.md):
 
 1. Scan the image for start codes followed by a plausible NAL header.
 2. A fragment starts at an SPS (H.264) or VPS/SPS (H.265). If the codec is
@@ -30,6 +40,10 @@ from typing import BinaryIO
 from backend.adapters.generic_carver.exceptions import (
     CarverExportError,
     CarverSourceError,
+)
+from backend.adapters.generic_carver.container import (
+    ContainerCarveOptions,
+    carve_containers,
 )
 from backend.adapters.generic_carver.models import (
     RECOVERY_METHOD,
@@ -137,10 +151,49 @@ class GenericNalCarver(RecoveryEngine):
         opts = self.options
         codec = opts.codec_hint if opts.codec_hint in ("h264", "h265") else None
         fragments: list[CarvedFragment] = []
-        stats = {"seen": 0, "valid": 0, "orphan": 0, "oversized": 0, "discarded": 0}
+        stats = {
+            "seen": 0,
+            "valid": 0,
+            "orphan": 0,
+            "oversized": 0,
+            "discarded": 0,
+            "in_container": 0,
+        }
         builder: _Builder | None = None
         pending: RawNal | None = None
         self._pending_aud = None
+
+        # Pass A: whole container files. Their byte ranges are excluded from
+        # the Annex-B scan below so the same bytes are never reported twice.
+        containers: list[CarvedFragment] = []
+        excluded: list[tuple[int, int]] = []
+        if opts.carve_containers:
+            try:
+                containers, container_stats = carve_containers(
+                    path, ContainerCarveOptions(block_size=opts.block_size)
+                )
+            except OSError as exc:
+                raise CarverSourceError(f"Cannot read {path}: {exc}") from exc
+            excluded = [
+                (c.fragment.byte_offset_start, c.fragment.byte_offset_end)
+                for c in containers
+            ]
+            if containers:
+                logger.info(
+                    "container pass recovered %d file(s) from %s",
+                    len(containers),
+                    path.name,
+                )
+                self._emit(
+                    "container_files_recovered",
+                    image_path=str(path),
+                    files=len(containers),
+                    candidates=container_stats.ftyp_candidates
+                    + container_stats.riff_candidates,
+                )
+
+        def in_container(offset: int) -> bool:
+            return any(lo <= offset < hi for lo, hi in excluded)
 
         try:
             # ``scan`` is read sequentially by the scanner; ``rnd`` is used for
@@ -164,6 +217,7 @@ class GenericNalCarver(RecoveryEngine):
 
                 for nal in scan_start_codes(scan, size, opts.block_size):
                     stats["seen"] += 1
+                    inside = in_container(nal.offset)
                     if pending is not None:
                         end = nal.offset - nal.preceding_zeros
                         builder, codec = self._step(
@@ -174,6 +228,13 @@ class GenericNalCarver(RecoveryEngine):
                             and nal.preceding_zeros > opts.filler_split_bytes
                         ):
                             close("zero_filler")
+                    if inside:
+                        # These bytes belong to a file recovered whole by pass
+                        # A; inside an mdat a start code is a coincidence.
+                        stats["in_container"] += 1
+                        close("container_region")
+                        pending = None
+                        continue
                     pending = nal
                 if pending is not None:
                     end = size - file_trailing_zeros
@@ -191,6 +252,14 @@ class GenericNalCarver(RecoveryEngine):
         except OSError as exc:
             raise CarverSourceError(f"Cannot read {path}: {exc}") from exc
 
+        # One ordered list: files recovered whole by pass A and streams carved
+        # by pass B, in the order they appear in the image.
+        fragments = sorted(
+            fragments + containers, key=lambda c: c.fragment.byte_offset_start
+        )
+        for position, item in enumerate(fragments):
+            item.index = position
+
         recovery_hash = hashlib.sha256(
             "\n".join(f.sha256 for f in fragments).encode()
         ).hexdigest()
@@ -205,6 +274,8 @@ class GenericNalCarver(RecoveryEngine):
                 oversized_nals=stats["oversized"],
                 discarded_fragments=stats["discarded"],
                 codec=codec or "unknown",
+                container_files=len(containers),
+                nals_inside_containers=stats["in_container"],
             ),
             recovery_hash=recovery_hash,
         )
@@ -471,7 +542,10 @@ class GenericNalCarver(RecoveryEngine):
         with open(source_path, "rb") as fh:
             for frag in result.fragments:
                 f = frag.fragment
-                ext = "h265" if frag.features.codec == "h265" else "h264"
+                if frag.container is not None:
+                    ext = frag.container.extension.lstrip(".")
+                else:
+                    ext = "h265" if frag.features.codec == "h265" else "h264"
                 out_path = (
                     out_dir
                     / f"fragment_{frag.index:04d}_{f.byte_offset_start:012x}.{ext}"

@@ -148,6 +148,29 @@ export async function streamFragment(caseId, fragmentIndex, rangeHeader) {
   return res;
 }
 
+/** The stream endpoint, fetched with the operator header and saved to disk. */
+export async function downloadFragment(caseId, fragmentIndex, filename) {
+  const res = await fetch(
+    url(API_BASE, `/case/${encodeURIComponent(caseId)}/fragments/${fragmentIndex}/stream`),
+    { headers: authHeaders() },
+  );
+  if (!res.ok) throw new Error(await readError(res));
+  const blob = await res.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = objectUrl;
+  anchor.download = filename || `${caseId}-fragment-${fragmentIndex}`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 10_000);
+}
+
+/** Where the recovered bytes for one fragment can be streamed from. */
+export function fragmentStreamUrl(caseId, fragmentIndex) {
+  return url(API_BASE, `/case/${encodeURIComponent(caseId)}/fragments/${fragmentIndex}/stream`);
+}
+
 // ---------------------------------------------------------------------------
 // Acquisition
 // ---------------------------------------------------------------------------
@@ -161,6 +184,15 @@ export async function getAcquisitionRun(jobId) {
 
 export async function getAcquisitionResult(jobId) {
   return fetchJson(url(ACQ_BASE, `/runs/${encodeURIComponent(jobId)}/result`));
+}
+
+/** The demonstration image path, when demo/build_demo_case.py has been run. */
+export async function getDemoSource() {
+  try {
+    return await fetchJson(url(API_BASE, "/demo/source"));
+  } catch {
+    return { available: false, source_path: null };
+  }
 }
 
 export async function detectFormat(sourcePath) {

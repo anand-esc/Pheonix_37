@@ -73,3 +73,74 @@ This isolation ensures the underlying evidence fragment (`fragment_id`) remains 
 * Contiguous sequences sharing identical SPS parameters lacking definitive EOS markers or `zero_filler` padding are fragmented solely when triggered by the `short_gop` logic. A stream that terminates identically upon a GOP boundary may coalesce with successive contiguous recordings.
 * Carved fragments exist purely as Annex-B byte streams. Standard video player decodability mandates independent MP4 wrapping logic.
 * Truncated NAL units abutting non-zero disk garbage are bounded at the subsequent valid start code due to inherent binary stream constraints.
+
+## Container File Carving (Pass A)
+
+The NAL carver described above reads Annex-B elementary streams, which is what a
+recorder writes to its own disk: every access unit is introduced by a `00 00 01`
+start code. A file copied from a computer is a different shape. An MP4 keeps its
+NAL units length-prefixed inside an `mdat` box and carries no start codes at all,
+so a start-code scan over one finds only coincidences. On a five-second sample
+clip it finds 677 of them, and every fragment built from them is noise.
+
+`container.py` therefore runs first and carves such a file **as a file**. It finds
+the `ftyp` box that opens every ISO base media file (or the `RIFF....AVI ` header
+of an AVI), walks the box chain to the end, and returns exactly that byte range.
+The result hashes identical to the original, which is the only claim worth making
+about a recovered exhibit.
+
+### Rules
+
+1. **Candidate detection.** The image is scanned for `ftyp` and `RIFF` with an
+   overlap between block reads, so a signature split across two reads is still
+   found. A candidate `ftyp` box must be 16 to 512 bytes, a multiple of four, and
+   followed by a printable major brand.
+2. **Box walking.** Each header is read in whichever of the three defined forms it
+   uses: a 32-bit size, `size == 1` with a 64-bit length in the next eight bytes,
+   or `size == 0` meaning the box runs to the end of the file. Ignoring the second
+   form is how a parser silently mis-reads every file over four gigabytes.
+3. **Termination.** The chain ends at another `ftyp` (`next_file`), at the last
+   byte of the image (`clean_end`), at a box that runs past the end
+   (`truncated_box`), or at a header that is not a box (`invalid_box`).
+4. **A media box is required.** An `ftyp` with no `mdat`, or a RIFF header with no
+   `movi` list, holds no footage. It is counted as rejected rather than reported,
+   which is what keeps a vendor's four-byte marker from being announced as a
+   recovered file.
+5. **Exclusion.** The byte ranges of everything pass A claims are excluded from
+   the Annex-B scan, so the same bytes are never reported twice and a run of start
+   codes inside an `mdat` does not become a second fragment.
+
+### What is read beyond the boundaries
+
+Deliberately little, and every value comes out of the file's own header:
+`mvhd` gives the declared duration, `tkhd` and the sample entry give the geometry,
+and the sample entry fourcc gives the codec. Nothing is inferred and nothing is
+decoded.
+
+### Confidence
+
+| Heuristic | Delta |
+|---|---|
+| Base: valid header and box chain | 0.30 |
+| Index box present (`moov` / `idx1`) — the file can be played | +0.30 |
+| Media payload present (`mdat` / `movi`) | +0.25 |
+| Box chain ended on a boundary | +0.10 |
+| Last box runs past the end of the image | −0.20 |
+| Header declares a duration | +0.05 |
+| Clamp | 0.05 .. 0.95 |
+
+An intact file with an index and a payload scores 0.95. As with the stream
+carver, the score is reconstruction completeness and is stated as such in the
+rationale — it is not a claim about what the footage shows.
+
+### Where it shows up
+
+`CarvedFragment.container` carries the `ContainerInfo` for exhibits found by this
+pass; it is `None` for carved streams. `recovery_method` is
+`container_file_carve` rather than `annexb_nal_carve`, export keeps the original
+extension (`.mp4`, `.avi`), and the pipeline serves such a file directly to the
+viewer instead of wrapping it, because re-wrapping would change the bytes that
+were hashed.
+
+`CarveOptions.carve_containers` turns the pass off; the carver then behaves
+exactly as it did before this pass existed.

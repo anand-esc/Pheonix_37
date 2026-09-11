@@ -23,6 +23,8 @@ END_DELTAS = {
     "oversized_nal_gap": -0.10,
     "invalid_nal": -0.10,
     "truncated_nal": -0.10,
+    # the run ran into a file recovered whole by the container pass
+    "container_region": 0.00,
 }
 FLOOR, CEILING = 0.05, 0.95
 

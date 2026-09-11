@@ -3,8 +3,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Play, Loader2, AlertCircle, FileText, Clock, Layers, Cpu, HardDrive, Activity } from "lucide-react";
 import {
   getCase, getCaseFragments, getCaseLedger, mapLedgerEntry,
-  startAcquisitionRun, pollAcquisitionRun, deleteCase,
+  startAcquisitionRun, pollAcquisitionRun, deleteCase, getDemoSource, formatBytes,
 } from "../api";
+import { RecoveredVideos } from "../components/RecoveredVideos";
 import { useRole } from "../context/RoleContext";
 import CaseHeader from "../components/phoenix-ui-kit/CaseHeader";
 import ChainOfCustody from "../components/phoenix-ui-kit/ChainOfCustody";
@@ -24,6 +25,14 @@ export function CaseDetail() {
   const [isAcquireModalOpen, setIsAcquireModalOpen] = useState(false);
   const [sourcePath, setSourcePath] = useState("");
   const [isAcquiring, setIsAcquiring] = useState(false);
+  const [demoSource, setDemoSource] = useState(null);
+  const [acquireStatus, setAcquireStatus] = useState("");
+
+  // Offer the demonstration image when one has been built, so the path does
+  // not have to be typed on stage.
+  useEffect(() => {
+    getDemoSource().then((d) => d?.available && setDemoSource(d));
+  }, []);
 
   const handleAcquire = async () => {
     // Strip leading and trailing quotes (single and double) and whitespace
@@ -42,10 +51,20 @@ export function CaseDetail() {
       });
       setIsAcquireModalOpen(false);
       setSourcePath("");
-      await pollAcquisitionRun(run.job_id);
-      alert("Acquisition completed successfully!");
+      await pollAcquisitionRun(
+        run.job_id,
+        (update) => {
+          setAcquireStatus(
+            `${(update.last_event || "running").replace(/_/g, " ")} - ${formatBytes(update.bytes_read || 0)} read`,
+          );
+        },
+        1000,
+      );
+      setAcquireStatus("");
       await loadData();
+      setActiveTab("fragments");
     } catch (err) {
+      setAcquireStatus("");
       alert("Acquisition failed: " + err.message);
     } finally {
       setIsAcquiring(false);
@@ -150,7 +169,7 @@ export function CaseDetail() {
 
       <div className="flex gap-1 mb-6 border-b border-phx-border">
         {[
-          { id: "fragments", label: "Fragments", count: fragments.length, icon: Play },
+          { id: "fragments", label: "Recovered Videos", count: fragments.length, icon: Play },
           { id: "ledger", label: "Chain of Custody", count: ledgerEntries.length, icon: Layers },
           { id: "timeline", label: "Timeline", count: 0, icon: Clock },
           { id: "triage", label: "AI Triage", count: caseData?.evidence_items?.[0]?.detections?.length || 0, icon: Cpu },
@@ -178,13 +197,14 @@ export function CaseDetail() {
 
       <div className="min-h-[400px]">
         {activeTab === "fragments" && (
-          <div>
-            <div className="text-xs text-phx-secondary mb-3 uppercase tracking-wider font-semibold">Recovered Fragments</div>
+          <div className="space-y-4">
             {fragments.length === 0 ? (
               <div className="bg-white border border-phx-border rounded-lg p-12 text-center">
                 <Play size={40} className="text-phx-muted mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-phx-primary mb-2">No Fragments Recovered</h3>
-                <p className="text-sm text-phx-secondary mb-4">Run the acquisition pipeline to carve video fragments.</p>
+                <h3 className="text-lg font-semibold text-phx-primary mb-2">Nothing recovered yet</h3>
+                <p className="text-sm text-phx-secondary mb-4">
+                  Point the pipeline at a disk image or a video file to recover exhibits.
+                </p>
                 <button
                   onClick={() => setIsAcquireModalOpen(true)}
                   disabled={!can("RUN_CARVING")}
@@ -195,20 +215,7 @@ export function CaseDetail() {
                 </button>
               </div>
             ) : (
-              <div className="bg-white border border-phx-border rounded-lg overflow-hidden shadow-sm">
-                {fragments.map((f, idx) => (
-                  <FragmentRow
-                    key={f.fragment_id || idx}
-                    fragmentId={f.fragment_id || `frag-${idx}`}
-                    codec={f.codec_info || "Unknown"}
-                    durationLabel={f.duration ? `${Math.floor(f.duration / 60)}:${String(Math.floor(f.duration % 60)).padStart(2, '0')}` : undefined}
-                    confidence={f.confidence_score || 0}
-                    rationale={f.confidence_rationale || "No rationale provided"}
-                    caseId={id}
-                    fragmentIndex={idx}
-                  />
-                ))}
-              </div>
+              <RecoveredVideos caseId={id} fragments={fragments} />
             )}
           </div>
         )}
@@ -283,15 +290,42 @@ export function CaseDetail() {
               <h3 className="font-semibold text-phx-primary">Acquire Evidence</h3>
             </div>
             <div className="p-6">
-              <label className="block text-sm font-medium text-phx-secondary mb-2">Source Path (File/Device)</label>
+              <label className="block text-sm font-medium text-phx-secondary mb-2">
+                Source path (disk image, video file, or raw device)
+              </label>
               <input
                 type="text"
                 autoFocus
                 value={sourcePath}
                 onChange={(e) => setSourcePath(e.target.value)}
-                placeholder="e.g. C:\evidence\dvr_dump.bin"
-                className="w-full py-2 px-3 bg-phx-surface border border-phx-border rounded text-sm text-phx-primary focus:outline-none focus:border-phx-red/40 focus:ring-1 focus:ring-phx-red/20 mb-6"
+                placeholder="D:\evidence\dvr_dump.img   or   D:\clips\camera1.mp4"
+                className="w-full py-2 px-3 bg-phx-surface border border-phx-border rounded text-sm text-phx-primary focus:outline-none focus:border-phx-red/40 focus:ring-1 focus:ring-phx-red/20"
               />
+              <p className="text-[11px] text-phx-muted mt-2">
+                The backend reads this path and copies the bytes into the case before
+                anything else runs, so deleting the original afterwards does not affect
+                the case.
+              </p>
+              {demoSource && (
+                <button
+                  type="button"
+                  onClick={() => setSourcePath(demoSource.source_path)}
+                  className="mt-3 w-full text-left px-3 py-2 rounded border border-dashed border-phx-border hover:border-phx-red/40 hover:bg-phx-surface transition-colors"
+                >
+                  <span className="block text-xs font-semibold text-phx-primary">
+                    Use the demonstration image
+                  </span>
+                  <span className="block text-[10px] font-mono text-phx-muted truncate">
+                    {demoSource.source_path} ({formatBytes(demoSource.size_bytes)})
+                  </span>
+                </button>
+              )}
+              {acquireStatus && (
+                <p className="mt-3 text-[11px] font-mono text-phx-secondary bg-phx-surface border border-phx-border rounded p-2">
+                  {acquireStatus}
+                </p>
+              )}
+              <div className="mb-6" />
               <div className="flex justify-end gap-3">
                 <button
                   onClick={() => setIsAcquireModalOpen(false)}

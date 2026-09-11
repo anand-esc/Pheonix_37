@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from backend.core.evidence_model import Fragment
 
 RECOVERY_METHOD = "annexb_nal_carve"
+CONTAINER_RECOVERY_METHOD = "container_file_carve"
 
 
 class CarveOptions(BaseModel):
@@ -20,6 +21,10 @@ class CarveOptions(BaseModel):
     verify_nal_bytes: int = 64 * 1024  # NALs longer than this are checked for 00 00 00
     min_nals: int = 3  # fragments with fewer NALs are discarded as noise
     codec_hint: str | None = None  # "h264" / "h265" from detection, if known
+    # Whole MP4/AVI files are carved as files before the Annex-B scan, and the
+    # bytes they occupy are then excluded from it. Without this a copied .mp4
+    # is reported as a handful of fragments built from coincidental start codes.
+    carve_containers: bool = True
 
 
 class StreamInfo(BaseModel):
@@ -70,6 +75,30 @@ class FragmentFeatures(BaseModel):
     parameter_set_repeats: int = 0
 
 
+class ContainerInfo(BaseModel):
+    """What a recovered container file declares about itself.
+
+    Every value here is read out of the file's own header, never inferred:
+    ``duration_seconds`` comes from ``mvhd``, the geometry from ``tkhd`` or
+    the sample entry, the codec from the sample entry fourcc.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: str  # "mp4" | "avi"
+    brand: str | None = None  # ISO major brand, e.g. "isom"
+    extension: str  # file extension to write on export
+    boxes: list[str] = Field(default_factory=list)  # top-level chain, in order
+    has_index: bool  # moov / idx1 present: the file can be played as-is
+    has_media: bool  # mdat / movi present
+    end_reason: str
+    duration_seconds: float | None = None
+    width: int | None = None
+    height: int | None = None
+    codec_name: str | None = None
+    track_count: int = 0
+
+
 class CarvedFragment(BaseModel):
     """A ``Fragment`` from the shared contract plus the carver's own evidence."""
 
@@ -80,6 +109,9 @@ class CarvedFragment(BaseModel):
     features: FragmentFeatures
     stream: StreamInfo | None = None
     sps_sha256: str | None = None  # identity of the encoder configuration
+    # Set when the fragment is a whole container file rather than a run of
+    # Annex-B NAL units; the two are carved by different passes.
+    container: ContainerInfo | None = None
     sha256: str
     length: int
 
@@ -94,6 +126,8 @@ class CarveStats(BaseModel):
     oversized_nals: int
     discarded_fragments: int
     codec: str
+    container_files: int = 0  # whole MP4/AVI files recovered by the container pass
+    nals_inside_containers: int = 0  # start codes skipped as part of a carved file
 
 
 class CarveResult(BaseModel):

@@ -388,19 +388,24 @@ async def stream_fragment(
         raise HTTPException(status_code=404, detail=f"Case '{case_id}' not found")
 
     prefix = f"fragment_{fragment_index:04d}"
-    mp4_files = sorted((run_dir / "playable").glob(f"{prefix}*.mp4"))
-    raw_files = sorted((run_dir / "fragments").glob(f"{prefix}*.h26?"))
-    file_path = mp4_files[0] if mp4_files else (raw_files[0] if raw_files else None)
+    # A wrapped view is preferred; a file recovered whole by the container
+    # pass is already playable and is served from the fragments directory.
+    candidates = sorted((run_dir / "playable").glob(f"{prefix}*.mp4"))
+    for suffix in (".mp4", ".avi", ".mov", ".h264", ".h265"):
+        candidates.extend(sorted((run_dir / "fragments").glob(f"{prefix}*{suffix}")))
+    file_path = candidates[0] if candidates else None
     if file_path is None or not file_path.is_file():
         raise HTTPException(
             status_code=404, detail=f"Fragment {fragment_index} not found"
         )
 
     file_size = file_path.stat().st_size
-    if file_path.suffix == ".mp4":
-        media_type = "video/mp4"
-    else:
-        media_type = "video/h265" if file_path.suffix == ".h265" else "video/h264"
+    media_type = {
+        ".mp4": "video/mp4",
+        ".mov": "video/quicktime",
+        ".avi": "video/x-msvideo",
+        ".h265": "video/h265",
+    }.get(file_path.suffix.lower(), "video/h264")
 
     start, end = 0, file_size - 1
     if range_header:
@@ -518,6 +523,28 @@ def download_case_certificate(case_id: str, _: str = Depends(require_operator)):
         media_type="application/pdf",
         filename=f"BSA63-Certificate-{case_id}.pdf",
     )
+
+
+# ---------------------------------------------------------------------------
+# Demonstration helper
+# ---------------------------------------------------------------------------
+DEMO_IMAGE = Path("./demo/out/ntro_dvr_volume.img")
+
+
+@app.get("/api/demo/source", summary="Path of the demonstration image, if built")
+def demo_source(_: str = Depends(require_operator)) -> dict:
+    """Lets the client offer the demo image instead of asking for a path.
+
+    Returns nothing useful until ``demo/build_demo_case.py`` has been run, so
+    the button only appears when there is something for it to point at.
+    """
+    if not DEMO_IMAGE.is_file():
+        return {"available": False, "source_path": None, "size_bytes": 0}
+    return {
+        "available": True,
+        "source_path": str(DEMO_IMAGE.resolve()),
+        "size_bytes": DEMO_IMAGE.stat().st_size,
+    }
 
 
 @app.get("/health", summary="Health check endpoint")

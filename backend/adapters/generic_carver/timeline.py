@@ -97,6 +97,24 @@ class Timeline(BaseModel):
         return None
 
 
+def _signature_of(carved) -> str:
+    """The key fragments are grouped by.
+
+    A carved stream is identified by its SPS bytes: two recordings that share
+    an encoder configuration cannot be told apart from the bitstream alone. A
+    recovered container file exposes no SPS, so it is keyed by what its own
+    header declares instead, and files that differ in geometry or codec land
+    in different groups.
+    """
+    container = getattr(carved, "container", None)
+    if container is not None:
+        return (
+            f"container:{container.kind}:{container.codec_name or '?'}:"
+            f"{container.width or 0}x{container.height or 0}"
+        )
+    return carved.sps_sha256 or UNKNOWN_SIGNATURE
+
+
 def build_timeline(
     result: CarveResult, *, assumed_fps: float = DEFAULT_ASSUMED_FPS
 ) -> Timeline:
@@ -107,17 +125,34 @@ def build_timeline(
     groups: dict[str, ChannelGroup] = {}
     order: list[str] = []
     for carved in ordered:
-        signature = carved.sps_sha256 or UNKNOWN_SIGNATURE
+        # Recovered files group by their own geometry, not by an SPS digest
+        # they do not expose; streams keep grouping by encoder configuration.
+        signature = _signature_of(carved)
         if signature not in groups:
             order.append(signature)
             stream = carved.stream
-            groups[signature] = ChannelGroup(
-                channel_id=f"probable-ch{len(order):02d}",
-                stream_signature=signature,
-                codec=carved.features.codec,
-                resolution=(
+            container = carved.container
+            if container is not None:
+                resolution = (
+                    f"{container.width}x{container.height}"
+                    if container.width and container.height
+                    else None
+                )
+                codec_label = container.codec_name or container.kind.upper()
+            else:
+                resolution = (
                     f"{stream.width}x{stream.height}" if stream is not None else None
+                )
+                codec_label = carved.features.codec
+            groups[signature] = ChannelGroup(
+                channel_id=(
+                    f"recovered-file{len(order):02d}"
+                    if container is not None
+                    else f"probable-ch{len(order):02d}"
                 ),
+                stream_signature=signature,
+                codec=codec_label,
+                resolution=resolution,
                 declared_fps=stream.declared_fps if stream is not None else None,
             )
         groups[signature].fragment_indexes.append(carved.index)
@@ -128,12 +163,16 @@ def build_timeline(
     cursor: dict[str, float] = {}
     position: dict[str, int] = {}
     for sequence, carved in enumerate(ordered, start=1):
-        signature = carved.sps_sha256 or UNKNOWN_SIGNATURE
+        signature = _signature_of(carved)
         group = groups[signature]
         declared = group.declared_fps
         pictures = carved.features.picture_count
 
-        if pictures == 0:
+        container = carved.container
+        if container is not None and container.duration_seconds is not None:
+            # the container's own header declares the length; no estimate needed
+            fps, basis, seconds = None, "declared_duration", container.duration_seconds
+        elif pictures == 0:
             fps, basis, seconds = declared, "unknown", None
         elif declared:
             fps, basis, seconds = declared, "declared_fps", pictures / declared
@@ -168,7 +207,8 @@ def build_timeline(
                     if start is not None and seconds is not None
                     else None
                 ),
-                complete=carved.features.end_reason == "eos",
+                complete=carved.features.end_reason
+                in ("eos", "clean_end", "next_file", "padding"),
                 rationale=_entry_rationale(
                     carved, group, basis, fps, pictures, seconds
                 ),
