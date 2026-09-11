@@ -10,6 +10,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Optional
 
+import anyio
 from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
@@ -65,12 +66,16 @@ app.add_middleware(
         "http://localhost:3000",
         "http://localhost:5173",
         "http://localhost:8080",
+        "http://localhost:8000",
         "http://127.0.0.1:3000",
         "http://127.0.0.1:5173",
+        "http://127.0.0.1:8000",
     ],
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Range", "Accept-Ranges", "Content-Length"],
 )
 
 # ---------------------------------------------------------------------------
@@ -387,7 +392,7 @@ async def stream_fragment(
     raw_files = list(fragment_dir.glob(f"fragment_{fragment_index:04d}*.h264"))
 
     file_path = mp4_files[0] if mp4_files else (raw_files[0] if raw_files else None)
-    if not file_path.exists():
+    if file_path is None or not file_path.exists():
         raise HTTPException(status_code=404, detail=f"Fragment {fragment_index} not found")
 
     file_size = file_path.stat().st_size
@@ -410,13 +415,15 @@ async def stream_fragment(
     end = min(file_size - 1, end)
     content_length = end - start + 1
 
-    async def file_iterator(path: Path, start: int, end: int, chunk_size: int = 8192):
+    async def file_iterator(path: Path, start: int, end: int, chunk_size: int = 65536):
+        def _read(fh, n):
+            return fh.read(n)
+
         with open(path, "rb") as f:
             f.seek(start)
             remaining = end - start + 1
             while remaining > 0:
-                read_size = min(chunk_size, remaining)
-                chunk = f.read(read_size)
+                chunk = await anyio.to_thread.run_sync(_read, f, min(chunk_size, remaining))
                 if not chunk:
                     break
                 remaining -= len(chunk)

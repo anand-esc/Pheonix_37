@@ -169,9 +169,10 @@ class DahuaAdapter(GenericCarverAdapter):
                 chunk = f.read(STREAM_CHUNK_SIZE)
                 if not chunk:
                     # Process remaining buffer
-                    fragments.extend(self._scan_buffer_for_frames(
+                    final_fragments, _ = self._scan_buffer_for_frames(
                         buffer, buffer_start_offset, is_final=True
-                    ))
+                    )
+                    fragments.extend(final_fragments)
                     break
                 
                 buffer += chunk

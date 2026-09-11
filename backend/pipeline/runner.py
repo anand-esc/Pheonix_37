@@ -228,7 +228,7 @@ def run_pipeline(
     exported: list[ExportedFragment] = []
     playable: list[PlayableView] = []
     parsed: EvidenceItem | None = None
-    if not isinstance(adapter, GenericCarverAdapter):
+    if type(adapter) is not GenericCarverAdapter:
         try:
             parsed = adapter.parse(str(image_path))
         except NotImplementedError as exc:
@@ -257,7 +257,7 @@ def run_pipeline(
                 reason=resolution.reason,
             )
             adapter = GenericCarverAdapter()
-    if isinstance(adapter, GenericCarverAdapter):
+    if type(adapter) is GenericCarverAdapter:
         options = carve_options or CarveOptions()
         adapter = GenericCarverAdapter(
             options,
@@ -283,7 +283,43 @@ def run_pipeline(
             )
         else:
             playable = []
-    
+
+    if isinstance(adapter, GenericCarverAdapter) and not exported and parsed and parsed.fragments:
+        frag_dir = out_dir / FRAGMENT_DIR
+        frag_dir.mkdir(parents=True, exist_ok=True)
+        with open(image_path, "rb") as src_f:
+            for idx, frag in enumerate(parsed.fragments):
+                ext = ".h265" if "265" in (frag.codec_info or "") else ".h264"
+                start = frag.byte_offset_start or 0
+                end = frag.byte_offset_end or start
+                frag_filename = f"fragment_{idx:04d}_{start:012d}{ext}"
+                out_path = frag_dir / frag_filename
+                src_f.seek(start)
+                length = max(0, end - start)
+                frag_bytes = src_f.read(length) if length > 0 else b""
+                out_path.write_bytes(frag_bytes)
+                frag_sha = hashlib.sha256(frag_bytes).hexdigest()
+                exported.append(
+                    ExportedFragment(
+                        index=idx,
+                        out_path=str(out_path),
+                        byte_offset_start=start,
+                        byte_offset_end=end,
+                        sha256=frag_sha,
+                        length=len(frag_bytes),
+                    )
+                )
+        if wrap_mp4:
+            playable = _wrap_playable(
+                exported,
+                out_dir / PLAYABLE_DIR,
+                fragment_ids={
+                    idx: f"frag-{idx:04d}" for idx in range(len(exported))
+                },
+            )
+        else:
+            playable = []
+
     recovery_end = time.perf_counter()
     timings.append(StageTiming(stage="recovery", seconds=recovery_end - t0))
     t0 = recovery_end
