@@ -271,7 +271,7 @@ class TestIDORPrevention:
     def test_correct_role_succeeds(self):
         """Investigator-01 can access the VIEW_EVIDENCE-protected endpoint."""
         res = self.client.get(
-            "/api/protected/evidence/MOCK-CASE-001",
+            "/api/protected/evidence/case-demo-001",
             headers={"X-Operator-ID": "investigator-01"},
         )
         assert res.status_code == 200
@@ -279,7 +279,7 @@ class TestIDORPrevention:
     def test_wrong_role_rejected(self):
         """Court-export operator cannot access VIEW_EVIDENCE endpoint."""
         res = self.client.get(
-            "/api/protected/evidence/MOCK-CASE-001",
+            "/api/protected/evidence/case-demo-001",
             headers={"X-Operator-ID": "court-export-01"},
         )
         assert res.status_code == 403
@@ -288,7 +288,7 @@ class TestIDORPrevention:
         """Injecting ?action=EXPORT_BUNDLE in the URL does NOT grant escalated access.
         The server ignores query-param action entirely; permission is statically bound."""
         res = self.client.get(
-            "/api/protected/evidence/MOCK-CASE-001?action=EXPORT_BUNDLE",
+            "/api/protected/evidence/case-demo-001?action=EXPORT_BUNDLE",
             headers={"X-Operator-ID": "court-export-01"},
         )
         # Still 403 — the ?action= param is meaningless
@@ -297,7 +297,7 @@ class TestIDORPrevention:
     def test_unknown_operator_rejected(self):
         """An unregistered operator is always denied."""
         res = self.client.get(
-            "/api/protected/evidence/MOCK-CASE-001",
+            "/api/protected/evidence/case-demo-001",
             headers={"X-Operator-ID": "hacker-99"},
         )
         assert res.status_code == 403
