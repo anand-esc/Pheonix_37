@@ -8,31 +8,18 @@ from __future__ import annotations
 
 import base64
 from typing import Optional
-from fastapi import APIRouter, HTTPException
+
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from backend.api.shared import get_event_sink, get_ledger, get_rbac_controller
-from backend.ledger.rbac import Role
 from backend.adapters.dahua import DahuaAdapter
+from backend.api.auth import require_operator, require_permission
+from backend.api.shared import get_ledger, get_rbac_controller
 
-
-# Get shared instances
-event_sink = get_event_sink()
+# Shared instances; operator roles are registered in backend.api.shared
 ledger = get_ledger()
 rbac = get_rbac_controller()
 dahua = DahuaAdapter()
-
-# Frontend operator IDs (production — must match frontend/src/api.js OPERATORS)
-rbac.assign_role("investigator-01", Role.INVESTIGATOR)
-rbac.assign_role("technical-expert-01", Role.TECHNICAL_EXPERT)
-rbac.assign_role("auditor-01", Role.AUDITOR)
-rbac.assign_role("court-export-01", Role.COURT_EXPORT)
-
-# Legacy IDs (backward test compatibility)
-rbac.assign_role("sat-01", Role.INVESTIGATOR)
-rbac.assign_role("tech-02", Role.TECHNICAL_EXPERT)
-rbac.assign_role("audit-03", Role.AUDITOR)
-rbac.assign_role("court-04", Role.COURT_EXPORT)
 
 router = APIRouter(prefix="/api/ledger", tags=["Ledger & RBAC"])
 
@@ -48,17 +35,22 @@ class AccessRequest(BaseModel):
 
 
 @router.get("/chain")
-def get_chain():
+def get_chain(_: str = Depends(require_operator)):
     return [entry.model_dump() for entry in ledger.chain]
 
 
 @router.post("/verify")
-def verify():
+def verify(_: str = Depends(require_operator)):
     return ledger.verify_chain()
 
 
 @router.post("/tamper")
-def tamper(req: TamperRequest):
+def tamper(req: TamperRequest, _: str = Depends(require_permission("AUDIT_LOGS"))):
+    """Demo control: deliberately corrupt one block so verify_chain can catch it.
+
+    Restricted to auditors (AUDIT_LOGS) so the audit trail cannot be altered
+    by an unprivileged client.
+    """
     try:
         ledger.tamper_block(req.index, req.payload)
     except IndexError as exc:
@@ -67,19 +59,23 @@ def tamper(req: TamperRequest):
 
 
 @router.post("/restore")
-def restore():
+def restore(_: str = Depends(require_permission("AUDIT_LOGS"))):
     ledger.restore_chain()
     return {"status": "restored", "chain_length": ledger.length}
 
 
 @router.post("/simulate-access")
-def simulate_access(req: AccessRequest):
+def simulate_access(req: AccessRequest, _: str = Depends(require_operator)):
     rbac.enforce_access(req.operator_id, req.action)
     return {"status": "granted", "operator_id": req.operator_id, "action": req.action}
 
 
 @router.get("/dahua/probe")
-def dahua_probe(data_b64: Optional[str] = None, file_path: Optional[str] = None):
+def dahua_probe(
+    data_b64: str | None = None,
+    file_path: str | None = None,
+    _: str = Depends(require_operator),
+):
     if data_b64:
         raw = base64.b64decode(data_b64)
     elif file_path:

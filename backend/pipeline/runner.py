@@ -36,7 +36,7 @@ from backend.adapters.generic_carver.models import (
     ExportedFragment,
 )
 from backend.adapters.generic_carver.timeline import Timeline
-from backend.core.evidence_model import EvidenceItem, HashRecord
+from backend.core.evidence_model import DetectionResult, EvidenceItem, HashRecord
 from backend.core.interfaces import CryptoProvider
 from backend.detection.detector import FormatDetector, resolve_adapter
 from backend.detection.models import DetectionReport
@@ -44,6 +44,18 @@ from backend.pipeline.custody import write_custody_facts
 from backend.pipeline.events import EventSink, InMemoryEventSink, PipelineEvent, emit
 
 logger = logging.getLogger("phoenix.pipeline.runner")
+
+
+class _RecordingSink:
+    """Forward to the caller's sink and keep a copy of every event for the transcript."""
+
+    def __init__(self, inner: EventSink) -> None:
+        self.inner = inner
+        self.events: list[PipelineEvent] = []
+
+    def emit(self, event: PipelineEvent) -> None:
+        self.events.append(event)
+        self.inner.emit(event)
 
 IMAGE_NAME = "evidence.img"
 FRAGMENT_DIR = "fragments"
@@ -182,6 +194,8 @@ def run_pipeline(
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     sink = sink if sink is not None else InMemoryEventSink()
+    if not hasattr(sink, "events"):
+        sink = _RecordingSink(sink)
     detector = detector or FormatDetector()
     started = datetime.now(UTC)
     timings: list[StageTiming] = []
@@ -229,19 +243,29 @@ def run_pipeline(
     playable: list[PlayableView] = []
     parsed: EvidenceItem | None = None
     if type(adapter) is not GenericCarverAdapter:
+        fallback_reason: str | None = None
         try:
             parsed = adapter.parse(str(image_path))
         except NotImplementedError as exc:
-            # Safety net: a vendor adapter that passed the probe but has no
-            # parser yet must not stop intake. Route to the generic carver
+            # a vendor adapter that passed the probe but has no parser yet
+            fallback_reason = f"parse raised NotImplementedError ({exc})"
+        else:
+            if not parsed.fragments:
+                # A vendor parser that finds nothing (missing or damaged index)
+                # must not end the recovery: the generic carver still reads
+                # the raw stream, which is the whole point of having it.
+                fallback_reason = "vendor parser found no recordings"
+                parsed = None
+        if fallback_reason is not None:
+            # Safety net: intake must not stop. Route to the generic carver
             # and record the change of plan.
             resolution = resolution.model_copy(
                 update={
                     "resolved_module": GenericCarverAdapter.__module__,
                     "resolved_class": GenericCarverAdapter.__name__,
                     "fallback": True,
-                    "reason": f"{resolution.reason}; parse raised "
-                    f"NotImplementedError ({exc}); using generic carver",
+                    "reason": f"{resolution.reason}; {fallback_reason}; "
+                    "using generic carver",
                     "adapter": None,
                 }
             )
@@ -284,7 +308,7 @@ def run_pipeline(
         else:
             playable = []
 
-    if isinstance(adapter, GenericCarverAdapter) and not exported and parsed and parsed.fragments:
+    if not exported and parsed and parsed.fragments:
         frag_dir = out_dir / FRAGMENT_DIR
         frag_dir.mkdir(parents=True, exist_ok=True)
         with open(image_path, "rb") as src_f:
@@ -314,7 +338,7 @@ def run_pipeline(
                 exported,
                 out_dir / PLAYABLE_DIR,
                 fragment_ids={
-                    idx: f"frag-{idx:04d}" for idx in range(len(exported))
+                    idx: frag.fragment_id for idx, frag in enumerate(parsed.fragments)
                 },
             )
         else:
@@ -329,7 +353,9 @@ def run_pipeline(
     if playable:
         t0 = time.perf_counter()
         try:
-            from backend.adapters.generic_carver.frame_extractor import extract_frames_from_playable
+            from backend.adapters.generic_carver.frame_extractor import (
+                extract_frames_from_playable,
+            )
             from backend.ai.triage import analyze_frame
             
             frames = extract_frames_from_playable(playable, max_frames_per_fragment=3)
@@ -370,8 +396,9 @@ def run_pipeline(
     if encrypt:
         t0 = time.perf_counter()
         if crypto is None:
-            from backend.crypto.provider import PhoenixCryptoProvider
             import os
+
+            from backend.crypto.provider import PhoenixCryptoProvider
 
             demo_mode = os.environ.get("PHOENIX_DEMO_MODE", "").lower() in ("1", "true", "yes")
             crypto = PhoenixCryptoProvider(demo_mode=demo_mode)

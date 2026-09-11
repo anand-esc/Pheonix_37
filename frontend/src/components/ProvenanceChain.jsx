@@ -35,7 +35,7 @@ export function ProvenanceChain({ caseId, initialCaseData }) {
     };
 
     pollCase();
-    const interval = setInterval(pollCase, 1500);
+    const interval = setInterval(pollCase, 5000);
 
     return () => {
       isMounted = false;
@@ -43,10 +43,6 @@ export function ProvenanceChain({ caseId, initialCaseData }) {
     };
   }, [caseId]);
 
-  const origHash = caseData?.evidence?.hash || null;
-  const origTime = caseData?.evidence?.acquiredAt || null;
-  const parsedHash = caseData?.parsedHash || null;
-  const parsedTime = caseData?.parsedAt || null;
   const primaryEvidence = caseData?.evidence_items?.[0] || caseData?.evidence;
   const hashLineage = primaryEvidence?.hash_lineage || [];
 
@@ -64,9 +60,10 @@ export function ProvenanceChain({ caseId, initialCaseData }) {
   const parsedHash = parsedRecord?.hex_digest || caseData?.parsedHash || null;
   const parsedTime = parsedRecord?.timestamp_utc || caseData?.parsedAt || null;
 
+  // the carver records each fragment's digest immediately before encryption
   const carveRecord = hashLineage.find(
     (h) => h.pipeline_stage?.toLowerCase() === "carve" || h.pipeline_stage?.toLowerCase() === "recovery"
-  );
+  ) || hashLineage.find((h) => h.pipeline_stage?.toLowerCase().startsWith("pre_encryption"));
   const firstFragment = primaryEvidence?.fragments?.[0];
   const lastRec =
     caseData?.lastRecovery ||
@@ -142,11 +139,6 @@ export function ProvenanceChain({ caseId, initialCaseData }) {
       title: "4. Report Package Hash",
       subtitle: "BSA Sec 63 Court Seal",
       icon: FileCheck,
-      state: "pending",
-      hash: null,
-      timestamp: null,
-      details: "Generated on legal report submission.",
-      note: "Generated on report submission",
       state: reportHash ? "completed" : "pending",
       hash: reportHash,
       timestamp: reportTime,

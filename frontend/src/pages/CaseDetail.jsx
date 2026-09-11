@@ -1,7 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Play, Loader2, AlertCircle, FileText, Clock, Layers, Cpu } from "lucide-react";
-import { getCase, getCaseFragments, getCaseLedger, mapLedgerEntry } from "../api";
+import { ArrowLeft, Play, Loader2, AlertCircle, FileText, Clock, Layers, Cpu, HardDrive, Activity } from "lucide-react";
+import {
+  getCase, getCaseFragments, getCaseLedger, mapLedgerEntry,
+  startAcquisitionRun, pollAcquisitionRun, deleteCase,
+} from "../api";
 import { useRole } from "../context/RoleContext";
 import CaseHeader from "../components/phoenix-ui-kit/CaseHeader";
 import ChainOfCustody from "../components/phoenix-ui-kit/ChainOfCustody";
@@ -10,7 +13,7 @@ import FragmentRow from "../components/phoenix-ui-kit/FragmentRow";
 export function CaseDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { role } = useRole();
+  const { role, operatorId, can } = useRole();
   const [caseData, setCaseData] = useState(null);
   const [fragments, setFragments] = useState([]);
   const [ledgerEntries, setLedgerEntries] = useState([]);
@@ -29,55 +32,47 @@ export function CaseDetail() {
     if (!cleanPath) return;
     try {
       setIsAcquiring(true);
-      const api = await import("../api");
-      const run = await api.startAcquisitionRun({
+      // the header identifies the operator; the body records the same id in custody
+      const run = await startAcquisitionRun({
         source_path: cleanPath,
         case_id: id,
-        operator_id: role,
+        operator_id: operatorId,
         out_dir: `case_store/${id}/run`,
         encrypt: true,
       });
       setIsAcquireModalOpen(false);
       setSourcePath("");
-      
-      await api.pollAcquisitionRun(run.job_id, (progressRun) => {
-        console.log("Acquisition progress:", progressRun);
-      });
-      
+      await pollAcquisitionRun(run.job_id);
       alert("Acquisition completed successfully!");
-      window.location.reload();
+      await loadData();
     } catch (err) {
       alert("Acquisition failed: " + err.message);
+    } finally {
       setIsAcquiring(false);
     }
   };
 
-  useEffect(() => {
-    let isMounted = true;
-    const loadData = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const [c, frags, ledger] = await Promise.all([
-          getCase(id),
-          getCaseFragments(id),
-          getCaseLedger(id).catch(() => []),
-        ]);
-        if (isMounted) {
-          setCaseData(c);
-          setFragments(frags || []);
-          setLedgerEntries((ledger || []).map(mapLedgerEntry));
-        }
-      } catch (err) {
-        console.error("Failed to load case detail", err);
-        if (isMounted) setError("Failed to load case detail");
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    };
-    loadData();
-    return () => { isMounted = false; };
+  const loadData = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const [c, frags, ledger] = await Promise.all([
+        getCase(id),
+        getCaseFragments(id),
+        getCaseLedger(id).catch(() => []),
+      ]);
+      setCaseData(c);
+      setFragments(frags || []);
+      setLedgerEntries((ledger || []).map(mapLedgerEntry));
+    } catch (err) {
+      console.error("Failed to load case detail", err);
+      setError(err.message || "Failed to load case detail");
+    } finally {
+      setIsLoading(false);
+    }
   }, [id]);
+
+  useEffect(() => { loadData(); }, [loadData]);
 
   const statusMap = { "Intake": "pending", "Processing": "pending", "Recovered": "validated", "Reported": "validated" };
 
@@ -115,19 +110,28 @@ export function CaseDetail() {
           <span>Back to Dashboard</span>
         </button>
         <div className="flex items-center gap-3">
+          <button onClick={() => navigate(`/cases/${id}/evidence`)} className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-phx-secondary hover:text-phx-primary border border-phx-border rounded transition-colors">
+            <HardDrive size={14} />
+            Evidence Intake
+          </button>
+          <button onClick={() => navigate(`/cases/${id}/analysis`)} className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-phx-secondary hover:text-phx-primary border border-phx-border rounded transition-colors">
+            <Activity size={14} />
+            Analysis
+          </button>
           <button 
+            disabled={!can("RUN_CARVING")}
+            title={can("RUN_CARVING") ? "Delete this case" : "Only an Investigator can delete a case"}
             onClick={async () => {
-              if (window.confirm("Are you sure you want to delete this case completely? This will wipe the blockchain ledger and all carved fragments from disk. This cannot be undone.")) {
+              if (window.confirm("Are you sure you want to delete this case completely? This will wipe the audit ledger and all carved fragments from disk. This cannot be undone.")) {
                 try {
-                  const api = await import("../api");
-                  await api.deleteCase(id);
+                  await deleteCase(id);
                   navigate("/cases");
                 } catch (err) {
                   alert("Failed to delete case: " + err.message);
                 }
               }
             }}
-            className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-phx-red hover:bg-phx-red hover:text-white border border-phx-red rounded transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-phx-red hover:bg-phx-red hover:text-white border border-phx-red rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Delete Case
           </button>
@@ -181,7 +185,12 @@ export function CaseDetail() {
                 <Play size={40} className="text-phx-muted mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-phx-primary mb-2">No Fragments Recovered</h3>
                 <p className="text-sm text-phx-secondary mb-4">Run the acquisition pipeline to carve video fragments.</p>
-                <button onClick={() => setIsAcquireModalOpen(true)} className="btn-primary mx-auto">
+                <button
+                  onClick={() => setIsAcquireModalOpen(true)}
+                  disabled={!can("RUN_CARVING")}
+                  title={can("RUN_CARVING") ? "" : "Only an Investigator can start acquisition"}
+                  className="btn-primary mx-auto disabled:opacity-40 disabled:cursor-not-allowed"
+                >
                   Start Acquisition
                 </button>
               </div>

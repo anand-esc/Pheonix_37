@@ -6,13 +6,24 @@ project_root = Path(SPECPATH).parent.parent
 
 a = Analysis(
     [str(project_root / "backend" / "run_server.py")],
-    pathex=[str(project_root), str(project_root / "backend")],
+    pathex=[str(project_root)],
+    datas=[
+        (
+            str(project_root / "backend" / "reporting" / "templates"),
+            "backend/reporting/templates",
+        )
+    ],
     hiddenimports=[
         "uvicorn.logging",
         "uvicorn.loops.auto",
         "uvicorn.protocols.http.auto",
         "uvicorn.lifespan.on",
-        "api.main",
+        "backend.api.main",
+        "backend.adapters.generic_carver.adapter",
+        "backend.adapters.hikvision",
+        "backend.adapters.dahua",
+        "backend.crypto.provider",
+        "backend.reporting.certificate_draft",
         "pydantic",
         "hashlib",
         "hmac",

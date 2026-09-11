@@ -2,22 +2,19 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   HardDrive, FileCheck, ArrowLeft, ArrowRight, RefreshCw, ShieldCheck,
-  Loader2, CheckCircle2, AlertCircle, Lock, Play,
+  Loader2, CheckCircle2, AlertCircle, Lock,
 } from "lucide-react";
 import { CaseNavigationTabs } from "../components/CaseNavigationTabs";
 import { Badge } from "../components/Badge";
 import { SectionHeading } from "../components/SectionHeading";
 import { HashDisplay } from "../components/HashDisplay";
-import {
-  getCase, startAcquisitionRun, pollAcquisitionRun,
-  formatBytes, formatDate, mapBackendStatus
-} from "../api";
+import { getCase, startAcquisitionRun, pollAcquisitionRun, formatBytes, formatDate } from "../api";
 import { useRole } from "../context/RoleContext";
 
 export function EvidencePage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { role } = useRole();
+  const { role, operatorId, can } = useRole();
 
   const [caseData, setCaseData] = useState(null);
   const [isLoadingCase, setIsLoadingCase] = useState(true);
@@ -41,25 +38,14 @@ export function EvidencePage() {
         const c = await getCase(id);
         if (isMounted) {
           setCaseData(c);
-          if (c && c.hasEvidence) {
-          const primaryEvidence = c?.evidence_items?.[0] || c?.evidence;
-          const intakeHash = primaryEvidence?.hash_lineage?.find(
-            (h) => h.pipeline_stage?.toLowerCase() === "intake" && (h.algorithm === "SHA-256" || !h.algorithm)
-          )?.hex_digest || primaryEvidence?.hash_lineage?.find(
-            (h) => h.pipeline_stage?.toLowerCase() === "intake"
-          )?.hex_digest || primaryEvidence?.hash;
-
-          if (primaryEvidence && (primaryEvidence.fragments?.length > 0 || intakeHash || c?.hasEvidence)) {
+          // a case that already holds evidence opens in its completed state
+          if (c && c.hasEvidence && c.evidence) {
             setAcquisitionStage("done");
             setAcquisitionResult({
-              hash: c.evidence?.hash || "",
-              fileName: c.evidence?.fileName || "",
-              fileSize: c.evidence?.fileSize || 0,
-              acquiredAt: c.evidence?.acquiredAt || "",
-              hash: intakeHash || "RECORDED",
-              fileName: primaryEvidence.source_device_info || primaryEvidence.fileName || "evidence.img",
-              fileSize: parseInt(primaryEvidence.metadata?.bytes_read || primaryEvidence.fileSize || 0, 10),
-              acquiredAt: primaryEvidence.metadata?.acquired_utc || primaryEvidence.acquiredAt || c.intake_timestamp_utc || "",
+              hash: c.evidence.hash || "RECORDED",
+              fileName: c.evidence.fileName,
+              fileSize: c.evidence.fileSize,
+              acquiredAt: c.evidence.acquiredAt,
             });
           }
         }
@@ -84,7 +70,6 @@ export function EvidencePage() {
       setAcquisitionError(null);
       setProgressBytes(0);
 
-      const operatorId = localStorage.getItem("phoenix_operator_id") || "investigator-01";
       const run = await startAcquisitionRun({
         source_path: sourcePath,
         case_id: id,
@@ -311,7 +296,8 @@ export function EvidencePage() {
                   </div>
                   <button
                     onClick={handleStartAcquisition}
-                    disabled={!sourcePath.trim()}
+                    disabled={!sourcePath.trim() || !can("RUN_CARVING")}
+                    title={can("RUN_CARVING") ? "" : "Only an Investigator can start acquisition"}
                     className="btn-primary py-3 px-6 whitespace-nowrap text-sm font-bold shadow-lg shadow-phx-cyan/10 disabled:opacity-50 disabled:shadow-none"
                   >
                     <Lock size={18} />

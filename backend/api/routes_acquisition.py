@@ -1,9 +1,4 @@
-"""Acquisition-side HTTP routes (not yet registered in ``backend.api.main``).
-
-Registering is one line in ``main.py``::
-
-    from backend.api.routes_acquisition import router as acquisition_router
-    app.include_router(acquisition_router)
+"""Acquisition-side HTTP routes, registered in ``backend.api.main``.
 
 Runs execute in a worker thread so the event loop stays responsive; the
 in-memory ``JobStore`` tracks them. It is per-process and non-persistent,
@@ -26,10 +21,11 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
 
 from backend.acquisition.exceptions import AcquisitionError
+from backend.api.auth import require_operator, require_permission, validate_case_id
 from backend.api.shared import get_event_sink
 from backend.detection.detector import FormatDetector
 from backend.detection.models import DetectionReport
@@ -239,8 +235,10 @@ store = JobStore()
 async def start_run(
     request: RunRequest,
     wait: bool = Query(False, description="block until the run finishes"),
+    _: str = Depends(require_permission("RUN_CARVING")),
 ) -> JobView:
     """Start an acquisition run. Returns immediately unless ``wait=true``."""
+    validate_case_id(request.case_id)
     if not Path(request.source_path).exists():
         raise HTTPException(status_code=400, detail="source_path does not exist")
     job = store.create(request)
@@ -252,17 +250,19 @@ async def start_run(
 
 
 @router.get("/runs", response_model=list[JobView])
-async def list_runs() -> list[JobView]:
+async def list_runs(_: str = Depends(require_operator)) -> list[JobView]:
     return [j.view() for j in store.all()]
 
 
 @router.get("/runs/{job_id}", response_model=JobView)
-async def get_run(job_id: str) -> JobView:
+async def get_run(job_id: str, _: str = Depends(require_operator)) -> JobView:
     return store.get(job_id).view()
 
 
 @router.get("/runs/{job_id}/result", response_model=PipelineResult)
-async def get_result(job_id: str) -> PipelineResult:
+async def get_result(
+    job_id: str, _: str = Depends(require_operator)
+) -> PipelineResult:
     job = store.get(job_id)
     if job.status is JobStatus.FAILED:
         raise HTTPException(status_code=409, detail=job.error)
@@ -272,7 +272,9 @@ async def get_result(job_id: str) -> PipelineResult:
 
 
 @router.get("/runs/{job_id}/events", response_model=list[PipelineEvent])
-async def get_events(job_id: str) -> list[PipelineEvent]:
+async def get_events(
+    job_id: str, _: str = Depends(require_operator)
+) -> list[PipelineEvent]:
     job = store.get(job_id)
     with job.lock:
         return list(job._events)
@@ -285,7 +287,10 @@ class DetectRequest(BaseModel):
 
 
 @router.post("/detect", response_model=DetectionReport)
-async def detect(request: DetectRequest) -> DetectionReport:
+async def detect(
+    request: DetectRequest,
+    _: str = Depends(require_permission("RUN_CARVING", "VALIDATE_PARSER")),
+) -> DetectionReport:
     """Bounded signature scan of a file; cheap enough to run inline."""
     path = Path(request.source_path)
     if not path.is_file():

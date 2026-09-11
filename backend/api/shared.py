@@ -1,10 +1,10 @@
 """Shared global state for the API layer."""
 
 import os
-from backend.ledger.event_bus import InMemoryEventSink
-from backend.ledger.audit_ledger import AuditLedger
-from backend.ledger.rbac import RBACController, init_rbac
 
+from backend.ledger.audit_ledger import AuditLedger
+from backend.ledger.event_bus import InMemoryEventSink
+from backend.ledger.rbac import RBACController, Role, init_rbac
 
 _event_sink: InMemoryEventSink | None = None
 _ledger: AuditLedger | None = None
@@ -27,10 +27,26 @@ def get_ledger() -> AuditLedger:
     return _ledger
 
 
+# Operator ids the desktop client offers (frontend/src/api.js OPERATORS),
+# plus the short ids used by the ledger/RBAC test-suite.
+DEFAULT_OPERATORS: dict[str, Role] = {
+    "investigator-01": Role.INVESTIGATOR,
+    "technical-expert-01": Role.TECHNICAL_EXPERT,
+    "auditor-01": Role.AUDITOR,
+    "court-export-01": Role.COURT_EXPORT,
+    "sat-01": Role.INVESTIGATOR,
+    "tech-02": Role.TECHNICAL_EXPERT,
+    "audit-03": Role.AUDITOR,
+    "court-04": Role.COURT_EXPORT,
+}
+
+
 def get_rbac_controller() -> RBACController:
     global _rbac_controller
     if _rbac_controller is None:
         _rbac_controller = init_rbac(get_event_sink())
+        for operator_id, role in DEFAULT_OPERATORS.items():
+            _rbac_controller.assign_role(operator_id, role)
     return _rbac_controller
 
 

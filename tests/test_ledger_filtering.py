@@ -17,7 +17,7 @@ def run_acquisition_job(case_id: str, operator_id: str, out_dir: Path) -> str:
     """Start an acquisition job and wait for completion. Returns job_id."""
     out_dir.mkdir(parents=True, exist_ok=True)
     build_dvr_image(out_dir / "sample.img", size_bytes=512 * 1024, seed=5, vendor_variant="none")
-    client = TestClient(app)
+    client = TestClient(app, headers={"X-Operator-ID": "investigator-01"})
     r = client.post('/acquisition/runs', json={
         'source_path': str(out_dir / "sample.img"),
         'case_id': case_id,
@@ -50,7 +50,7 @@ def test_ledger_filtering():
         print("2. Running CASE-B...")
         run_acquisition_job('CASE-B', 'op-b', tmp_path / 'run_b')
         
-        client = TestClient(app)
+        client = TestClient(app, headers={"X-Operator-ID": "investigator-01"})
         
         # Check CASE-A ledger
         print("\n3. Checking /api/case/CASE-A/ledger...")

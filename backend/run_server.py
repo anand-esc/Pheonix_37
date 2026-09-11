@@ -2,11 +2,11 @@
 
 PyInstaller compiles this file into a standalone binary that Electron spawns
 as a child process.  The frozen backend listens on 127.0.0.1:8000 and exposes
-the FastAPI application defined in ``api.main``.
+the FastAPI application defined in ``backend.api.main``.
 
 Required hidden imports (for PyInstaller spec / CLI):
     uvicorn.logging, uvicorn.loops.auto, uvicorn.protocols.http.auto,
-    uvicorn.lifespan.on, pydantic, hashlib, hmac, fastapi, api.main
+    uvicorn.lifespan.on, pydantic, hashlib, hmac, fastapi, backend.api.main
 """
 
 from __future__ import annotations
@@ -15,6 +15,7 @@ from __future__ import annotations
 # This MUST execute before any other logic — including top-level imports
 # that might themselves spawn subprocesses.
 import multiprocessing
+
 multiprocessing.freeze_support()
 
 import atexit
@@ -25,15 +26,14 @@ from pathlib import Path
 from types import FrameType
 
 # ---------------------------------------------------------------------------
-# Ensure both the project root and backend/ are importable so that
-# ``api.main:app`` resolves whether running from source or from a frozen
-# PyInstaller bundle.
+# Ensure the project root is importable so that ``backend.api.main:app``
+# resolves whether running from source or from a frozen PyInstaller bundle.
+# The app is imported under this one name only, so its module-level
+# singletons (event sink, ledger, RBAC) exist exactly once per process.
 # ---------------------------------------------------------------------------
-BACKEND_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = BACKEND_DIR.parent
-for _import_root in (str(PROJECT_ROOT), str(BACKEND_DIR)):
-    if _import_root not in sys.path:
-        sys.path.insert(0, _import_root)
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 logger = logging.getLogger("forensic-backend")
 
@@ -90,7 +90,7 @@ def main() -> None:
     import uvicorn
 
     uvicorn.run(
-        "api.main:app",
+        "backend.api.main:app",
         host="127.0.0.1",
         port=8000,
         log_level="info",

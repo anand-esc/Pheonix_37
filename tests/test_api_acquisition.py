@@ -120,7 +120,7 @@ def test_router_mounts_on_a_standalone_app(tmp_path):
 
     app = FastAPI()
     app.include_router(api.router)
-    client = TestClient(app)
+    client = TestClient(app, headers={"X-Operator-ID": "investigator-01"})
 
     req = _request(tmp_path)
     resp = client.post("/acquisition/runs?wait=true", json=req.model_dump())

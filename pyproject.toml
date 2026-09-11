@@ -19,6 +19,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# AI triage (backend/ai) is optional: the pipeline skips it when these are absent.
+ai = [
+    "torch>=2.0",
+    "ultralytics>=8.0",
+    "Pillow>=10.0",
+]
 dev = [
     "pytest>=7.0.0",
     "ruff>=0.1.0",

@@ -46,6 +46,7 @@ import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from xml.sax.saxutils import escape as _xml_escape
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -538,7 +539,11 @@ def render_pdf(draft: CertificateDraft, output_path: str | Path) -> Path:
 
     def _field_row(label: str, value: str, mono: bool = False) -> list:
         vs = s_mono if mono else s_value
-        return [Paragraph(label, s_label), Paragraph(value or "[not recorded]", vs)]
+        # Paragraph parses inline XML markup, so evidence-derived text is escaped
+        return [
+            Paragraph(_xml_escape(label), s_label),
+            Paragraph(_xml_escape(value or "[not recorded]"), vs),
+        ]
 
     # ── On-page header / footer (watermark + draft stamp) ─────────────────
     def _on_page(canvas, doc: Any) -> None:
@@ -838,7 +843,7 @@ def render_pdf(draft: CertificateDraft, output_path: str | Path) -> Path:
     story.append(Paragraph("LIMITATIONS — VERBATIM FROM PIPELINE", s_section))
     story.append(Spacer(1, 4))
     for lim in draft.limitations:
-        story.append(Paragraph(f"⚠  {lim}", s_list))
+        story.append(Paragraph(f"⚠  {_xml_escape(lim)}", s_list))
     story.append(Spacer(1, 10))
 
     # ── LEGAL BASIS ──────────────────────────────────────────────────────────
@@ -854,21 +859,21 @@ def render_pdf(draft: CertificateDraft, output_path: str | Path) -> Path:
     sig_rows = [
         [
             [Paragraph("Full Name of Certifying Person", s_sig_label),
-             Paragraph(sb.certifying_person_name or "___________________________", s_value)],
+             Paragraph(_xml_escape(sb.certifying_person_name or "___________________________"), s_value)],
             [Paragraph("Official Designation / Rank", s_sig_label),
-             Paragraph(sb.designation or "___________________________", s_value)],
+             Paragraph(_xml_escape(sb.designation or "___________________________"), s_value)],
         ],
         [
             [Paragraph("Responsible For (relation to device)", s_sig_label),
-             Paragraph(sb.responsible_for or "___________________________", s_value)],
+             Paragraph(_xml_escape(sb.responsible_for or "___________________________"), s_value)],
             [Paragraph("Place", s_sig_label),
-             Paragraph(sb.place or "___________________________", s_value)],
+             Paragraph(_xml_escape(sb.place or "___________________________"), s_value)],
         ],
         [
             [Paragraph("Date (DD/MM/YYYY)", s_sig_label),
-             Paragraph(sb.date or "___  /  ___  /  _______", s_value)],
+             Paragraph(_xml_escape(sb.date or "___  /  ___  /  _______"), s_value)],
             [Paragraph("Signature (with seal if applicable)", s_sig_label),
-             Paragraph(sb.signature or "___________________________", s_value)],
+             Paragraph(_xml_escape(sb.signature or "___________________________"), s_value)],
         ],
     ]
     t_sig = Table(sig_rows, colWidths=[None, None])
@@ -884,7 +889,7 @@ def render_pdf(draft: CertificateDraft, output_path: str | Path) -> Path:
     )
     story.append(t_sig)
     story.append(Spacer(1, 6))
-    story.append(Paragraph(sb.note, s_disclaimer))
+    story.append(Paragraph(_xml_escape(sb.note), s_disclaimer))
 
     # Build
     doc.build(story, onFirstPage=_on_page, onLaterPages=_on_page)

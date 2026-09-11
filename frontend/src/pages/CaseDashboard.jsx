@@ -47,8 +47,9 @@ export function CaseDashboard() {
     try {
       setIsCreating(true);
       const res = await createCase({ name: newCaseTitle, examiner: role });
-      if (res && res.case_id) {
-        navigate(`/cases/${res.case_id}`);
+      const newId = res && (res.case_id || res.id);
+      if (newId) {
+        navigate(`/cases/${newId}`);
       } else {
         await fetchCases();
         setIsModalOpen(false);

@@ -1,16 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Play, Pause, Volume2, VolumeX, Maximize, Minimize, Loader2, AlertCircle, RotateCcw } from "lucide-react";
-import { streamFragment, getCase, getCaseFragments, formatDate, formatBytes } from "../api";
-import { useRole } from "../context/RoleContext";
+import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, Loader2, AlertCircle } from "lucide-react";
+import { streamFragment, getCase, getCaseFragments } from "../api";
 import CaseHeader from "../components/phoenix-ui-kit/CaseHeader";
-import FragmentRow from "../components/phoenix-ui-kit/FragmentRow";
 
 export function VideoViewer() {
   const { id, fragmentIdx } = useParams();
   const fragmentIndex = parseInt(fragmentIdx, 10);
   const navigate = useNavigate();
-  const { role } = useRole();
 
   const [caseData, setCaseData] = useState(null);
   const [fragments, setFragments] = useState([]);
@@ -84,7 +81,8 @@ export function VideoViewer() {
       setCurrentTime(videoRef.current.currentTime);
       const buffered = videoRef.current.buffered;
       if (buffered.length > 0) {
-        setBuffered({ start: buffered.start(0), end: buffered.end(0) });
+        // after a seek there can be several disjoint ranges; report the furthest
+        setBuffered({ start: buffered.start(0), end: buffered.end(buffered.length - 1) });
       }
     }
   };
@@ -213,8 +211,8 @@ export function VideoViewer() {
     return (
       <div className="phx-page" style={{ background: "var(--color-phx-deep)", minHeight: "100vh", padding: "2rem" }}>
         <CaseHeader
-          caseId={caseData?.case_id || id}
-          title={caseData?.title || "Video Fragment Viewer"}
+          caseId={caseData?.id || id}
+          title={caseData?.name || "Video Fragment Viewer"}
           status="tampered"
           statusLabel="Stream error"
         />
@@ -263,9 +261,10 @@ export function VideoViewer() {
     <div className="phx-page" style={{ background: "var(--color-phx-deep)", minHeight: "100vh" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "1.5rem" }}>
         <CaseHeader
-          caseId={caseData?.case_id || id}
-          title={caseData?.title || `Case ${id}`}
-          status={caseData?.status === "validated" ? "validated" : caseData?.status === "tampered" ? "tampered" : "pending"}
+          caseId={caseData?.id || id}
+          title={caseData?.name || `Case ${id}`}
+          status={caseData?.status === "Recovered" || caseData?.status === "Reported" ? "validated" : "pending"}
+          statusLabel={caseData?.status}
         />
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: "1.5rem" }}>
@@ -498,7 +497,7 @@ export function VideoViewer() {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .phx-spinner {
           animation: spin 1s linear infinite;
         }

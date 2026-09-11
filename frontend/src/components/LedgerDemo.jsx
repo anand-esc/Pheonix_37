@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Shield, AlertTriangle, RotateCcw, Search, Terminal, RefreshCw, Copy, Check, X } from "lucide-react";
 import { getLedgerChain, verifyLedgerChain, tamperLedgerBlock, restoreLedgerChain, simulateLedgerAccess, probeDahua } from "../api";
-import { HashDisplay } from "./HashDisplay";
 
 export function LedgerDemo() {
   const [fullChain, setFullChain] = useState([]);

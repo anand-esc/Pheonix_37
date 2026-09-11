@@ -10,7 +10,7 @@
 
 'use strict';
 
-const { app, BrowserWindow, dialog, ipcMain } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, session } = require('electron');
 const { spawn, execFileSync } = require('child_process');
 const http = require('http');
 const path = require('path');
@@ -152,7 +152,9 @@ function startBackend() {
       cwd: projectRoot,
       stdio: ['ignore', 'pipe', 'pipe'],
       windowsHide: true,
-      env: { ...process.env, PHOENIX_LEDGER_SECRET: 'dummy' }
+      // Development runs without operator-provisioned secrets: say so
+      // explicitly instead of relying on the silent demo-key fallback.
+      env: { ...process.env, PHOENIX_DEMO_MODE: process.env.PHOENIX_DEMO_MODE || '1' },
     });
     
     backendProcess.on('error', (error) => {
@@ -254,10 +256,39 @@ function stopBackend() {
 // Window creation
 // ---------------------------------------------------------------------------
 
+/**
+ * Content-Security-Policy for the packaged renderer: only bundled assets and
+ * the local API. Applied only when packaged, because the Vite dev server needs
+ * inline scripts and a websocket for hot reload.
+ */
+function installContentSecurityPolicy() {
+  if (!app.isPackaged) return;
+  const api = `http://${HOST}:${PORT}`;
+  const csp = [
+    "default-src 'self'",
+    "script-src 'self'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob:",
+    `media-src 'self' blob: ${api}`,
+    `connect-src 'self' ${api}`,
+    "object-src 'none'",
+    "base-uri 'self'",
+  ].join('; ');
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [csp],
+      },
+    });
+  });
+}
+
 async function createMainWindow() {
   startBackend();
   await waitForBackend();
   console.log('[startup] Backend is ready, creating window...');
+  installContentSecurityPolicy();
 
   mainWindow = new BrowserWindow({
     width: 1280,
@@ -285,6 +316,18 @@ async function createMainWindow() {
   if (!app.isPackaged) {
     mainWindow.webContents.openDevTools({ mode: 'bottom' });
   }
+
+  // The renderer never opens new windows and never navigates away from the
+  // app: links to anything else are dropped.
+  mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    const devUrl = process.env.VITE_DEV_SERVER_URL || 'http://localhost:5173';
+    const allowed = app.isPackaged ? url.startsWith('file://') : url.startsWith(devUrl);
+    if (!allowed) {
+      console.warn('[security] blocked navigation to', url);
+      event.preventDefault();
+    }
+  });
 
   // Log any renderer crashes
   mainWindow.webContents.on('render-process-gone', (_event, details) => {

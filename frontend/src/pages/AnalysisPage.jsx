@@ -1,24 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import {
-  Play, ArrowLeft, Cpu, Film, Loader2, GitCommit,
-  HardDrive, Layers, CheckCircle2, XCircle, AlertCircle, Shield,
-} from "lucide-react";
+import { Play, ArrowLeft, Cpu, Film, GitCommit, Layers, Shield } from "lucide-react";
 import { CaseNavigationTabs } from "../components/CaseNavigationTabs";
 import { ProvenanceChain } from "../components/ProvenanceChain";
 import { LedgerDemo } from "../components/LedgerDemo";
 import { Badge } from "../components/Badge";
 import { SectionHeading } from "../components/SectionHeading";
-import { HashDisplay } from "../components/HashDisplay";
-import {
-  getCase, getCaseFragments, detectFormat, getCaseLedger,
-  formatBytes, mapBackendStatus
-} from "../api";
+import { getCase, getCaseFragments, detectFormat, getCaseLedger } from "../api";
 import { useRole } from "../context/RoleContext";
 
 export function AnalysisPage() {
   const { id } = useParams();
-  const { role } = useRole();
+  const navigate = useNavigate();
+  const { role, can } = useRole();
 
   const [activeTab, setActiveTab] = useState("provenance");
   const [caseData, setCaseData] = useState(null);
@@ -53,18 +47,21 @@ export function AnalysisPage() {
     return () => { isMounted = false; };
   }, [id]);
 
+  // detection runs on the acquired image inside the case store, never on
+  // the original source device
+  const imagePath = caseData?.evidence?.imagePath || "";
+  const canDetect = Boolean(imagePath) && (can("RUN_CARVING") || can("VALIDATE_PARSER"));
+
   const handleDetectFormat = async () => {
-    if (!caseData?.hasEvidence) return;
+    if (!canDetect) return;
     try {
       setDetectError(null);
-      const fmt = await detectFormat(caseData.evidence?.fileName || "");
+      const fmt = await detectFormat(imagePath);
       setFormatData(fmt);
     } catch (err) {
       setDetectError(err.message || "Format detection failed");
     }
   };
-
-  const recoverySegments = fragments.filter(f => f.recovery_method && f.recovery_method !== "VALIDATED");
 
   return (
     <div className="space-y-6">
@@ -194,7 +191,8 @@ export function AnalysisPage() {
                     </div>
                     <button
                       onClick={handleDetectFormat}
-                      disabled={!caseData?.hasEvidence}
+                      disabled={!canDetect}
+                      title={imagePath ? "" : "Acquire evidence first"}
                       className="px-4 py-2.5 bg-phx-cyan/10 border border-phx-cyan/30 text-phx-cyan text-[11px] font-medium rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all font-mono hover:bg-phx-cyan/10"
                     >
                       <Play className="w-4 h-4" />
@@ -216,12 +214,7 @@ export function AnalysisPage() {
                           {formatData?.vendor_info?.vendor_name || "—"}
                         </span>
                         {formatData?.vendor_info?.validation_status && (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold">
-                            {formatData.vendor_info.validation_status === 'VALIDATED' ? 'bg-[var(--accent-green-dim)] text-phx-green border border-[rgba(52,211,153,0.2)]' :
-                             formatData.vendor_info.validation_status === 'GENERIC_FALLBACK' ? 'bg-phx-amber/10 text-phx-amber border border-[rgba(240,169,58,0.2)]' :
-                             'bg-phx-cyan/10 text-phx-cyan border border-phx-cyan/20'}
-                            {formatData.vendor_info.validation_status}
-                          </span>
+                          <Badge label={formatData.vendor_info.validation_status} size="xs" />
                         )}
                       </div>
                     </div>

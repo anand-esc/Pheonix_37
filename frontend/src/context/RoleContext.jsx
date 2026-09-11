@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useReducer, useEffect } from "react";
-import { OPERATORS, getOperatorRole, setOperatorId } from "../api";
+import React, { createContext, useContext, useReducer } from "react";
+import { OPERATORS, ROLE_ACTIONS, getOperatorRole, setOperatorId } from "../api";
 
 const initialState = {
   operatorId: localStorage.getItem("phoenix_operator_id") || "investigator-01",
@@ -39,30 +39,26 @@ export function RoleProvider({ children }) {
     dispatch({ type: "SET_AUTH", payload: false });
   };
 
-  const operator = OPERATORS.find(o => o.id === state.operatorId) || OPERATORS[0];
-  const role = getOperatorRole();
+  const operator = OPERATORS.find((o) => o.id === state.operatorId) || OPERATORS[0];
+  const role = getOperatorRole(state.operatorId);
 
-  const can = (action) => {
-    const roleActions = {
-      INVESTIGATOR: ["VIEW_EVIDENCE", "EXPORT_BUNDLE", "TRIGGER_ACQUISITION"],
-      TECHNICAL_EXPERT: ["VIEW_EVIDENCE", "EXPORT_BUNDLE", "TRIGGER_ACQUISITION", "RUN_DETECTION"],
-      AUDITOR: ["VIEW_EVIDENCE", "EXPORT_BUNDLE", "VIEW_LEDGER"],
-      COURT_EXPORT: ["VIEW_EVIDENCE", "EXPORT_BUNDLE", "GENERATE_CERTIFICATE"],
-    };
-    return roleActions[role]?.includes(action) ?? false;
-  };
+  // Mirrors the backend RBAC matrix; the backend is still the authority and
+  // answers 403 when a role lacks an action, this only shapes the UI.
+  const can = (action) => ROLE_ACTIONS[role]?.includes(action) ?? false;
 
   return (
-    <RoleContext.Provider value={{
-      operatorId: state.operatorId,
-      isAuthenticated: state.isAuthenticated,
-      operator,
-      role,
-      setOperator,
-      login,
-      logout,
-      can,
-    }}>
+    <RoleContext.Provider
+      value={{
+        operatorId: state.operatorId,
+        isAuthenticated: state.isAuthenticated,
+        operator,
+        role,
+        setOperator,
+        login,
+        logout,
+        can,
+      }}
+    >
       {children}
     </RoleContext.Provider>
   );

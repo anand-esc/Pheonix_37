@@ -214,7 +214,10 @@ def test_vendor_adapter_is_used_when_available(tmp_path):
     )
     assert result.adapter.fallback is False
     assert result.adapter.class_name == "StubVendorAdapter"
-    assert result.carve is None and result.exported == [] and result.encrypted == []
+    # no carve for a vendor parse, but its fragments are still exported and sealed
+    assert result.carve is None
+    assert [e.byte_offset_end for e in result.exported] == [10]
+    assert len(result.encrypted) == 1
     assert result.evidence.channels[0].channel_id == "ch01"
     assert result.evidence.fragments[0].recovery_method == "vendor_index"
     assert result.evidence.metadata["parsed_by"] == "stub"

@@ -5,7 +5,7 @@ import { useRole } from "../context/RoleContext";
 import { OPERATORS } from "../api";
 
 export function Header() {
-  const { operatorId, role, setOperator, logout } = useRole();
+  const { operatorId, setOperator, logout } = useRole();
   const location = useLocation();
 
   const caseIdMatch = location.pathname.match(/\/cases\/([^/]+)/);
