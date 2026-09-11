@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Optional
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request, Response
+from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
@@ -24,22 +24,26 @@ from backend.ledger.rbac import Role, enforce_access
 # ---------------------------------------------------------------------------
 # RBAC dependency for protected endpoints
 # ---------------------------------------------------------------------------
-async def require_role(
-    operator_id: str = Header(..., alias="X-Operator-ID"),
-    action: str = Query(..., description="Action being attempted"),
-) -> str:
+def require_permission(required_action: str):
+    """Factory: returns a FastAPI dependency that enforces a *static* permission.
+
+    The required action is bound at route-registration time, NOT from user
+    input (query params, body, etc.), eliminating IDOR / privilege-escalation
+    via a manipulated ``?action=`` query string.
     """
-    FastAPI dependency that enforces RBAC for the given action.
-    Reads operator_id from X-Operator-ID header, action from query param.
-    Raises 403 on denial (and logs to ledger via event sink).
-    """
-    try:
-        enforce_access(operator_id, action)
-    except HTTPException:
-        raise
-    except Exception as exc:
-        raise HTTPException(status_code=403, detail=f"RBAC error: {exc}")
-    return operator_id
+
+    async def _dependency(
+        operator_id: str = Header(..., alias="X-Operator-ID"),
+    ) -> str:
+        try:
+            enforce_access(operator_id, required_action)
+        except HTTPException:
+            raise
+        except Exception as exc:
+            raise HTTPException(status_code=403, detail=f"RBAC error: {exc}")
+        return operator_id
+
+    return _dependency
 
 
 app = FastAPI(
@@ -422,10 +426,9 @@ async def stream_fragment(
 )
 def protected_evidence(
     case_id: str,
-    operator_id: str = Depends(require_role),
+    operator_id: str = Depends(require_permission("VIEW_EVIDENCE")),
 ) -> dict:
     """Example endpoint that requires VIEW_EVIDENCE permission."""
-    # The require_role dependency already enforced VIEW_EVIDENCE via action param
     case = _load_case_from_run(case_id)
     if case is None:
         from backend.api.mock_data import MOCK_CASE, MOCK_CASE_ID
