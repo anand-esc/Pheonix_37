@@ -312,8 +312,8 @@ async function createMainWindow() {
     mainWindow.focus();
   });
 
-  // Open devtools in development for debugging
-  if (!app.isPackaged) {
+  // Open devtools in development only if explicitly requested via OPEN_DEVTOOLS=1
+  if (!app.isPackaged && process.env.OPEN_DEVTOOLS === '1') {
     mainWindow.webContents.openDevTools({ mode: 'bottom' });
   }
 
