@@ -22,7 +22,13 @@ ledger = get_ledger()
 rbac = get_rbac_controller()
 dahua = DahuaAdapter()
 
-# Assign default roles to the shared RBAC controller
+# Frontend operator IDs (production — must match frontend/src/api.js OPERATORS)
+rbac.assign_role("investigator-01", Role.INVESTIGATOR)
+rbac.assign_role("technical-expert-01", Role.TECHNICAL_EXPERT)
+rbac.assign_role("auditor-01", Role.AUDITOR)
+rbac.assign_role("court-export-01", Role.COURT_EXPORT)
+
+# Legacy IDs (backward test compatibility)
 rbac.assign_role("sat-01", Role.INVESTIGATOR)
 rbac.assign_role("tech-02", Role.TECHNICAL_EXPERT)
 rbac.assign_role("audit-03", Role.AUDITOR)
