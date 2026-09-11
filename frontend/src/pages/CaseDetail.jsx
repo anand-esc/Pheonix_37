@@ -149,6 +149,7 @@ export function CaseDetail() {
           { id: "fragments", label: "Fragments", count: fragments.length, icon: Play },
           { id: "ledger", label: "Chain of Custody", count: ledgerEntries.length, icon: Layers },
           { id: "timeline", label: "Timeline", count: 0, icon: Clock },
+          { id: "triage", label: "AI Triage", count: caseData?.evidence_items?.[0]?.detections?.length || 0, icon: Cpu },
           { id: "report", label: "Certificate", count: 0, icon: FileText },
         ].map((tab) => (
           <button
@@ -204,6 +205,48 @@ export function CaseDetail() {
         )}
 
         {activeTab === "ledger" && <ChainOfCustody entries={ledgerEntries} />}
+
+
+        {activeTab === "triage" && (
+          <div>
+            <div className="text-xs text-phx-secondary mb-3 uppercase tracking-wider font-semibold">AI Triage Results</div>
+            {!(caseData?.evidence_items?.[0]?.detections?.length) ? (
+              <div className="bg-white border border-phx-border rounded-lg p-12 text-center">
+                <Cpu size={40} className="text-phx-muted mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-phx-primary mb-2">No Detections Found</h3>
+                <p className="text-sm text-phx-secondary mb-4">AI triage did not flag any objects of interest.</p>
+              </div>
+            ) : (
+              <div className="bg-white border border-phx-border rounded-lg overflow-hidden shadow-sm p-4">
+                <table className="w-full text-left text-sm text-phx-primary">
+                  <thead className="bg-phx-surface text-phx-secondary font-mono text-xs border-b border-phx-border">
+                    <tr>
+                      <th className="py-2 px-4">Fragment ID</th>
+                      <th className="py-2 px-4">Detected Object</th>
+                      <th className="py-2 px-4">Confidence</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {caseData.evidence_items[0].detections.map((d, i) => (
+                      <tr key={i} className="border-b border-phx-border hover:bg-phx-surface transition-colors">
+                        <td className="py-3 px-4 font-mono text-phx-red">{d.fragment_id || 'Unknown'}</td>
+                        <td className="py-3 px-4 capitalize font-semibold">{d.object_class}</td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2">
+                            <div className="h-1.5 w-16 bg-phx-border rounded-full overflow-hidden">
+                              <div className="h-full bg-phx-amber rounded-full" style={{ width: `${Math.round(d.confidence_score * 100)}%` }} />
+                            </div>
+                            <span className="font-mono text-[10px] font-bold text-phx-secondary">{Math.round(d.confidence_score * 100)}%</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
 
         {activeTab === "timeline" && (
           <div className="bg-white border border-phx-border rounded-lg p-16 text-center">
