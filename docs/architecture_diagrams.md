@@ -1,7 +1,9 @@
 # Architecture and pipeline diagrams
 
-Both diagrams render on GitHub. The same pair, laid out for presentation, is at
-[docs/MANUAL_TESTING.md](MANUAL_TESTING.md) for the operating instructions.
+Both diagrams render on GitHub. Who performs each step, and the standards the
+implementation was written against, are in
+[workflow_and_references.md](workflow_and_references.md); the commands are in
+[MANUAL_TESTING.md](MANUAL_TESTING.md).
 
 ## System architecture
 
