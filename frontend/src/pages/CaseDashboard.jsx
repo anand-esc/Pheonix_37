@@ -74,21 +74,20 @@ export function CaseDashboard() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 relative">
-      <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
-        <CaseHeader
-          caseId="PHEONIX_37"
-          title="Forensic Evidence Review Dashboard"
-          status="pending"
-          statusLabel={`${cases.length} cases on record`}
-        />
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="btn-primary"
-        >
-          <Plus size={16} />
-          <span>New Case</span>
-        </button>
-      </div>
+      <CaseHeader
+        title="Forensic Evidence Review Dashboard"
+        status="pending"
+        statusLabel={`${cases.length} cases on record`}
+        actions={
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="btn-primary py-1.5 px-3.5 text-xs font-semibold rounded-lg flex items-center gap-1.5 cursor-pointer shadow-xs"
+          >
+            <Plus size={15} />
+            <span>New Case</span>
+          </button>
+        }
+      />
 
       <div className="bg-white border border-phx-border rounded-lg p-4 mb-6 flex flex-wrap gap-4 items-center justify-between shadow-sm">
         <div className="flex flex-1 flex-wrap gap-4">

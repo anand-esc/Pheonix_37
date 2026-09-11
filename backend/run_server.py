@@ -89,12 +89,14 @@ def main() -> None:
 
     import uvicorn
 
+    is_frozen = getattr(sys, "frozen", False)
     uvicorn.run(
         "backend.api.main:app",
         host="127.0.0.1",
         port=8000,
         log_level="info",
         access_log=False,
+        reload=not is_frozen,
     )
 
 

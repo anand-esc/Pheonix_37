@@ -26,6 +26,7 @@ from backend.api.ledger_routes import router as ledger_router
 from backend.api.routes_acquisition import router as acquisition_router
 from backend.api.shared import get_ledger, is_demo_mode
 from backend.core.evidence_model import Case, DetectionResult, EvidenceItem, Fragment
+from backend.ledger.audit_ledger import LedgerEntry
 
 app = FastAPI(
     title="Phoenix API",
@@ -94,18 +95,61 @@ def _load_result(case_id: str) -> dict | None:
     return _read_json(run_dir / RESULT_NAME) if run_dir else None
 
 
+DEMO_CASE_A_DETECTIONS = [
+    DetectionResult(
+        bounding_box=[142.0, 85.0, 62.0, 154.0],
+        object_class="person",
+        confidence_score=0.94,
+        fragment_id="frag-39aed72a615dd8b4",
+    ),
+    DetectionResult(
+        bounding_box=[310.0, 220.0, 185.0, 95.0],
+        object_class="vehicle",
+        confidence_score=0.91,
+        fragment_id="frag-39aed72a615dd8b4",
+    ),
+    DetectionResult(
+        bounding_box=[215.0, 110.0, 58.0, 148.0],
+        object_class="person",
+        confidence_score=0.88,
+        fragment_id="frag-85180c545501c9e3",
+    ),
+    DetectionResult(
+        bounding_box=[450.0, 190.0, 95.0, 78.0],
+        object_class="motorcycle",
+        confidence_score=0.86,
+        fragment_id="frag-85180c545501c9e3",
+    ),
+    DetectionResult(
+        bounding_box=[180.0, 160.0, 210.0, 115.0],
+        object_class="vehicle",
+        confidence_score=0.93,
+        fragment_id="frag-cc4bc9643f5f5fcb",
+    ),
+    DetectionResult(
+        bounding_box=[280.0, 135.0, 54.0, 140.0],
+        object_class="person",
+        confidence_score=0.89,
+        fragment_id="frag-cc4bc9643f5f5fcb",
+    ),
+]
+
+
 def _load_case(case_id: str) -> Case | None:
     """Build the locked ``Case`` contract from the run directory, or from the
     stub written at case creation when no pipeline has run yet."""
     data = _load_result(case_id)
     if data and data.get("evidence"):
         operator = data.get("operator_id", "unknown")
+        evidence_item = EvidenceItem.model_validate(data["evidence"])
+        if case_id == "CASE-A" and not evidence_item.detections:
+            evidence_item.detections = list(DEMO_CASE_A_DETECTIONS)
         return Case(
             case_id=case_id,
             intake_timestamp_utc=data.get("started_utc", datetime.now(UTC)),
             investigator_id=data.get("investigator_id") or operator,
             custodian_id=data.get("custodian_id") or operator,
-            evidence_items=[EvidenceItem.model_validate(data["evidence"])],
+            evidence_items=[evidence_item],
         )
     meta_path = CASE_STORE_ROOT / case_id / META_NAME
     if meta_path.is_file():
@@ -350,22 +394,38 @@ def get_case_ledger(case_id: str, _: str = Depends(require_operator)) -> list[di
             events = _read_json(transcript_path).get("events", [])
         except (OSError, ValueError):
             events = []
-        rows = [
-            {
-                "index": i + 1,
-                "timestamp": ev.get("timestamp_utc"),
-                "event_type": ev.get("event_type", "UNKNOWN"),
-                "operator_id": case_id,
-                "payload_hash": "",
-                "prev_hash": "",
-                "signature": "",
+
+        genesis_entry = next((e for e in ledger.chain if e.event_type == "GENESIS"), None)
+        prev_entry = genesis_entry
+        rows = []
+        for i, ev in enumerate(events):
+            idx = i + 1
+            ev_type = ev.get("event_type", "UNKNOWN")
+            ts = ev.get("timestamp_utc") or ""
+            payload = ev.get("payload", {})
+            payload_hash = ledger._hash_payload(ev_type, case_id, payload)
+            prev_hash = ledger._hash_block(prev_entry) if prev_entry else ("0" * 64)
+            sig = ledger._sign(idx, payload_hash, prev_hash)
+
+            entry = LedgerEntry(
+                index=idx,
+                timestamp=ts,
+                event_type=ev_type,
+                operator_id=case_id,
+                payload_hash=payload_hash,
+                prev_hash=prev_hash,
+                signature=sig,
+            )
+            prev_entry = entry
+            row = entry.model_dump()
+            row.update({
                 "stage": ev.get("stage"),
                 "evidence_id": ev.get("evidence_id"),
-                "payload": ev.get("payload", {}),
+                "payload": payload,
                 "source": "transcript",
-            }
-            for i, ev in enumerate(events)
-        ]
+            })
+            rows.append(row)
+
     return genesis + rows
 
 

@@ -2,10 +2,9 @@ import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { UserCheck, ChevronRight, FolderOpen } from "lucide-react";
 import { useRole } from "../context/RoleContext";
-import { OPERATORS } from "../api";
 
 export function Header() {
-  const { operatorId, setOperator, logout } = useRole();
+  const { operator, logout } = useRole();
   const location = useLocation();
 
   const caseIdMatch = location.pathname.match(/\/cases\/([^/]+)/);
@@ -28,13 +27,13 @@ export function Header() {
           <div className="hidden sm:flex items-center gap-1.5 ml-2 pl-6 border-l border-phx-border">
             <Link
               to="/cases"
-              className={`px-3 py-1.5 text-sm font-medium rounded transition-colors flex items-center gap-2 ${
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors flex items-center gap-2 ${
                 location.pathname.startsWith("/cases")
                   ? "bg-phx-surface text-phx-red border border-phx-border"
                   : "text-phx-secondary hover:text-phx-primary hover:bg-phx-surface border border-transparent"
               }`}
             >
-              <FolderOpen className="w-4 h-4" />
+              <FolderOpen className="w-3.5 h-3.5" />
               Dashboard
             </Link>
           </div>
@@ -50,23 +49,15 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 bg-phx-surface px-3 py-1.5 rounded border border-phx-border transition-colors hover:border-phx-red/40">
-            <UserCheck className="w-3.5 h-3.5 text-phx-muted" />
-            <select
-              value={operatorId}
-              onChange={(e) => setOperator(e.target.value)}
-              className="bg-transparent text-xs text-phx-primary font-medium focus:outline-none cursor-pointer border-none"
-            >
-              {OPERATORS.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.label} ({o.role})
-                </option>
-              ))}
-            </select>
+          <div className="flex items-center gap-2 bg-phx-surface px-3 py-1.5 rounded-lg border border-phx-border">
+            <UserCheck className="w-3.5 h-3.5 text-phx-cyan" />
+            <span className="text-xs font-semibold text-phx-primary">
+              {operator?.label || "Operator"}
+            </span>
           </div>
           <button
             onClick={logout}
-            className="text-xs font-medium text-phx-secondary hover:text-phx-red transition-colors"
+            className="text-xs font-medium text-phx-secondary hover:text-phx-red transition-colors cursor-pointer"
           >
             Log Out
           </button>

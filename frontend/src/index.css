@@ -96,6 +96,20 @@
     @apply px-4 py-2 bg-phx-panel text-phx-primary border border-phx-border font-sans text-sm font-medium hover:bg-phx-surface hover:text-phx-cyan transition-colors flex items-center justify-center gap-2 rounded-md shadow-sm;
   }
 
+  .data-panel {
+    @apply bg-phx-panel border border-phx-border shadow-sm rounded-lg;
+  }
+
+  .forensic-table {
+    @apply w-full text-left border-collapse bg-white text-xs border border-phx-border;
+  }
+  .forensic-table th {
+    @apply px-3.5 py-2.5 bg-phx-surface font-mono font-semibold text-xs text-phx-secondary uppercase tracking-wider border-b border-r border-phx-border last:border-r-0 whitespace-nowrap;
+  }
+  .forensic-table td {
+    @apply px-3.5 py-2.5 text-xs text-phx-primary border-b border-r border-phx-border last:border-r-0 align-middle;
+  }
+
   .mono {
     font-family: var(--font-mono);
   }

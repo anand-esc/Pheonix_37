@@ -251,42 +251,42 @@ export function AnalysisPage() {
                     subtitle="Carved NAL units with confidence scoring and channel attribution"
                     icon={Film}
                   />
-                  <div className="overflow-x-auto">
-                    <table className="forensic-table">
-                      <thead>
-                        <tr>
-                          <th className="forensic-table th">Fragment ID</th>
-                          <th className="forensic-table th">Byte Range</th>
-                          <th className="forensic-table th">Codec</th>
-                          <th className="forensic-table th">Recovery Method</th>
-                          <th className="forensic-table th">Confidence</th>
-                          <th className="forensic-table th">Rationale</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[var(--border)]">
-                        {fragments.map((frag, idx) => (
-                          <tr key={frag.fragment_id}>
-                            <td className="forensic-table td font-mono">{frag.fragment_id || `frag-${idx}`}</td>
-                            <td className="forensic-table td font-mono">{frag.byte_offset_start || 0} – {frag.byte_offset_end || 0}</td>
-                            <td className="forensic-table td">{frag.codec_info || "—"}</td>
-                            <td className="forensic-table td"><Badge label={frag.recovery_method || "GENERIC"} variant="slate" size="xs" /></td>
-                            <td className="forensic-table td">
-                              <div className="flex items-center gap-2">
-                                <span className="font-mono font-bold text-phx-primary">{((frag.confidence_score || 0) * 100).toFixed(0)}%</span>
-                              </div>
-                            </td>
-                            <td className="forensic-table td text-[10px] font-mono text-phx-secondary">
-                              {frag.confidence_rationale || "—"}
-                            </td>
+                  <div className="border border-phx-border rounded-lg overflow-hidden shadow-sm bg-white">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse bg-white">
+                        <thead>
+                          <tr className="bg-phx-surface border-b-2 border-phx-border text-xs font-mono font-bold text-phx-secondary uppercase tracking-wider">
+                            <th className="px-4 py-3 border-r border-phx-border whitespace-nowrap">Fragment ID</th>
+                            <th className="px-4 py-3 border-r border-phx-border whitespace-nowrap">Byte Range</th>
+                            <th className="px-4 py-3 border-r border-phx-border whitespace-nowrap">Codec</th>
+                            <th className="px-4 py-3 border-r border-phx-border whitespace-nowrap">Recovery Method</th>
+                            <th className="px-4 py-3 border-r border-phx-border whitespace-nowrap">Confidence</th>
+                            <th className="px-4 py-3 whitespace-nowrap">Rationale</th>
                           </tr>
-                        ))}
-                        {fragments.length === 0 && (
-                          <tr>
-                            <td colSpan={6} className="py-8 text-center text-phx-muted font-mono">No fragments recovered.</td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-phx-border text-xs">
+                          {fragments.map((frag, idx) => (
+                            <tr key={frag.fragment_id} className="even:bg-phx-surface/25 hover:bg-phx-surface/60 transition-colors">
+                              <td className="px-4 py-2.5 font-mono text-phx-red border-r border-phx-border font-semibold">{frag.fragment_id || `frag-${idx}`}</td>
+                              <td className="px-4 py-2.5 font-mono text-phx-secondary border-r border-phx-border whitespace-nowrap">{frag.byte_offset_start || 0} – {frag.byte_offset_end || 0}</td>
+                              <td className="px-4 py-2.5 text-phx-primary border-r border-phx-border">{frag.codec_info || "—"}</td>
+                              <td className="px-4 py-2.5 border-r border-phx-border"><Badge label={frag.recovery_method || "GENERIC"} variant="slate" size="xs" /></td>
+                              <td className="px-4 py-2.5 border-r border-phx-border">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono font-bold text-phx-primary">{((frag.confidence_score || 0) * 100).toFixed(0)}%</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-2.5 text-[11px] font-mono text-phx-secondary">{frag.confidence_rationale || "—"}</td>
+                            </tr>
+                          ))}
+                          {fragments.length === 0 && (
+                            <tr>
+                              <td colSpan={6} className="px-6 py-10 text-center text-phx-muted font-mono">No fragments recovered.</td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -303,44 +303,46 @@ export function AnalysisPage() {
                   />
                 </div>
                 <div className="data-panel p-6">
-                  <div className="overflow-x-auto">
-                    <table className="forensic-table">
-                      <thead>
-                        <tr>
-                          <th className="forensic-table th">#</th>
-                          <th className="forensic-table th">Fragment ID</th>
-                          <th className="forensic-table th">Byte Offset</th>
-                          <th className="forensic-table th">Length</th>
-                          <th className="forensic-table th">Codec</th>
-                          <th className="forensic-table th">Recovery</th>
-                          <th className="forensic-table th">Confidence</th>
-                          <th className="forensic-table th">Rationale</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[var(--border)]">
-                        {fragments.map((frag, idx) => (
-                          <tr key={frag.fragment_id || idx}>
-                            <td className="forensic-table td font-mono text-phx-cyan">{idx + 1}</td>
-                            <td className="forensic-table td font-mono">{frag.fragment_id || `frag-${idx}`}</td>
-                            <td className="forensic-table td font-mono">{frag.byte_offset_start || 0} – {frag.byte_offset_end || 0}</td>
-                            <td className="forensic-table td font-mono">{(frag.byte_offset_end || 0) - (frag.byte_offset_start || 0)} bytes</td>
-                            <td className="forensic-table td">{frag.codec_info || "—"}</td>
-                            <td className="forensic-table td"><Badge label={frag.recovery_method || "GENERIC"} variant="slate" size="xs" /></td>
-                            <td className="forensic-table td">
-                              <div className="flex items-center gap-2">
-                                <span className="font-mono font-bold text-phx-primary">{((frag.confidence_score || 0) * 100).toFixed(0)}%</span>
-                              </div>
-                            </td>
-                            <td className="forensic-table td text-[10px] font-mono text-phx-secondary">{frag.confidence_rationale || "—"}</td>
+                  <div className="border border-phx-border rounded-lg overflow-hidden shadow-sm bg-white">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse bg-white">
+                        <thead>
+                          <tr className="bg-phx-surface border-b-2 border-phx-border text-xs font-mono font-bold text-phx-secondary uppercase tracking-wider">
+                            <th className="px-3.5 py-3 border-r border-phx-border w-12 text-center">#</th>
+                            <th className="px-4 py-3 border-r border-phx-border whitespace-nowrap">Fragment ID</th>
+                            <th className="px-4 py-3 border-r border-phx-border whitespace-nowrap">Byte Offset</th>
+                            <th className="px-4 py-3 border-r border-phx-border whitespace-nowrap">Length</th>
+                            <th className="px-4 py-3 border-r border-phx-border whitespace-nowrap">Codec</th>
+                            <th className="px-4 py-3 border-r border-phx-border whitespace-nowrap">Recovery</th>
+                            <th className="px-4 py-3 border-r border-phx-border whitespace-nowrap">Confidence</th>
+                            <th className="px-4 py-3 whitespace-nowrap">Rationale</th>
                           </tr>
-                        ))}
-                        {fragments.length === 0 && (
-                          <tr>
-                            <td colSpan={8} className="py-8 text-center text-phx-muted font-mono">No fragments recovered yet.</td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-phx-border text-xs">
+                          {fragments.map((frag, idx) => (
+                            <tr key={frag.fragment_id || idx} className="even:bg-phx-surface/25 hover:bg-phx-surface/60 transition-colors">
+                              <td className="px-3.5 py-2.5 font-mono font-bold text-phx-cyan text-center border-r border-phx-border bg-phx-surface/40">{idx + 1}</td>
+                              <td className="px-4 py-2.5 font-mono text-phx-red border-r border-phx-border font-semibold">{frag.fragment_id || `frag-${idx}`}</td>
+                              <td className="px-4 py-2.5 font-mono text-phx-secondary border-r border-phx-border whitespace-nowrap">{frag.byte_offset_start || 0} – {frag.byte_offset_end || 0}</td>
+                              <td className="px-4 py-2.5 font-mono text-phx-secondary border-r border-phx-border whitespace-nowrap">{(frag.byte_offset_end || 0) - (frag.byte_offset_start || 0)} bytes</td>
+                              <td className="px-4 py-2.5 text-phx-primary border-r border-phx-border">{frag.codec_info || "—"}</td>
+                              <td className="px-4 py-2.5 border-r border-phx-border"><Badge label={frag.recovery_method || "GENERIC"} variant="slate" size="xs" /></td>
+                              <td className="px-4 py-2.5 border-r border-phx-border">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono font-bold text-phx-primary">{((frag.confidence_score || 0) * 100).toFixed(0)}%</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-2.5 text-[11px] font-mono text-phx-secondary">{frag.confidence_rationale || "—"}</td>
+                            </tr>
+                          ))}
+                          {fragments.length === 0 && (
+                            <tr>
+                              <td colSpan={8} className="px-6 py-10 text-center text-phx-muted font-mono">No fragments recovered yet.</td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -355,43 +357,85 @@ export function AnalysisPage() {
                     subtitle={ledgerEntries.length === 0 ? "No ledger entries for this case" : `${ledgerEntries.length} entries (including GENESIS)`}
                     icon={Layers}
                   />
+                  <p className="text-[11px] text-phx-secondary leading-relaxed mt-2">
+                    Append-only HMAC-SHA256 block chaining, cryptographic payload integrity verification, and mathematical tamper-evidence under BSA 2023 Section 63.
+                  </p>
                 </div>
                 <div className="data-panel p-6">
-                  <div className="overflow-x-auto">
-                    <table className="forensic-table">
-                      <thead>
-                        <tr>
-                          <th className="forensic-table th">#</th>
-                          <th className="forensic-table th">Event Type</th>
-                          <th className="forensic-table th">Operator</th>
-                          <th className="forensic-table th">Timestamp (UTC)</th>
-                          <th className="forensic-table th">Payload Hash</th>
-                          <th className="forensic-table th">Prev Hash</th>
-                          <th className="forensic-table th">Signature</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[var(--border)]">
-                        {ledgerEntries.map((entry, idx) => (
-                          <tr key={idx} className={entry.event_type === "GENESIS" ? "bg-phx-amber/10" : ""}>
-                            <td className="forensic-table td font-mono text-phx-cyan">{entry.index}</td>
-                            <td className="forensic-table td font-medium">
-                              {entry.event_type === "GENESIS" && <span className="text-phx-amber font-bold">GENESIS</span>}
-                              {entry.event_type !== "GENESIS" && entry.event_type}
-                            </td>
-                            <td className="forensic-table td font-mono">{entry.operator_id}</td>
-                            <td className="forensic-table td font-mono">{entry.timestamp}</td>
-                            <td className="forensic-table td font-mono">{entry.payload_hash}</td>
-                            <td className="forensic-table td font-mono">{entry.prev_hash}</td>
-                            <td className="forensic-table td font-mono">{entry.signature}</td>
+                  <div className="border border-phx-border rounded-lg overflow-hidden shadow-sm bg-white">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse bg-white">
+                        <thead>
+                          <tr className="bg-phx-surface border-b-2 border-phx-border text-xs font-mono font-bold text-phx-secondary uppercase tracking-wider">
+                            <th className="px-3.5 py-3 border-r border-phx-border w-12 text-center">#</th>
+                            <th className="px-4 py-3 border-r border-phx-border whitespace-nowrap">Event Type</th>
+                            <th className="px-4 py-3 border-r border-phx-border whitespace-nowrap">Operator</th>
+                            <th className="px-4 py-3 border-r border-phx-border whitespace-nowrap">Timestamp (UTC)</th>
+                            <th className="px-4 py-3 border-r border-phx-border whitespace-nowrap">Payload Hash</th>
+                            <th className="px-4 py-3 border-r border-phx-border whitespace-nowrap">Prev Hash</th>
+                            <th className="px-4 py-3 whitespace-nowrap">Signature</th>
                           </tr>
-                        ))}
-                        {ledgerEntries.length === 0 && (
-                          <tr>
-                            <td colSpan={7} className="py-8 text-center text-phx-muted font-mono">No ledger entries found.</td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-phx-border text-xs">
+                          {ledgerEntries.map((entry, idx) => {
+                            const isGenesis = entry.event_type === "GENESIS";
+                            return (
+                              <tr
+                                key={idx}
+                                className={`transition-colors ${
+                                  isGenesis
+                                    ? "bg-amber-50/80 hover:bg-amber-100/70"
+                                    : "even:bg-phx-surface/30 hover:bg-phx-surface/60"
+                                }`}
+                              >
+                                <td className="px-3.5 py-2.5 font-mono font-bold text-phx-cyan text-center border-r border-phx-border bg-phx-surface/40">
+                                  {entry.index}
+                                </td>
+                                <td className="px-4 py-2.5 border-r border-phx-border whitespace-nowrap font-medium">
+                                  {isGenesis ? (
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300">
+                                      GENESIS
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono bg-phx-surface border border-phx-border text-phx-primary font-medium">
+                                      {entry.event_type}
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="px-4 py-2.5 font-mono text-phx-secondary border-r border-phx-border whitespace-nowrap">
+                                  {entry.operator_id}
+                                </td>
+                                <td className="px-4 py-2.5 font-mono text-phx-secondary border-r border-phx-border whitespace-nowrap">
+                                  {entry.timestamp}
+                                </td>
+                                <td className="px-4 py-2.5 font-mono text-phx-primary border-r border-phx-border max-w-[220px]" title={entry.payload_hash}>
+                                  <div className="truncate font-mono text-[11px] select-all">
+                                    {entry.payload_hash}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-2.5 font-mono text-phx-muted border-r border-phx-border max-w-[180px]" title={entry.prev_hash}>
+                                  <div className="truncate font-mono text-[11px] select-all">
+                                    {entry.prev_hash}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-2.5 font-mono text-phx-muted max-w-[180px]" title={entry.signature}>
+                                  <div className="truncate font-mono text-[11px] select-all">
+                                    {entry.signature}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                          {ledgerEntries.length === 0 && (
+                            <tr>
+                              <td colSpan={7} className="px-6 py-10 text-center text-phx-muted font-mono">
+                                No ledger entries found.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
               </div>

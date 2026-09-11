@@ -43,25 +43,25 @@ def test_ledger_filtering():
         tmp_path = Path(tmpdir)
         
         # Run first case
-        print("1. Running CASE-A...")
-        run_acquisition_job('CASE-A', 'op-a', tmp_path / 'run_a')
+        print("1. Running CASE-FILT-A...")
+        run_acquisition_job('CASE-FILT-A', 'op-a', tmp_path / 'run_a')
         
         # Run second case
-        print("2. Running CASE-B...")
-        run_acquisition_job('CASE-B', 'op-b', tmp_path / 'run_b')
+        print("2. Running CASE-FILT-B...")
+        run_acquisition_job('CASE-FILT-B', 'op-b', tmp_path / 'run_b')
         
         client = TestClient(app, headers={"X-Operator-ID": "investigator-01"})
         
-        # Check CASE-A ledger
-        print("\n3. Checking /api/case/CASE-A/ledger...")
-        r = client.get('/api/case/CASE-A/ledger')
+        # Check CASE-FILT-A ledger
+        print("\n3. Checking /api/case/CASE-FILT-A/ledger...")
+        r = client.get('/api/case/CASE-FILT-A/ledger')
         assert r.status_code == 200
         ledger_a = r.json()
         event_types_a = [e['event_type'] for e in ledger_a]
         print(f"   Entries: {len(ledger_a)}")
         print(f"   Event types: {event_types_a}")
         
-        # Verify CASE-A events present
+        # Verify CASE-FILT-A events present
         assert 'GENESIS' in event_types_a
         assert 'intake_started' in event_types_a
         assert 'intake_completed' in event_types_a
@@ -72,18 +72,14 @@ def test_ledger_filtering():
         assert 'fragment_exported' in event_types_a
         assert 'encryption_completed' in event_types_a
         
-        # Verify NO CASE-B events in CASE-A ledger
-        # (CASE-B events would have operator_id='CASE-B')
-        # Since CASE-A ledger filters by operator_id == 'CASE-A', it should only have CASE-A events
-        # The event_types are the same, but the operator_id differs
-        # We can check by verifying the number of non-GENESIS entries matches expected
+        # Verify NO CASE-FILT-B events in CASE-FILT-A ledger
         non_genesis_a = [e for e in ledger_a if e['event_type'] != 'GENESIS']
-        print(f"   Non-GENESIS entries for CASE-A: {len(non_genesis_a)}")
+        print(f"   Non-GENESIS entries for CASE-FILT-A: {len(non_genesis_a)}")
         assert len(non_genesis_a) == 13  # 13 pipeline events per case
         
-        # Check CASE-B ledger
-        print("\n4. Checking /api/case/CASE-B/ledger...")
-        r = client.get('/api/case/CASE-B/ledger')
+        # Check CASE-FILT-B ledger
+        print("\n4. Checking /api/case/CASE-FILT-B/ledger...")
+        r = client.get('/api/case/CASE-FILT-B/ledger')
         assert r.status_code == 200
         ledger_b = r.json()
         event_types_b = [e['event_type'] for e in ledger_b]
@@ -91,7 +87,7 @@ def test_ledger_filtering():
         print(f"   Event types: {event_types_b}")
         
         non_genesis_b = [e for e in ledger_b if e['event_type'] != 'GENESIS']
-        print(f"   Non-GENESIS entries for CASE-B: {len(non_genesis_b)}")
+        print(f"   Non-GENESIS entries for CASE-FILT-B: {len(non_genesis_b)}")
         assert len(non_genesis_b) == 13
         
         # Verify GENESIS appears in both
@@ -103,15 +99,14 @@ def test_ledger_filtering():
         assert genesis_a[0] == genesis_b[0]
         
         # Verify the operator_id filtering works by checking raw ledger entries
-        # The ledger stores operator_id = case_id from PipelineEvent
         print("\n5. Verifying operator_id filtering in raw ledger...")
         raw_ledger = get_ledger().chain
         print(f"   Total raw ledger entries: {len(raw_ledger)}")
-        case_a_raw = [e for e in raw_ledger if e.operator_id == 'CASE-A']
-        case_b_raw = [e for e in raw_ledger if e.operator_id == 'CASE-B']
+        case_a_raw = [e for e in raw_ledger if e.operator_id == 'CASE-FILT-A']
+        case_b_raw = [e for e in raw_ledger if e.operator_id == 'CASE-FILT-B']
         genesis_raw = [e for e in raw_ledger if e.event_type == 'GENESIS']
-        print(f"   Raw entries with operator_id=CASE-A: {len(case_a_raw)}")
-        print(f"   Raw entries with operator_id=CASE-B: {len(case_b_raw)}")
+        print(f"   Raw entries with operator_id=CASE-FILT-A: {len(case_a_raw)}")
+        print(f"   Raw entries with operator_id=CASE-FILT-B: {len(case_b_raw)}")
         print(f"   Raw GENESIS entries: {len(genesis_raw)}")
         
         assert len(case_a_raw) == 13
@@ -123,9 +118,9 @@ def test_ledger_filtering():
         assert len(ledger_b) == len(genesis_raw) + len(case_b_raw)  # 1 + 13 = 14
         
         print("\n=== ALL FILTERING TESTS PASSED ===")
-        print(f"   CASE-A ledger: 1 GENESIS + 13 case events = {len(ledger_a)} entries")
-        print(f"   CASE-B ledger: 1 GENESIS + 13 case events = {len(ledger_b)} entries")
-        print(f"   Global raw ledger: 1 GENESIS + 13 CASE-A + 13 CASE-B = {len(raw_ledger)} entries")
+        print(f"   CASE-FILT-A ledger: 1 GENESIS + 13 case events = {len(ledger_a)} entries")
+        print(f"   CASE-FILT-B ledger: 1 GENESIS + 13 case events = {len(ledger_b)} entries")
+        print(f"   Global raw ledger: 1 GENESIS + 13 CASE-FILT-A + 13 CASE-FILT-B = {len(raw_ledger)} entries")
 
 
 if __name__ == '__main__':

@@ -224,8 +224,17 @@ export function CaseDetail() {
 
 
         {activeTab === "triage" && (
-          <div>
-            <div className="text-xs text-phx-secondary mb-3 uppercase tracking-wider font-semibold">AI Triage Results</div>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-xs text-phx-secondary uppercase tracking-wider font-semibold">AI Triage Results</div>
+                <p className="text-xs text-phx-muted mt-0.5">Automated visual localization of persons and vehicles for investigative filtering.</p>
+              </div>
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-phx-surface text-phx-primary border border-phx-border">
+                {caseData?.evidence_items?.[0]?.detections?.length || 0} Detections Flagged
+              </span>
+            </div>
+
             {!(caseData?.evidence_items?.[0]?.detections?.length) ? (
               <div className="bg-white border border-phx-border rounded-lg p-12 text-center">
                 <Cpu size={40} className="text-phx-muted mx-auto mb-4" />
@@ -233,20 +242,25 @@ export function CaseDetail() {
                 <p className="text-sm text-phx-secondary mb-4">AI triage did not flag any objects of interest.</p>
               </div>
             ) : (
-              <div className="bg-white border border-phx-border rounded-lg overflow-hidden shadow-sm p-4">
+              <div className="bg-white border border-phx-border rounded-lg overflow-hidden shadow-sm">
                 <table className="w-full text-left text-sm text-phx-primary">
                   <thead className="bg-phx-surface text-phx-secondary font-mono text-xs border-b border-phx-border">
                     <tr>
-                      <th className="py-2 px-4">Fragment ID</th>
-                      <th className="py-2 px-4">Detected Object</th>
-                      <th className="py-2 px-4">Confidence</th>
+                      <th className="py-2.5 px-4">Fragment ID</th>
+                      <th className="py-2.5 px-4">Detected Object</th>
+                      <th className="py-2.5 px-4">Confidence</th>
+                      <th className="py-2.5 px-4">Bounding Box [x, y, w, h]</th>
                     </tr>
                   </thead>
                   <tbody>
                     {caseData.evidence_items[0].detections.map((d, i) => (
-                      <tr key={i} className="border-b border-phx-border hover:bg-phx-surface transition-colors">
-                        <td className="py-3 px-4 font-mono text-phx-red">{d.fragment_id || 'Unknown'}</td>
-                        <td className="py-3 px-4 capitalize font-semibold">{d.object_class}</td>
+                      <tr key={i} className="border-b border-phx-border hover:bg-phx-surface/60 transition-colors">
+                        <td className="py-3 px-4 font-mono text-phx-red text-xs">{d.fragment_id || 'Unknown'}</td>
+                        <td className="py-3 px-4">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider bg-phx-surface border border-phx-border text-phx-primary">
+                            {d.object_class}
+                          </span>
+                        </td>
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-2">
                             <div className="h-1.5 w-16 bg-phx-border rounded-full overflow-hidden">
@@ -254,6 +268,11 @@ export function CaseDetail() {
                             </div>
                             <span className="font-mono text-[10px] font-bold text-phx-secondary">{Math.round(d.confidence_score * 100)}%</span>
                           </div>
+                        </td>
+                        <td className="py-3 px-4 font-mono text-xs text-phx-muted">
+                          {Array.isArray(d.bounding_box) && d.bounding_box.length === 4
+                            ? `[${d.bounding_box.map(Math.round).join(', ')}]`
+                            : '—'}
                         </td>
                       </tr>
                     ))}
