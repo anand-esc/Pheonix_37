@@ -215,20 +215,6 @@ Modify a ledger entry — verification fails visibly. Attempt unauthorized decry
 
 ---
 
-## Definition of Done
-
-Every feature is considered complete only when:
-
-- [ ] Works end-to-end, not just in isolation
-- [ ] Known input produces a known, verified output
-- [ ] At least one failure or error case has been tested
-- [ ] Output hash is recorded in the chain
-- [ ] UI displays the result
-- [ ] Ledger event is written for the action
-- [ ] One line of documentation exists
-
----
-
 <div align="center">
 
 *Phoenix — SIH 2026 · NTRO · Blockchain & Cybersecurity*
