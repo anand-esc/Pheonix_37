@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Play, Loader2, AlertCircle, FileText, Clock, Layers } from "lucide-react";
+import { ArrowLeft, Play, Loader2, AlertCircle, FileText, Clock, Layers, Cpu } from "lucide-react";
 import { getCase, getCaseFragments, getCaseLedger, mapLedgerEntry } from "../api";
 import { useRole } from "../context/RoleContext";
 import CaseHeader from "../components/phoenix-ui-kit/CaseHeader";
