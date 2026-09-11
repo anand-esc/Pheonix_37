@@ -249,3 +249,103 @@ class TestRBAC:
     def test_court_export_permissions(self):
         self.rbac.enforce_access("court-01", "EXPORT_BUNDLE")
         self.rbac.enforce_access("court-01", "VIEW_CERTIFICATE")
+
+
+# ===================================================================
+# IDOR prevention tests (WP-T2)
+# ===================================================================
+
+class TestIDORPrevention:
+    """Verify that a manipulated ?action= query string cannot escalate privileges."""
+
+    @pytest.fixture(autouse=True)
+    def _setup_client(self):
+        """Create a TestClient using the real app with RBAC wired up."""
+        httpx = pytest.importorskip("httpx")  # skip if httpx not installed
+
+        from backend.api.main import app
+        from fastapi.testclient import TestClient
+
+        self.client = TestClient(app)
+
+    def test_correct_role_succeeds(self):
+        """Investigator-01 can access the VIEW_EVIDENCE-protected endpoint."""
+        res = self.client.get(
+            "/api/protected/evidence/MOCK-CASE-001",
+            headers={"X-Operator-ID": "investigator-01"},
+        )
+        assert res.status_code == 200
+
+    def test_wrong_role_rejected(self):
+        """Court-export operator cannot access VIEW_EVIDENCE endpoint."""
+        res = self.client.get(
+            "/api/protected/evidence/MOCK-CASE-001",
+            headers={"X-Operator-ID": "court-export-01"},
+        )
+        assert res.status_code == 403
+
+    def test_manipulated_query_param_cannot_escalate(self):
+        """Injecting ?action=EXPORT_BUNDLE in the URL does NOT grant escalated access.
+        The server ignores query-param action entirely; permission is statically bound."""
+        res = self.client.get(
+            "/api/protected/evidence/MOCK-CASE-001?action=EXPORT_BUNDLE",
+            headers={"X-Operator-ID": "court-export-01"},
+        )
+        # Still 403 — the ?action= param is meaningless
+        assert res.status_code == 403
+
+    def test_unknown_operator_rejected(self):
+        """An unregistered operator is always denied."""
+        res = self.client.get(
+            "/api/protected/evidence/MOCK-CASE-001",
+            headers={"X-Operator-ID": "hacker-99"},
+        )
+        assert res.status_code == 403
+
+
+# ===================================================================
+# EventBus concurrency tests (WP-T4)
+# ===================================================================
+
+class TestEventBusConcurrency:
+    """Verify concurrent event pushes do not lose or corrupt entries."""
+
+    def test_concurrent_event_pushes_no_loss(self):
+        import threading
+
+        sink = InMemoryEventSink()
+        received = []
+        lock = threading.Lock()
+
+        def safe_append(event):
+            with lock:
+                received.append(event)
+
+        sink.subscribe(safe_append)
+
+        n_threads = 20
+        events_per_thread = 50
+
+        def push_events(thread_id):
+            for i in range(events_per_thread):
+                sink.publish({
+                    "event_type": "CONCURRENT_TEST",
+                    "operator_id": f"thread-{thread_id}",
+                    "details": {"seq": i},
+                })
+
+        threads = [
+            threading.Thread(target=push_events, args=(t,))
+            for t in range(n_threads)
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        expected = n_threads * events_per_thread
+        assert len(received) == expected, (
+            f"Expected {expected} events, got {len(received)} — data loss detected"
+        )
+        assert sink.event_count == expected
+
