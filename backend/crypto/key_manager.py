@@ -23,13 +23,13 @@ def generate_salt() -> bytes:
     return os.urandom(16)
 
 
-def derive_kek(passphrase: str, salt: bytes) -> bytes:
+def derive_kek(passphrase: str | bytes, salt: bytes) -> bytes:
     """
     Derives a 256-bit Key Encryption Key (KEK) using Argon2id.
     Parameters are tuned to modern OWASP recommendations for memory-hard KDFs.
     
     Args:
-        passphrase: The human-readable string or master secret.
+        passphrase: The human-readable string or master secret (bytes).
         salt: A 16-byte cryptographically secure random salt.
         
     Returns:
@@ -42,7 +42,9 @@ def derive_kek(passphrase: str, salt: bytes) -> bytes:
         lanes=4,
         memory_cost=65536,
     )
-    return kdf.derive(passphrase.encode('utf-8'))
+    if isinstance(passphrase, str):
+        passphrase = passphrase.encode('utf-8')
+    return kdf.derive(passphrase)
 
 
 def wrap_dek(dek: bytes, kek: bytes) -> tuple[bytes, bytes]:

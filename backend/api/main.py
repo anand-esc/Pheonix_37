@@ -438,3 +438,46 @@ def protected_evidence(
         "evidence_count": len(case.evidence_items),
         "message": "RBAC check passed — access granted",
     }
+
+from fastapi.responses import FileResponse
+
+@app.post("/api/case/{case_id}/certificate", summary="Generate BSA Certificate")
+def generate_case_certificate(case_id: str) -> dict:
+    run_dir = _find_case_dir(case_id)
+    if not run_dir:
+        raise HTTPException(status_code=404, detail="Case run not found")
+    
+    facts_path = run_dir / "custody_facts.json"
+    if not facts_path.exists():
+        raise HTTPException(status_code=400, detail="custody_facts.json not found. Pipeline must finish first.")
+        
+    out_dir = CASE_STORE_ROOT / case_id / "certificate"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    
+    from backend.reporting.certificate_draft import generate_draft
+    try:
+        generate_draft(facts_path=str(facts_path), output_dir=str(out_dir))
+        return {"success": True, "message": "Certificate generated successfully."}
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Failed to generate certificate: {exc}")
+
+@app.get("/api/case/{case_id}/certificate/download", summary="Download BSA Certificate PDF")
+def download_case_certificate(case_id: str):
+    out_dir = CASE_STORE_ROOT / case_id / "certificate"
+    pdf_path = out_dir / "certificate_draft.pdf"
+    if not pdf_path.exists():
+        raise HTTPException(status_code=404, detail="Certificate not generated yet.")
+        
+    return FileResponse(
+        path=pdf_path,
+        media_type="application/pdf",
+        filename=f"BSA63-Certificate-{case_id}.pdf"
+    )
+
+@app.get("/health", summary="Health check endpoint")
+def health_check():
+    return {"status": "ok"}
+
+@app.get("/ready", summary="Readiness endpoint")
+def ready_check():
+    return {"status": "ready"}

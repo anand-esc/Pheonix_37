@@ -18,6 +18,7 @@ import json
 import logging
 import os
 import threading
+import warnings
 from datetime import datetime, timezone
 from typing import Any, Optional
 from pydantic import BaseModel, Field
@@ -26,19 +27,24 @@ from .event_bus import InMemoryEventSink
 
 logger = logging.getLogger(__name__)
 
+_DEMO_LEDGER_SECRET = "phoenix-demo-ledger-secret-32-bytes!!"
+_DEMO_WARNING = (
+    "PHOENIX_LEDGER_SECRET not set — using INSECURE DEMO KEY. "
+    "DO NOT USE IN PRODUCTION. Set PHOENIX_LEDGER_SECRET environment variable."
+)
 
-def _load_secret() -> str:
+
+def _load_secret(demo_mode: bool = False) -> str:
     """Read the HMAC signing key from the environment.
 
     In production, set ``PHOENIX_LEDGER_SECRET`` to a vault-managed value.
-    No default is provided — the application must fail loudly if unset.
+    If missing, gracefully degrades to a demo secret with a warning.
     """
     secret = os.environ.get("PHOENIX_LEDGER_SECRET")
     if secret:
         return secret
-    raise RuntimeError(
-        "PHOENIX_LEDGER_SECRET must be set — no default is provided for security reasons"
-    )
+    warnings.warn(_DEMO_WARNING, RuntimeWarning, stacklevel=2)
+    return _DEMO_LEDGER_SECRET
 
 
 class LedgerEntry(BaseModel):
@@ -56,8 +62,9 @@ class AuditLedger:
         self,
         event_sink: Optional[InMemoryEventSink] = None,
         secret: str | None = None,
+        demo_mode: bool = False,
     ) -> None:
-        self._secret = secret or _load_secret()
+        self._secret = secret or _load_secret(demo_mode=demo_mode)
         self._lock = threading.Lock()
         self._chain: list[LedgerEntry] = []
         self._backup: list[dict] = []

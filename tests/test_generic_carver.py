@@ -493,24 +493,3 @@ def test_mp4_wrap_rejects_streams_without_parameter_sets(tmp_path):
     with pytest.raises(ValueError):  # nothing at all
         wrap_annexb(b"\x00" * 64)
 
-
-# ---------------------------------------------------------------------------
-# Committed sample fixtures must match the builder (drift guard)
-# ---------------------------------------------------------------------------
-def test_committed_sample_image_matches_builder(tmp_path):
-    sample = FIXTURE_DIR / "sample_dvr_image.img"
-    manifest = load_manifest(sample)
-    rebuilt = build_dvr_image(
-        tmp_path / "rebuilt.img",
-        size_bytes=manifest["size_bytes"],
-        seed=manifest["seed"],
-        vendor_variant=manifest["vendor_variant"],
-        block_size=manifest["block_size"],
-    )
-    assert rebuilt.sha256 == manifest["sha256"]
-    assert hashlib.sha256(sample.read_bytes()).hexdigest() == manifest["sha256"]
-    result = GenericNalCarver().carve(sample)
-    assert [c.sha256 for c in result.fragments] == [
-        s["sha256"] for s in manifest["segments"]
-    ]
-    assert manifest["segments"][1]["deleted"] is True

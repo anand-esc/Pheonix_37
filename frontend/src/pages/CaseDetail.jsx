@@ -30,19 +30,24 @@ export function CaseDetail() {
     try {
       setIsAcquiring(true);
       const api = await import("../api");
-      await api.startAcquisitionRun({
+      const run = await api.startAcquisitionRun({
         source_path: cleanPath,
         case_id: id,
         operator_id: role,
         out_dir: `case_store/${id}/run`,
-        encrypt: false, // Turn off for dev/testing ease
+        encrypt: true,
       });
       setIsAcquireModalOpen(false);
       setSourcePath("");
-      alert("Acquisition started in the background. Check backend logs or refresh later.");
+      
+      await api.pollAcquisitionRun(run.job_id, (progressRun) => {
+        console.log("Acquisition progress:", progressRun);
+      });
+      
+      alert("Acquisition completed successfully!");
+      window.location.reload();
     } catch (err) {
       alert("Acquisition failed: " + err.message);
-    } finally {
       setIsAcquiring(false);
     }
   };

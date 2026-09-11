@@ -157,9 +157,10 @@ def test_pipeline_runs_end_to_end_on_the_shaped_image(tmp_path):
         encrypt=False,
     )
     assert result.detection.vendor_info.vendor_name == "Hikvision"
-    assert result.adapter.fallback is True  # the native parser is still a stub
-    assert "stub" in result.adapter.reason
-    assert [c.sha256 for c in result.carve.fragments] == [
+    assert result.adapter.fallback is False  # native WFS parser now implemented
+    assert result.adapter.module == "backend.adapters.hikvision"
+    # Native parser provides fragments directly in evidence
+    assert [f.sha256 for f in result.evidence.fragments] == [
         r.sha256 for r in manifest.recordings
     ]
     assert len(result.playable) == 2 and all(p.mp4_path for p in result.playable)

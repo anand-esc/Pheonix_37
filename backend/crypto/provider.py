@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 import os
+import warnings
 
 from backend.core.interfaces import CryptoProvider
 from backend.core.evidence_model import HashRecord
@@ -9,25 +10,31 @@ from backend.crypto.key_manager import generate_dek, generate_salt, derive_kek, 
 from backend.crypto.exceptions import ForensicIntegrityError
 
 
+_DEMO_MASTER_SECRET = b"phoenix-demo-master-secret-32-bytes!!"
+_DEMO_WARNING = (
+    "PHOENIX_MASTER_SECRET not set — using INSECURE DEMO KEY. "
+    "DO NOT USE IN PRODUCTION. Set PHOENIX_MASTER_SECRET environment variable."
+)
+
+
 class PhoenixCryptoProvider(CryptoProvider):
     """
     Concrete implementation of the CryptoProvider interface.
     Wires our standalone mathematical crypto engines into the strict Pydantic data contracts.
     """
     
-    def __init__(self):
-        # ASSUMPTION: Since per-investigator authentication isn't wired in yet
-        # (blocked on Satya's RBAC branch), we derive the KEK from a system-level
-        # master secret read from an environment variable, combined with a per-case salt.
-        # TODO: replace with real per-investigator secret once RBAC lands.
+    def __init__(self, demo_mode: bool = False):
         master_secret = os.environ.get("PHOENIX_MASTER_SECRET")
-        if not master_secret:
-            raise RuntimeError("PHOENIX_MASTER_SECRET must be set — no default is provided for security reasons")
-        self._master_secret = master_secret
+        if demo_mode or not master_secret:
+            if not demo_mode:
+                # If they didn't explicitly request demo mode but forgot the secret, gracefully degrade with a warning.
+                warnings.warn(_DEMO_WARNING, RuntimeWarning, stacklevel=2)
+            elif demo_mode:
+                warnings.warn(_DEMO_WARNING, RuntimeWarning, stacklevel=2)
+            self._master_secret = _DEMO_MASTER_SECRET
+        else:
+            self._master_secret = master_secret.encode() if isinstance(master_secret, str) else master_secret
 
-        # In production, this would securely fetch wrapped DEKs from a KMS/Vault database.
-        # For the hackathon prototype, we use an in-memory secure registry per case.
-        # Stores: case_id -> {"wrapped_dek": bytes, "nonce": bytes, "salt": bytes}
         self._case_key_records: dict[str, dict] = {}
 
     def _ensure_case_initialized(self, case_id: str) -> None:

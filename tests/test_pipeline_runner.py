@@ -134,6 +134,7 @@ def test_full_run_end_to_end(tmp_path):
         "intake",
         "detection",
         "recovery",
+        "triage",
         "encryption",
     ]
 

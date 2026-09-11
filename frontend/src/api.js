@@ -259,3 +259,12 @@ export function mapLedgerEntry(entry) {
   };
   return { ...entry, type: typeMap[eventType] || "detected" };
 }
+export async function generateCertificate(caseId) {
+  return fetchJson(buildUrl(API_BASE, `/case/${encodeURIComponent(caseId)}/certificate`, "VIEW_EVIDENCE"), {
+    method: "POST"
+  });
+}
+
+export function getCertificateDownloadUrl(caseId) {
+  return buildUrl(API_BASE, `/case/${encodeURIComponent(caseId)}/certificate/download`, "VIEW_EVIDENCE");
+}
