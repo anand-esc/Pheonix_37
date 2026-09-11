@@ -22,7 +22,6 @@
     "requestedExecutionLevel": "requireAdministrator"
   },
   "nsis": {
-    "requestedExecutionLevel": "requireAdministrator",
     "allowElevation": true,
     "perMachine": true
   },
