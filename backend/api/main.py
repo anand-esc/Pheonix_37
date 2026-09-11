@@ -324,13 +324,33 @@ def get_case_fragments(case_id: str) -> list[Fragment]:
     summary="Hash-chained audit ledger for a case",
 )
 def get_case_ledger(case_id: str) -> list[dict]:
-    """Returns the real audit ledger chain from the shared AuditLedger,
-    filtered to this case's events (plus the genesis anchor).
+    """Returns the audit ledger for a case.
+
+    Priority order:
+    1. Persisted ``run_transcript.json`` in the case run directory (survives
+       server restarts).
+    2. In-memory ``AuditLedger`` chain filtered by case_id / GENESIS.
     """
+    import json as _json
+
+    # 1. Try persisted transcript (durable across restarts)
+    run_dir = _find_case_dir(case_id)
+    if run_dir:
+        transcript_path = run_dir / "run_transcript.json"
+        if transcript_path.exists():
+            try:
+                transcript = _json.loads(
+                    transcript_path.read_text(encoding="utf-8")
+                )
+                events = transcript.get("events", [])
+                if events:
+                    return events
+            except Exception:
+                pass  # fall through to in-memory
+
+    # 2. Fallback: in-memory ledger chain
     ledger = get_ledger()
     chain = ledger.chain
-    # Ledger's emit() maps PipelineEvent.case_id -> operator_id.
-    # GENESIS always included as chain anchor. Other entries filtered by operator_id == case_id.
     filtered = [
         entry.model_dump() for entry in chain
         if entry.event_type == "GENESIS" or entry.operator_id == case_id
