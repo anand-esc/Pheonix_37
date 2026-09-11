@@ -1,0 +1,13 @@
+--- tests/test_hikvision_shaped_image.py
++++ tests/test_hikvision_shaped_image.py
+@@ -118,8 +118,9 @@
+ def test_carver_recovers_every_recording_including_the_unlisted_ones(image):
+     path, manifest = image
+     result = GenericNalCarver().carve(path)
+-        r.sha256 for r in manifest.recordings
+-        r.sha256[:8] for r in manifest.recordings if not r.deleted
++    assert [c.sha256 for c in result.fragments] == [
++        r.sha256 for r in manifest.recordings
+     ]
+     # the index knows about fewer recordings than the disk holds
+     assert len(read_index(path)) < len(result.fragments)

@@ -11,11 +11,15 @@ from backend.api.main import app
 from backend.api.routes_acquisition import store
 from backend.api.shared import get_event_sink, get_ledger
 
+from tests.fixtures.build_fixtures import build_dvr_image
+
 def run_acquisition_job(case_id: str, operator_id: str, out_dir: Path) -> str:
     """Start an acquisition job and wait for completion. Returns job_id."""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    build_dvr_image(out_dir / "sample.img", size_bytes=512 * 1024, seed=5, vendor_variant="none")
     client = TestClient(app)
     r = client.post('/acquisition/runs', json={
-        'source_path': str(Path('tests/fixtures/sample_dvr_image.img')),
+        'source_path': str(out_dir / "sample.img"),
         'case_id': case_id,
         'operator_id': operator_id,
         'out_dir': str(out_dir),

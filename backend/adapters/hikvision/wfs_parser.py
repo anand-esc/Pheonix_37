@@ -320,7 +320,7 @@ class WFSParser:
             index_data = self.file_handle.read(block_size)
         
         if len(index_data) < 8:
-            logger.warning("Index block too small or empty")
+            logger.warning(f"Index block too small or empty. index_offset={self.master_sector.index_offset}, block_size={block_size}, len={len(index_data)}")
             return entries
         
         # Check for B+Tree magic
@@ -338,8 +338,11 @@ class WFSParser:
                 logger.warning("Synthetic index block magic mismatch")
                 return entries
         
-        # Parse standard B+Tree (simplified - real implementation would traverse tree)
-        entries = self._parse_btree_node(index_data, block_size, 0)
+        if is_synthetic:
+            entries = self._parse_synthetic_index(index_data)
+        else:
+            # Parse standard B+Tree (simplified - real implementation would traverse tree)
+            entries = self._parse_btree_node(index_data, block_size, 0)
         
         # Also scan all blocks for file entries (fallback for fragmented index)
         if len(entries) < self.master_sector.channel_count * 10:
