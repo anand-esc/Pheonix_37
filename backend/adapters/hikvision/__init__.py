@@ -7,6 +7,8 @@ Extracts channel information and recovers video fragments including deleted file
 from backend.core.evidence_model import ChannelInfo, EvidenceItem
 from backend.core.interfaces import BaseAdapter
 from backend.pipeline.events import EventSink
+from typing import Optional
+
 
 from .wfs_parser import WFSParser, parse_wfs_image
 
