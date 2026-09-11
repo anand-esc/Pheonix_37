@@ -37,23 +37,58 @@ class PhoenixCryptoProvider(CryptoProvider):
 
         self._case_key_records: dict[str, dict] = {}
 
+    def _persist_key_record(self, case_id: str, record: dict) -> None:
+        import json
+        from pathlib import Path
+        KEY_STORE_DIR = Path("./case_store/.keys")
+        KEY_STORE_DIR.mkdir(parents=True, exist_ok=True)
+        target = KEY_STORE_DIR / f"{case_id}.key.json"
+        target.write_text(json.dumps({
+            "wrapped_dek": record["wrapped_dek"].hex(),
+            "nonce": record["nonce"].hex(),
+            "salt": record["salt"].hex(),
+        }), encoding="utf-8")
+
+    def _load_key_record(self, case_id: str) -> dict | None:
+        import json
+        from pathlib import Path
+        KEY_STORE_DIR = Path("./case_store/.keys")
+        target = KEY_STORE_DIR / f"{case_id}.key.json"
+        if not target.exists():
+            return None
+        data = json.loads(target.read_text(encoding="utf-8"))
+        salt = bytes.fromhex(data["salt"])
+        return {
+            "wrapped_dek": bytes.fromhex(data["wrapped_dek"]),
+            "nonce": bytes.fromhex(data["nonce"]),
+            "salt": salt,
+            "kek": derive_kek(self._master_secret, salt),
+        }
+
     def _ensure_case_initialized(self, case_id: str) -> None:
         """Generates a DEK, derives a KEK, wraps the DEK, and stores only the wrapped material."""
         if case_id not in self._case_key_records:
+            record = self._load_key_record(case_id)
+            if record is not None:
+                self._case_key_records[case_id] = record
+                return
+
             salt = generate_salt()
             kek = derive_kek(self._master_secret, salt)
             dek = generate_dek()
 
             wrapped_dek, wrap_nonce = wrap_dek(dek, kek)
-
-            self._case_key_records[case_id] = {
+            
+            record = {
                 "wrapped_dek": wrapped_dek,
                 "nonce": wrap_nonce,
                 "salt": salt,
                 "kek": kek
             }
+            self._case_key_records[case_id] = record
+            self._persist_key_record(case_id, record)
 
-    def _get_key_for_case(self, case_id: str) -> bytes:
+    def _get_key_for_case(self, case_id: str) -> bytearray:
         """
         Retrieves the Data Encryption Key (DEK) for a case.
         Used by the pipeline runner for whole-image streaming encryption.
@@ -62,7 +97,7 @@ class PhoenixCryptoProvider(CryptoProvider):
         record = self._case_key_records[case_id]
         kek = record["kek"]
         dek = unwrap_dek(record["wrapped_dek"], record["nonce"], kek)
-        return dek
+        return bytearray(dek)
 
     def _unwrap_dek_for_case(self, case_id: str) -> bytearray:
         """Unwraps the DEK for a case just-in-time."""
@@ -102,8 +137,7 @@ class PhoenixCryptoProvider(CryptoProvider):
         """
         dek_array = self._unwrap_dek_for_case(case_id)
         try:
-            dek = bytes(dek_array)
-            ciphertext, nonce = encrypt_data(data, dek)
+            ciphertext, nonce = encrypt_data(data, dek_array)
             # Package nonce and ciphertext together for the data store
             return nonce + ciphertext
         finally:
@@ -123,8 +157,7 @@ class PhoenixCryptoProvider(CryptoProvider):
 
         dek_array = self._unwrap_dek_for_case(case_id)
         try:
-            dek = bytes(dek_array)
-            return decrypt_data(ciphertext, nonce, dek)
+            return decrypt_data(ciphertext, nonce, dek_array)
         finally:
             # Securely wipe the DEK from RAM immediately after use
             for i in range(len(dek_array)):
@@ -136,5 +169,10 @@ class PhoenixCryptoProvider(CryptoProvider):
         Reads from input_path, writes encrypted result to output_path.
         """
         from backend.crypto.encryption import encrypt_file
-        dek = self._get_key_for_case(case_id)
-        encrypt_file(input_path, output_path, dek)
+        dek_array = self._get_key_for_case(case_id)
+        try:
+            encrypt_file(input_path, output_path, dek_array)
+        finally:
+            # Securely wipe the DEK from RAM immediately after use
+            for i in range(len(dek_array)):
+                dek_array[i] = 0

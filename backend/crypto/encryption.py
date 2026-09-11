@@ -98,8 +98,10 @@ def decrypt_file(input_path: Path | str, output_path: Path | str, key: bytes, ch
         ciphertext_length = file_size - 28
         bytes_read = 0
         
-        with open(output_path, 'wb') as f_out:
-            try:
+        temp_output_path = str(output_path) + ".tmp"
+        
+        try:
+            with open(temp_output_path, 'wb') as f_out:
                 while bytes_read < ciphertext_length:
                     read_size = min(chunk_size, ciphertext_length - bytes_read)
                     chunk = f_in.read(read_size)
@@ -110,9 +112,16 @@ def decrypt_file(input_path: Path | str, output_path: Path | str, key: bytes, ch
                 
                 # Finalize verifies the tag. If it fails, InvalidTag is raised.
                 f_out.write(decryptor.finalize())
-                
-            except InvalidTag:
-                # Security Rule: Do not leave unauthenticated plaintext on disk
-                f_out.close()
-                os.remove(output_path)
-                raise ForensicIntegrityError("CRITICAL: File tampered or incorrect key used. Decryption aborted.")
+            
+            # Authentication successful, move to final path
+            os.replace(temp_output_path, output_path)
+            
+        except InvalidTag:
+            # Security Rule: Do not leave unauthenticated plaintext on disk
+            if os.path.exists(temp_output_path):
+                os.remove(temp_output_path)
+            raise ForensicIntegrityError("CRITICAL: File tampered or incorrect key used. Decryption aborted.")
+        except Exception:
+            if os.path.exists(temp_output_path):
+                os.remove(temp_output_path)
+            raise
